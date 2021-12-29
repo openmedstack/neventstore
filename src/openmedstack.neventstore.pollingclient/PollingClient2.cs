@@ -1,8 +1,8 @@
-﻿namespace openmedstack.neventstore.client
+﻿namespace OpenMedStack.NEventStore.PollingClient
 {
     using Microsoft.Extensions.Logging;
-    using OpenMedStack.NEventStore;
-    using OpenMedStack.NEventStore.Persistence;
+    using NEventStore;
+    using Persistence;
 
     /// <summary>
     /// This is the new polling client that does not depends on RX.

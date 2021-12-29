@@ -1,4 +1,4 @@
-﻿namespace openmedstack.neventstore.client
+﻿namespace OpenMedStack.NEventStore.PollingClient
 {
     /// <summary>
     /// ApplicationException has been deprecated in .NET Core

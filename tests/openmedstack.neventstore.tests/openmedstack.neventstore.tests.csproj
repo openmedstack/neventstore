@@ -31,7 +31,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\openmedstack.neventstore.client\openmedstack.neventstore.client.csproj" />
+        <ProjectReference Include="..\..\src\openmedstack.neventstore.pollingclient\openmedstack.neventstore.pollingclient.csproj" />
         <ProjectReference Include="..\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj" />
         <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
     </ItemGroup>

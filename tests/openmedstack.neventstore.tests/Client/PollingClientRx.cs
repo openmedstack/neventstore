@@ -6,7 +6,7 @@
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
-    using openmedstack.neventstore.client;
+    using PollingClient;
 
     /// <summary>
     /// Represents a client that poll the storage for latest commits.

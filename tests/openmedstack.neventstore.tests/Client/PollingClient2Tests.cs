@@ -10,7 +10,7 @@
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests;
     using NEventStore.Persistence.AcceptanceTests.BDD;
-    using openmedstack.neventstore.client;
+    using PollingClient;
     using Xunit;
     
     public class BaseHandlingCommittedEvents : UsingPollingClient2
