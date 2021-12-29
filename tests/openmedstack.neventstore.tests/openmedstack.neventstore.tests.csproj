@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0</TargetFrameworks>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <IsPackable>false</IsPackable>
+        <AssemblyName>openmedstack.neventstore.tests</AssemblyName>
+        <RootNamespace>OpenMedStack.NEventStore.Tests</RootNamespace>
+    </PropertyGroup>
+	<Import Project="..\..\shared.proj" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\openmedstack.neventstore.persistence.acceptancetests\PersistenceTests.cs" Link="Persistence\InMemoryPersistence\PersistenceTests.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="FakeItEasy" Version="7.2.0" />
+        <PackageReference Include="FluentAssertions" Version="6.2.0" />
+        <PackageReference Include="System.Reactive.Core" Version="5.0.0" />
+        <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\openmedstack.neventstore.client\openmedstack.neventstore.client.csproj" />
+        <ProjectReference Include="..\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj" />
+        <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+    </ItemGroup>
+
+</Project>

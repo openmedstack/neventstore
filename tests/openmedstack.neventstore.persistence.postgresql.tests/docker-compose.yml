@@ -1,0 +1,11 @@
+﻿version: "3.7"
+services:
+
+  postgres:
+    image: postgres:11.5-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=openmedstack
+      - POSTGRES_PASSWORD=openmedstack
+      - POSTGRES_DB=eventdb

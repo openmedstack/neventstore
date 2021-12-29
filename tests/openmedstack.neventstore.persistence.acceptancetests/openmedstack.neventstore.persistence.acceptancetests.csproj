@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>OpenMedStack.NEventStore.Persistence.AcceptanceTests</RootNamespace>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyName>openmedstack.neventstore.persistence.acceptancetests</AssemblyName>
+    </PropertyGroup>
+	<Import Project="..\..\shared.proj" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="ConfigurationExtensions.cs" />
+        <Compile Remove="PersistenceTests.cs" />
+        <Compile Remove="SerializationTests.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="xunit" Version="2.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
+    </ItemGroup>
+
+</Project>

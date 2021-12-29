@@ -1,0 +1,126 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net6.0</TargetFrameworks>
+		<RootNamespace>OpenMedStack.NEventStore</RootNamespace>
+		<AssemblyName>openmedstack.neventstore</AssemblyName>
+		<PackageId>OpenMedStack.NEventstore</PackageId>
+		<PackageTags>OpenMedStack Architecture EventStore</PackageTags>
+		<PackageReleaseNotes>Packaged with nubian for Debian compatibility.</PackageReleaseNotes>
+		<Description>NEventStore OpenMedStack based applications.</Description>
+		<langVersion>latest</langVersion>
+	</PropertyGroup>
+	<Import Project="..\..\shared.proj" />
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DefineConstants>TRACE;DEBUG;</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Messages.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Messages.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<Compile Update="Messages.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Messages.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\PersistenceMessages.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>PersistenceMessages.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\CommonSqlStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>CommonSqlStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\FirebirdSqlStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>FirebirdSqlStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\MsSqlStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>MsSqlStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\MySqlStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>MySqlStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\OracleNativeStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>OracleNativeStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\PostgreSqlStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>PostgreSqlStatements.resx</DependentUpon>
+		</Compile>
+		<Compile Update="Persistence\Sql\SqlDialects\SqliteStatements.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>SqliteStatements.resx</DependentUpon>
+		</Compile>
+		<EmbeddedResource Update="Persistence\Sql\PersistenceMessages.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>PersistenceMessages.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\CommonSqlStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>CommonSqlStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\FirebirdSqlStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>FirebirdSqlStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\MsSqlStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>MsSqlStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\MySqlStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>MySqlStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\OracleNativeStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>OracleNativeStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\PostgreSqlStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>PostgreSqlStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Persistence\Sql\SqlDialects\SqliteStatements.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>SqliteStatements.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<Compile Update="Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+		<EmbeddedResource Update="Serialization\SerializerMessages.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>SerializerMessages.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<Compile Update="Serialization\SerializerMessages.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>SerializerMessages.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Persistence\Sql\SqlDialects\" />
+	</ItemGroup>
+</Project>

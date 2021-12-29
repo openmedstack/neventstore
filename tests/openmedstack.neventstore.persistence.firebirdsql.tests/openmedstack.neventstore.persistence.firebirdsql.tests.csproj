@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <OutputTypeEx>exe</OutputTypeEx>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <AssemblyName>openmedstack.neventstore.persistence.firebirdsql.tests</AssemblyName>
+        <RootNamespace>OpenMedStack.NEventStore.Persistence.FirebirdSql.Tests</RootNamespace>
+    </PropertyGroup>
+	<Import Project="..\..\shared.proj" />
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Properties\Settings.Designer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\openmedstack.neventstore.persistence.acceptancetests\PersistenceTests.cs" Link="PersistenceTests.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Firebird.Embedded" Version="3.0.0.32485" />
+        <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="8.5.4" />
+        <PackageReference Include="FluentAssertions" Version="6.2.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\openmedstack.neventstore.tests\openmedstack.neventstore.tests.csproj" />
+        <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Properties\Settings.settings">
+            <Generator>SettingsSingleFileGenerator</Generator>
+        </None>
+    </ItemGroup>
+
+</Project>

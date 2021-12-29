@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore", "src\openmedstack.neventstore\openmedstack.neventstore.csproj", "{AFB722C8-EC83-4DC5-A53E-E66B16811D57}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1D0BF739-F744-4B0B-9162-78770E21A030}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.tests", "tests\openmedstack.neventstore.tests\openmedstack.neventstore.tests.csproj", "{9319A568-60F5-4164-AFAE-6D71FCCF75CA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.acceptancetests", "tests\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj", "{8BFE371A-285C-4711-9217-E3A122F5E60F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.firebirdsql.tests", "tests\openmedstack.neventstore.persistence.firebirdsql.tests\openmedstack.neventstore.persistence.firebirdsql.tests.csproj", "{FAB3D477-2916-43CF-B006-0D2CBECCBD24}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.postgresql.tests", "tests\openmedstack.neventstore.persistence.postgresql.tests\openmedstack.neventstore.persistence.postgresql.tests.csproj", "{045829E3-4CF6-4F71-8F82-DF419074A476}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EC1E5A3A-6909-435A-883C-B7E152E6688C}"
+	ProjectSection(SolutionItems) = preProject
+		NuGet.config = NuGet.config
+		shared.proj = shared.proj
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.client", "src\openmedstack.neventstore.client\openmedstack.neventstore.client.csproj", "{652F34CF-5D47-4240-B3B3-3F4DD9DD130A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AFB722C8-EC83-4DC5-A53E-E66B16811D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFB722C8-EC83-4DC5-A53E-E66B16811D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFB722C8-EC83-4DC5-A53E-E66B16811D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFB722C8-EC83-4DC5-A53E-E66B16811D57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9319A568-60F5-4164-AFAE-6D71FCCF75CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9319A568-60F5-4164-AFAE-6D71FCCF75CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9319A568-60F5-4164-AFAE-6D71FCCF75CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9319A568-60F5-4164-AFAE-6D71FCCF75CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{045829E3-4CF6-4F71-8F82-DF419074A476}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{045829E3-4CF6-4F71-8F82-DF419074A476}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{045829E3-4CF6-4F71-8F82-DF419074A476}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{045829E3-4CF6-4F71-8F82-DF419074A476}.Release|Any CPU.Build.0 = Release|Any CPU
+		{652F34CF-5D47-4240-B3B3-3F4DD9DD130A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{652F34CF-5D47-4240-B3B3-3F4DD9DD130A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{652F34CF-5D47-4240-B3B3-3F4DD9DD130A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{652F34CF-5D47-4240-B3B3-3F4DD9DD130A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9319A568-60F5-4164-AFAE-6D71FCCF75CA} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{FAB3D477-2916-43CF-B006-0D2CBECCBD24} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{045829E3-4CF6-4F71-8F82-DF419074A476} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {67B44C3E-DC8A-4BB3-9CD4-5D81241AC7A5}
+	EndGlobalSection
+EndGlobal
