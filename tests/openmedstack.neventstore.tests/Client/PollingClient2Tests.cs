@@ -5,14 +5,13 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests;
     using NEventStore.Persistence.AcceptanceTests.BDD;
     using PollingClient;
     using Xunit;
-    
+
     public class BaseHandlingCommittedEvents : UsingPollingClient2
     {
         private readonly List<ICommit> _commits = new();
@@ -41,7 +40,7 @@
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 1);
-            _commits.Count.Should().Be(1);
+            Assert.Single(_commits);
         }
     }
 
@@ -77,7 +76,7 @@
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 16);
-            _commits.Count.Should().Be(16);
+            Assert.Equal(16, _commits.Count);
         }
     }
 
@@ -109,7 +108,7 @@
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(1);
+            Assert.Single(_commits);
         }
     }
 
@@ -146,8 +145,8 @@
         public void commits_are_retried()
         {
             WaitForCondition(() => _commits.Count >= 3, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(3);
-            _commits.All(c => c.CheckpointToken == 1).Should().BeTrue();
+            Assert.Equal(3, _commits.Count);
+            Assert.All(_commits, c => Assert.Equal(1, c.CheckpointToken));
         }
     }
 
@@ -182,11 +181,8 @@
         public void commits_are_retried_then_move_next()
         {
             WaitForCondition(() => _commits.Count >= 4, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(4);
-            _commits
-                .Select(c => c.CheckpointToken)
-                .SequenceEqual(new[] { 1L, 1L, 1, 2 })
-                .Should().BeTrue();
+            Assert.Equal(4, _commits.Count);
+            Assert.Equal(new[] { 1L, 1L, 1, 2 }, _commits.Select(c => c.CheckpointToken));
         }
     }
 
@@ -220,11 +216,8 @@
         public void commits_are_retried_then_move_next()
         {
             WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 3);
-            _commits.Count.Should().Be(2);
-            _commits
-                .Select(c => c.CheckpointToken)
-                .SequenceEqual(new[] { 1L, 2L })
-                .Should().BeTrue();
+            Assert.Equal(2, _commits.Count);
+            Assert.Equal(new[] { 1L, 2L }, _commits.Select(c => c.CheckpointToken));
         }
     }
 
@@ -245,9 +238,10 @@
 
         protected override Task Context()
         {
-            HandleFunction = c => Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+            HandleFunction = _ => Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
             StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
-            Sut = new PollingClient2(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance, _pollingInterval);
+            Sut = new PollingClient2(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
+                _pollingInterval);
             return Task.CompletedTask;
         }
 

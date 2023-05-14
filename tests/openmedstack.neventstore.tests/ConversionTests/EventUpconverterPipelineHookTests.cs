@@ -6,7 +6,6 @@
     using System.Reflection;
     using System.Threading.Tasks;
     using Conversion;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
@@ -26,19 +25,19 @@
 
         protected override async Task Because()
         {
-            _converted = await EventUpconverter.Select(_commit).ConfigureAwait(false);
+            _converted = await EventUpConverter.Select(_commit).ConfigureAwait(false);
         }
 
         [Fact]
         public void should_not_be_converted()
         {
-            _converted.Should().BeSameAs(_commit);
+            Assert.Same(_commit, _converted);
         }
 
         [Fact]
         public void should_have_the_same_instance_of_the_event()
         {
-            _converted.Events.Single().Should().Be(_commit.Events.Single());
+            Assert.Same(_commit.Events.Single(), _converted.Events.Single());
         }
     }
 
@@ -57,19 +56,19 @@
 
         protected override async Task Because()
         {
-            _converted = await EventUpconverter.Select(_commit).ConfigureAwait(false);
+            _converted = await EventUpConverter.Select(_commit).ConfigureAwait(false);
         }
 
         [Fact]
         public void should_be_of_the_converted_type()
         {
-            _converted.Events.Single().Body.GetType().Should().Be(typeof(ConvertingEvent3));
+            Assert.IsType<ConvertingEvent3>(_converted.Events.Single().Body);
         }
 
         [Fact]
-        public void should_have_the_same_id_of_the_commited_event()
+        public void should_have_the_same_id_of_the_committed_event()
         {
-            ((ConvertingEvent3)_converted.Events.Single().Body).Id.Should().Be(_id);
+            Assert.Equal(_id, ((ConvertingEvent3)_converted.Events.Single().Body).Id);
         }
     }
 
@@ -91,19 +90,19 @@
 
         protected override async Task Because()
         {
-            _converted = await EventUpconverter.Select(_commit).ConfigureAwait(false);
+            _converted = await EventUpConverter.Select(_commit).ConfigureAwait(false);
         }
 
         [Fact]
         public void should_be_of_the_converted_type()
         {
-            _converted.Events.Single().Body.GetType().Should().Be(typeof(ConvertingEvent3));
+            Assert.IsType<ConvertingEvent3>(_converted.Events.Single().Body);
         }
 
         [Fact]
-        public void should_have_the_same_id_of_the_commited_event()
+        public void should_have_the_same_id_of_the_committed_event()
         {
-            ((ConvertingEvent3)_converted.Events.Single().Body).Id.Should().Be(_id);
+            Assert.Equal(_id, ((ConvertingEvent3)_converted.Events.Single().Body).Id);
         }
     }
 
@@ -111,14 +110,14 @@
     {
         private IEnumerable<Assembly> _assemblies = null!;
         private Dictionary<Type, Func<object, object>> _converters = null!;
-        private EventUpconverterPipelineHook? _eventUpconverter;
+        private EventUpconverterPipelineHook? _eventUpConverter;
 
-        public UsingEventConverter()
+        protected UsingEventConverter()
         {
             OnStart().Wait();
         }
 
-        protected EventUpconverterPipelineHook EventUpconverter => _eventUpconverter ??= CreateUpConverterHook();
+        protected EventUpconverterPipelineHook EventUpConverter => _eventUpConverter ??= CreateUpConverterHook();
 
         private EventUpconverterPipelineHook CreateUpConverterHook()
         {
@@ -136,7 +135,8 @@
                     let sourceType = i.GetGenericArguments().First()
                     let convertMethod = i.GetMethods(BindingFlags.Public | BindingFlags.Instance).First()
                     let instance = Activator.CreateInstance(t)
-                    select new KeyValuePair<Type, Func<object, object>>(sourceType, e => convertMethod.Invoke(instance, new[] { e })!);
+                    select new KeyValuePair<Type, Func<object, object>>(sourceType,
+                        e => convertMethod.Invoke(instance, new[] { e })!);
             try
             {
                 return c.ToDictionary(x => x.Key, x => x.Value);
@@ -150,7 +150,8 @@
         private IEnumerable<Assembly> GetAllAssemblies()
         {
             return
-                Assembly.GetCallingAssembly().GetReferencedAssemblies().Select(Assembly.Load).Concat(new[] { Assembly.GetCallingAssembly() });
+                Assembly.GetCallingAssembly().GetReferencedAssemblies().Select(Assembly.Load)
+                    .Concat(new[] { Assembly.GetCallingAssembly() });
         }
 
         protected static ICommit CreateCommit(EventMessage eventMessage)
@@ -174,11 +175,13 @@
 
     public class ExplicitConvertingEventConverter : IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>
     {
-        ConvertingEvent3 IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>.Convert(ConvertingEvent2 sourceEvent) => new(sourceEvent.Id, "Temp", true);
+        ConvertingEvent3 IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>.Convert(ConvertingEvent2 sourceEvent) =>
+            new(sourceEvent.Id, "Temp", true);
     }
 
     public class NonConvertingEvent
-    { }
+    {
+    }
 
     public class ConvertingEvent
     {

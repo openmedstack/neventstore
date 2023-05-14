@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Tests
     using System.Linq;
     using System.Threading.Tasks;
     using FakeItEasy;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
@@ -25,43 +24,43 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_return_a_new_stream()
         {
-            _stream.Should().NotBeNull();
+            Assert.NotNull(_stream);
         }
 
         [Fact]
         public void should_return_a_stream_with_the_correct_stream_identifier()
         {
-            _stream.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, _stream.StreamId);
         }
 
         [Fact]
         public void should_return_a_stream_with_a_zero_stream_revision()
         {
-            _stream.StreamRevision.Should().Be(0);
+            Assert.Equal(0, _stream.StreamRevision);
         }
 
         [Fact]
         public void should_return_a_stream_with_a_zero_commit_sequence()
         {
-            _stream.CommitSequence.Should().Be(0);
+            Assert.Equal(0, _stream.CommitSequence);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_uncommitted_events()
         {
-            _stream.UncommittedEvents.Should().BeEmpty();
+            Assert.Empty(_stream.UncommittedEvents);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_committed_events()
         {
-            _stream.CommittedEvents.Should().BeEmpty();
+            Assert.Empty(_stream.CommittedEvents);
         }
 
         [Fact]
         public void should_return_a_stream_with_empty_headers()
         {
-            _stream.UncommittedHeaders.Should().BeEmpty();
+            Assert.Empty(_stream.UncommittedHeaders);
         }
     }
 
@@ -84,43 +83,43 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_return_a_new_stream()
         {
-            _stream.Should().NotBeNull();
+            Assert.NotNull(_stream);
         }
 
         [Fact]
         public void should_return_a_stream_with_the_correct_stream_identifier()
         {
-            _stream.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, _stream.StreamId);
         }
 
         [Fact]
         public void should_return_a_stream_with_a_zero_stream_revision()
         {
-            _stream.StreamRevision.Should().Be(0);
+            Assert.Equal(0, _stream.StreamRevision);
         }
 
         [Fact]
         public void should_return_a_stream_with_a_zero_commit_sequence()
         {
-            _stream.CommitSequence.Should().Be(0);
+            Assert.Equal(0, _stream.CommitSequence);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_uncommitted_events()
         {
-            _stream.UncommittedEvents.Should().BeEmpty();
+            Assert.Empty(_stream.UncommittedEvents);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_committed_events()
         {
-            _stream.CommittedEvents.Should().BeEmpty();
+            Assert.Empty(_stream.CommittedEvents);
         }
 
         [Fact]
         public void should_return_a_stream_with_empty_headers()
         {
-            _stream.UncommittedHeaders.Should().BeEmpty();
+            Assert.Empty(_stream.UncommittedHeaders);
         }
     }
 
@@ -145,7 +144,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_throw_a_StreamNotFoundException()
         {
-            _thrown.Should().BeOfType<StreamNotFoundException>();
+            Assert.IsType<StreamNotFoundException>(_thrown);
         }
     }
 
@@ -189,9 +188,9 @@ namespace OpenMedStack.NEventStore.Tests
         }
 
         [Fact]
-        public void should_return_an_event_stream_containing_the_correct_stream_identifer()
+        public void should_return_an_event_stream_containing_the_correct_stream_identifier()
         {
-            _stream.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, _stream.StreamId);
         }
     }
 
@@ -253,37 +252,37 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_return_a_stream_with_the_correct_stream_identifier()
         {
-            _stream.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, _stream.StreamId);
         }
 
         [Fact]
         public void should_return_a_stream_with_revision_of_the_stream_head()
         {
-            _stream.StreamRevision.Should().Be(HeadStreamRevision);
+            Assert.Equal(HeadStreamRevision, _stream.StreamRevision);
         }
 
         [Fact]
         public void should_return_a_stream_with_a_commit_sequence_of_the_stream_head()
         {
-            _stream.CommitSequence.Should().Be(HeadCommitSequence);
+            Assert.Equal(HeadCommitSequence, _stream.CommitSequence);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_committed_events()
         {
-            _stream.CommittedEvents.Count.Should().Be(0);
+            Assert.Empty(_stream.CommittedEvents);
         }
 
         [Fact]
         public void should_return_a_stream_with_no_uncommitted_events()
         {
-            _stream.UncommittedEvents.Count.Should().Be(0);
+            Assert.Empty(_stream.UncommittedEvents);
         }
 
         [Fact]
         public void should_only_enumerate_the_set_of_commits_once()
         {
-            _committed.GetEnumeratorCallCount.Should().Be(1);
+            Assert.Equal(1, _committed.GetEnumeratorCallCount);
         }
     }
 
@@ -529,7 +528,11 @@ namespace OpenMedStack.NEventStore.Tests
 
         protected OptimisticEventStore Store
         {
-            get { return _store ??= new OptimisticEventStore(Persistence, PipelineHooks.Select(x => x), NullLogger.Instance); }
+            get
+            {
+                return _store ??=
+                    new OptimisticEventStore(Persistence, PipelineHooks.Select(x => x), NullLogger.Instance);
+            }
         }
 
         protected override void Cleanup()

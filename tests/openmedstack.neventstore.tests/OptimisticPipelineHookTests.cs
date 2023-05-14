@@ -3,7 +3,6 @@ namespace OpenMedStack.NEventStore.Tests
     using System;
     using System.Linq;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
@@ -41,7 +40,7 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_PersistenceException()
             {
-                _thrown.Should().BeOfType<StorageException>();
+                Assert.IsType<StorageException>(_thrown);
             }
         }
 
@@ -72,7 +71,7 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_StorageException()
             {
-                _thrown.Should().BeOfType<StorageException>();
+                Assert.IsType<StorageException>(_thrown);
             }
         }
 
@@ -105,15 +104,15 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_ConcurrencyException()
             {
-                _thrown.Should().BeOfType<ConcurrencyException>();
+                Assert.IsType<ConcurrencyException>(_thrown);
             }
 
 
             [Fact]
             public void ConcurrencyException_should_have_good_message()
             {
-                _thrown.Message.Should().Contain(_attempt.StreamId);
-                _thrown.Message.Should().Contain("CommitSequence [" + _attempt.CommitSequence);
+                Assert.Contains(_attempt.StreamId, _thrown.Message);
+                Assert.Contains("CommitSequence [" + _attempt.CommitSequence, _thrown.Message);
             }
         }
 
@@ -146,14 +145,14 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_ConcurrencyException()
             {
-                _thrown.Should().BeOfType<ConcurrencyException>();
+                Assert.IsType<ConcurrencyException>(_thrown);
             }
 
             [Fact]
             public void ConcurrencyException_should_have_good_message()
             {
-                _thrown.Message.Should().Contain(_failedAttempt.StreamId);
-                _thrown.Message.Should().Contain("StreamRevision [" + _failedAttempt.CommitSequence);
+                Assert.Contains(_failedAttempt.StreamId, _thrown.Message);
+                Assert.Contains("StreamRevision [" + _failedAttempt.CommitSequence, _thrown.Message);
             }
         }
 
@@ -182,14 +181,14 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_ConcurrencyException()
             {
-                _thrown.Should().BeOfType<ConcurrencyException>();
+                Assert.IsType<ConcurrencyException>(_thrown);
             }
 
             [Fact]
             public void ConcurrencyException_should_have_good_message()
             {
-                _thrown.Message.Should().Contain(_failedAttempt.StreamId);
-                _thrown.Message.Should().Contain("CommitSequence [" + _failedAttempt.CommitSequence);
+                Assert.Contains(_failedAttempt.StreamId, _thrown.Message);
+                Assert.Contains("CommitSequence [" + _failedAttempt.CommitSequence, _thrown.Message);
             }
         }
 
@@ -221,14 +220,14 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_throw_a_ConcurrencyException()
             {
-                _thrown.Should().BeOfType<ConcurrencyException>();
+                Assert.IsType<ConcurrencyException>(_thrown);
             }
 
             [Fact]
             public void Concurrency_exception_should_have_good_message()
             {
-                _thrown.Message.Should().Contain(_failedAttempt.StreamId);
-                _thrown.Message.Should().Contain(_failedAttempt.StreamRevision.ToString());
+                Assert.Contains(_failedAttempt.StreamId, _thrown.Message);
+                Assert.Contains(_failedAttempt.StreamRevision.ToString(), _thrown.Message);
             }
         }
 
@@ -271,7 +270,7 @@ namespace OpenMedStack.NEventStore.Tests
             public void should_only_contain_streams_explicitly_tracked()
             {
                 var untracked = BuildCommit(Guid.Empty, _trackedCommitAttempts[0].CommitId);
-                _hook.Contains(untracked).Should().BeFalse();
+                Assert.False(_hook.Contains(untracked));
             }
 
             [Fact]
@@ -280,7 +279,7 @@ namespace OpenMedStack.NEventStore.Tests
                 var stillTracked = BuildCommit(
                     _trackedCommitAttempts.Last().StreamId,
                     _trackedCommitAttempts.Last().CommitId);
-                _hook.Contains(stillTracked).Should().BeTrue();
+                Assert.True(_hook.Contains(stillTracked));
             }
 
             [Fact]
@@ -289,12 +288,13 @@ namespace OpenMedStack.NEventStore.Tests
                 var droppedFromTracking = BuildCommit(
                     _trackedCommitAttempts.First().StreamId,
                     _trackedCommitAttempts.First().CommitId);
-                _hook.Contains(droppedFromTracking).Should().BeFalse();
+                Assert.False(_hook.Contains(droppedFromTracking));
             }
 
             private ICommit BuildCommit(Guid streamId, Guid commitId) => BuildCommit(streamId.ToString(), commitId);
 
-            private ICommit BuildCommit(string streamId, Guid commitId) => new Commit(Bucket.Default, streamId, 0, commitId, 0, SystemTime.UtcNow, 0, null, null);
+            private ICommit BuildCommit(string streamId, Guid commitId) => new Commit(Bucket.Default, streamId, 0,
+                commitId, 0, SystemTime.UtcNow, 0, null, null);
         }
 
         public class WhenPurging : SpecificationBase
@@ -326,7 +326,7 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_not_track_commit()
             {
-                _hook.Contains(_trackedCommit).Should().BeFalse();
+                Assert.False(_hook.Contains(_trackedCommit));
             }
 
             private ICommit BuildCommit(Guid bucketId, Guid streamId, Guid commitId) =>
@@ -374,13 +374,13 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_not_track_the_commit_in_bucket()
             {
-                _hook.Contains(_trackedCommitBucket1).Should().BeFalse();
+                Assert.False(_hook.Contains(_trackedCommitBucket1));
             }
 
             [Fact]
             public void should_track_the_commit_in_other_bucket()
             {
-                _hook.Contains(_trackedCommitBucket2).Should().BeTrue();
+                Assert.True(_hook.Contains(_trackedCommitBucket2));
             }
 
             private ICommit BuildCommit(Guid bucketId, Guid streamId, Guid commitId) =>
@@ -420,18 +420,19 @@ namespace OpenMedStack.NEventStore.Tests
                 return Task.CompletedTask;
             }
 
-            protected override Task Because() => _hook.OnDeleteStream(_trackedCommitDeleted.BucketId, _trackedCommitDeleted.StreamId);
+            protected override Task Because() =>
+                _hook.OnDeleteStream(_trackedCommitDeleted.BucketId, _trackedCommitDeleted.StreamId);
 
             [Fact]
             public void should_not_track_the_commit_in_the_deleted_stream()
             {
-                _hook.Contains(_trackedCommitDeleted).Should().BeFalse();
+                Assert.False(_hook.Contains(_trackedCommitDeleted));
             }
 
             [Fact]
             public void should_track_the_commit_that_is_not_in_the_deleted_stream()
             {
-                _hook.Contains(_trackedCommit).Should().BeTrue();
+                Assert.True(_hook.Contains(_trackedCommit));
             }
 
             private ICommit BuildCommit(Guid bucketId, Guid streamId, Guid commitId) =>

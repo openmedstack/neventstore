@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using OpenMedStack.NEventStore;
     using OpenMedStack.NEventStore.Persistence;
@@ -29,19 +28,21 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
                 1,
                 DateTime.Now,
                 new Dictionary<string, object> { { "key.1", "value" } },
-                new List<EventMessage> { new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }) });
+                new List<EventMessage>
+                    { new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }) });
             return Persistence.Commit(attempt);
         }
 
         protected override async Task Because()
         {
-            _persisted = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).First().ConfigureAwait(false);
+            _persisted = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).First()
+                .ConfigureAwait(false);
         }
 
         [Fact]
         public void should_correctly_deserialize_headers()
         {
-            _persisted.Headers.Keys.Should().Contain("key.1");
+            Assert.Contains("key.1", _persisted.Headers.Keys);
         }
     }
 
@@ -63,31 +64,32 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            _persisted = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).First().ConfigureAwait(false);
+            _persisted = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).First()
+                .ConfigureAwait(false);
         }
 
         [Fact]
         public void should_correctly_persist_the_stream_identifier()
         {
-            _persisted.StreamId.Should().Be(_attempt.StreamId);
+            Assert.Equal(_attempt.StreamId, _persisted.StreamId);
         }
 
         [Fact]
         public void should_correctly_persist_the_stream_stream_revision()
         {
-            _persisted.StreamRevision.Should().Be(_attempt.StreamRevision);
+            Assert.Equal(_attempt.StreamRevision, _persisted.StreamRevision);
         }
 
         [Fact]
         public void should_correctly_persist_the_commit_identifier()
         {
-            _persisted.CommitId.Should().Be(_attempt.CommitId);
+            Assert.Equal(_attempt.CommitId, _persisted.CommitId);
         }
 
         [Fact]
         public void should_correctly_persist_the_commit_sequence()
         {
-            _persisted.CommitSequence.Should().Be(_attempt.CommitSequence);
+            Assert.Equal(_attempt.CommitSequence, _persisted.CommitSequence);
         }
 
         // persistence engines have varying levels of precision with respect to time.
@@ -95,31 +97,30 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         public void should_correctly_persist_the_commit_stamp()
         {
             var difference = _persisted.CommitStamp.Subtract(_now);
-            difference.Days.Should().Be(0);
-            difference.Hours.Should().Be(0);
-            difference.Minutes.Should().Be(0);
-            difference.Should().BeLessOrEqualTo(TimeSpan.FromSeconds(1));
+            Assert.Equal(0, difference.Days);
+            Assert.Equal(0, difference.Hours);
+            Assert.Equal(0, difference.Minutes);
+            Assert.True(difference <= TimeSpan.FromSeconds(1));
         }
 
         [Fact]
         public void should_correctly_persist_the_headers()
         {
-            _persisted.Headers.Count.Should().Be(_attempt.Headers.Count);
+            Assert.Equal(_attempt.Headers.Count, _persisted.Headers.Count);
         }
 
         [Fact]
         public void should_correctly_persist_the_events()
         {
-            _persisted.Events.Count.Should().Be(_attempt.Events.Count);
+            Assert.Equal(_attempt.Events.Count, _persisted.Events.Count);
         }
 
         [Fact]
         public async Task should_cause_the_stream_to_be_found_in_the_list_of_streams_to_snapshot()
         {
             var streamHead = Persistence.GetStreamsToSnapshot(1, CancellationToken.None);
-            (await streamHead.FirstOrDefault(x => x.StreamId == _streamId, CancellationToken.None)
-                    .ConfigureAwait(false)).Should()
-                .NotBeNull();
+            Assert.NotNull(await streamHead.FirstOrDefault(x => x.StreamId == _streamId, CancellationToken.None)
+                .ConfigureAwait(false));
         }
     }
 
@@ -143,19 +144,21 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            _committed = await Persistence.GetFrom(_streamId, LoadFromCommitContainingRevision, UpToCommitWithContainingRevision, CancellationToken.None).ToArray().ConfigureAwait(false);
+            _committed = await Persistence
+                .GetFrom(_streamId, LoadFromCommitContainingRevision, UpToCommitWithContainingRevision,
+                    CancellationToken.None).ToArray().ConfigureAwait(false);
         }
 
         [Fact]
         public void should_start_from_the_commit_which_contains_the_min_stream_revision_specified()
         {
-            _committed.First().CommitId.Should().Be(_oldest2.CommitId); // contains revision 3
+            Assert.Equal(_oldest2.CommitId, _committed.First().CommitId); // contains revision 3
         }
 
         [Fact]
         public void should_read_up_to_the_commit_which_contains_the_max_stream_revision_specified()
         {
-            _committed.Last().CommitId.Should().Be(_oldest3.CommitId); // contains revision 5
+            Assert.Equal(_oldest3.CommitId, _committed.Last().CommitId); // contains revision 5
         }
     }
 
@@ -179,19 +182,21 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            _committed = await Persistence.GetFrom(_streamId, LoadFromCommitContainingRevision, UpToCommitWithContainingRevision, CancellationToken.None).ToArray().ConfigureAwait(false);
+            _committed = await Persistence
+                .GetFrom(_streamId, LoadFromCommitContainingRevision, UpToCommitWithContainingRevision,
+                    CancellationToken.None).ToArray().ConfigureAwait(false);
         }
 
         [Fact]
         public void should_start_from_the_commit_which_contains_the_min_stream_revision_specified()
         {
-            _committed.First().CommitId.Should().Be(_oldest2.CommitId); // contains revision 3
+            Assert.Equal(_oldest2.CommitId, _committed.First().CommitId); // contains revision 3
         }
 
         [Fact]
         public void should_read_up_to_the_commit_which_contains_the_max_stream_revision_specified()
         {
-            _committed.Last().CommitId.Should().Be(_oldest3.CommitId); // contains revision 6
+            Assert.Equal(_oldest3.CommitId, _committed.Last().CommitId); // contains revision 6
         }
     }
 
@@ -208,15 +213,15 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Persistence.Commit(_attemptWithSameRevision)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Persistence.Commit(_attemptWithSameRevision))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
         public void should_throw_a_ConcurrencyException()
         {
-            _thrown.Should().BeOfType<ConcurrencyException>();
+            Assert.IsType<ConcurrencyException>(_thrown);
         }
-
     }
 
     // This test ensure the uniqueness of BucketId+StreamId+CommitSequence
@@ -231,16 +236,16 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             var streamId = Guid.NewGuid().ToString();
             _attempt1 = streamId.BuildAttempt();
             _attempt2 = new CommitAttempt(
-                _attempt1.BucketId,         // <--- Same bucket
-                _attempt1.StreamId,         // <--- Same stream it
+                _attempt1.BucketId, // <--- Same bucket
+                _attempt1.StreamId, // <--- Same stream it
                 _attempt1.StreamRevision + 10,
                 Guid.NewGuid(),
-                _attempt1.CommitSequence,   // <--- Same commit seq
+                _attempt1.CommitSequence, // <--- Same commit seq
                 DateTime.UtcNow,
                 _attempt1.Headers,
                 new[]
                 {
-                    new EventMessage( new ExtensionMethods.SomeDomainEvent {SomeProperty = "Test 3"})
+                    new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test 3" })
                 }
             );
 
@@ -255,7 +260,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_throw_a_ConcurrencyException()
         {
-            _thrown.Should().BeOfType<ConcurrencyException>();
+            Assert.IsType<ConcurrencyException>(_thrown);
         }
     }
 
@@ -281,7 +286,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_throw_a_ConcurrencyException()
         {
-            _thrown.Should().BeOfType<ConcurrencyException>();
+            Assert.IsType<ConcurrencyException>(_thrown);
         }
     }
 
@@ -312,7 +317,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_throw_a_DuplicateCommitException()
         {
-            _thrown.Should().BeOfType<DuplicateCommitException>();
+            Assert.IsType<DuplicateCommitException>(_thrown);
         }
     }
 
@@ -344,7 +349,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_throw_a_DuplicateCommitException()
         {
-            _thrown.Should().BeOfType<DuplicateCommitException>();
+            Assert.IsType<DuplicateCommitException>(_thrown);
         }
     }
 
@@ -357,26 +362,28 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         protected override async Task Context()
         {
             _streamId = Guid.NewGuid().ToString();
-            _committed = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId).ConfigureAwait(false)).ToArray();
+            _committed =
+                (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId).ConfigureAwait(false))
+                .ToArray();
         }
 
         protected override async Task Because()
         {
-            _loaded = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).ToArray().ConfigureAwait(false);
+            _loaded = await Persistence.GetFrom(_streamId, 0, int.MaxValue, CancellationToken.None).ToArray()
+                .ConfigureAwait(false);
         }
 
         [Fact]
         public void should_load_the_same_number_of_commits_which_have_been_persisted()
         {
-            _loaded.Length.Should().Be(_committed.Length);
+            Assert.Equal(_committed.Length, _loaded.Length);
         }
 
         [Fact]
         public void should_load_the_same_commits_which_have_been_persisted()
         {
-            _committed
-                .All(commit => _loaded.SingleOrDefault(loaded => loaded.CommitId == commit.CommitId) != null)
-                .Should().BeTrue();
+            Assert.All(_committed,
+                commit => Assert.NotNull(_loaded.SingleOrDefault(loaded => loaded.CommitId == commit.CommitId)));
         }
     }
 
@@ -401,13 +408,13 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_indicate_the_snapshot_was_added()
         {
-            _added.Should().BeTrue();
+            Assert.True(_added);
         }
 
         [Fact]
         public void should_be_able_to_retrieve_the_snapshot()
         {
-            Persistence.GetSnapshot(_streamId, _snapshot.StreamRevision, CancellationToken.None).Should().NotBeNull();
+            Assert.NotNull(Persistence.GetSnapshot(_streamId, _snapshot.StreamRevision, CancellationToken.None));
         }
     }
 
@@ -425,9 +432,11 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             var commit2 = (await Persistence.CommitNext(commit1).ConfigureAwait(false))!; // rev 3-4
             await Persistence.CommitNext(commit2).ConfigureAwait(false); // rev 5-6
 
-            await Persistence.AddSnapshot(new Snapshot(_streamId, 1, string.Empty)).ConfigureAwait(false); //Too far back
+            await Persistence.AddSnapshot(new Snapshot(_streamId, 1, string.Empty))
+                .ConfigureAwait(false); //Too far back
             await Persistence.AddSnapshot(_correct = new Snapshot(_streamId, 3, "Snapshot")).ConfigureAwait(false);
-            await Persistence.AddSnapshot(_tooFarForward = new Snapshot(_streamId, 5, string.Empty)).ConfigureAwait(false);
+            await Persistence.AddSnapshot(_tooFarForward = new Snapshot(_streamId, 5, string.Empty))
+                .ConfigureAwait(false);
         }
 
         protected override async Task Because()
@@ -440,19 +449,19 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_load_the_most_recent_prior_snapshot()
         {
-            _snapshot.StreamRevision.Should().Be(_correct.StreamRevision);
+            Assert.Equal(_correct.StreamRevision, _snapshot.StreamRevision);
         }
 
         [Fact]
         public void should_have_the_correct_snapshot_payload()
         {
-            _snapshot.Payload.Should().Be(_correct.Payload);
+            Assert.Equal(_correct.Payload, _snapshot.Payload);
         }
 
         [Fact]
         public void should_have_the_correct_stream_id()
         {
-            _snapshot.StreamId.Should().Be(_correct.StreamId);
+            Assert.Equal(_correct.StreamId, _snapshot.StreamId);
         }
     }
 
@@ -471,15 +480,17 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             _newest = (await Persistence.CommitNext(_oldest2).ConfigureAwait(false))!;
         }
 
-        protected override Task Because() => Persistence.AddSnapshot(new Snapshot(_streamId, _newest.StreamRevision, SnapshotData));
+        protected override Task Because()
+        {
+            return Persistence.AddSnapshot(new Snapshot(_streamId, _newest.StreamRevision, SnapshotData));
+        }
 
         [Fact]
         public async Task should_no_longer_find_the_stream_in_the_set_of_streams_to_be_snapshot()
         {
-            (await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList().ConfigureAwait(false))
-                .Any(x => x.StreamId == _streamId)
-                .Should()
-                .BeFalse();
+            Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList()
+                    .ConfigureAwait(false),
+                x => x.StreamId == _streamId);
         }
     }
 
@@ -496,22 +507,30 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             _streamId = Guid.NewGuid().ToString();
             _oldest = (await Persistence.CommitSingle(_streamId).ConfigureAwait(false))!;
             _oldest2 = (await Persistence.CommitNext(_oldest).ConfigureAwait(false))!;
-            await Persistence.AddSnapshot(new Snapshot(_streamId, _oldest2.StreamRevision, SnapshotData)).ConfigureAwait(false);
+            await Persistence.AddSnapshot(new Snapshot(_streamId, _oldest2.StreamRevision, SnapshotData))
+                .ConfigureAwait(false);
         }
 
-        protected override Task Because() => Persistence.Commit(_oldest2.BuildNextAttempt());
+        protected override Task Because()
+        {
+            return Persistence.Commit(_oldest2.BuildNextAttempt());
+        }
 
         // Because Raven and Mongo update the stream head asynchronously, occasionally will fail this test
         [Fact]
         public async Task should_find_the_stream_in_the_set_of_streams_to_be_snapshot_when_within_the_threshold()
         {
-            (await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList().ConfigureAwait(false)).FirstOrDefault(x => x.StreamId == _streamId).Should().NotBeNull();
+            Assert.NotNull((await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList()
+                .ConfigureAwait(false)).FirstOrDefault(x => x.StreamId == _streamId));
         }
 
         [Fact]
         public async Task should_not_find_the_stream_in_the_set_of_streams_to_be_snapshot_when_over_the_threshold()
         {
-            (await Persistence.GetStreamsToSnapshot(OverThreshold, CancellationToken.None).ToList().ConfigureAwait(false)).Any(x => x.StreamId == _streamId).Should().BeFalse();
+            Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(OverThreshold, CancellationToken.None)
+                    .ToList()
+                    .ConfigureAwait(false),
+                x => x.StreamId == _streamId);
         }
     }
 
@@ -546,7 +565,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_return_all_commits_on_or_after_the_point_in_time_specified()
         {
-            _committed.Length.Should().Be(4);
+            Assert.Equal(4, _committed.Length);
         }
     }
 
@@ -562,7 +581,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             // Due to loss in precision in various storage engines, we're rounding down to the
             // nearest second to ensure include all commits from the 'start'.
             _start = _start.AddSeconds(-1);
-            _committed = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2).ConfigureAwait(false)).ToArray();
+            _committed =
+                (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2).ConfigureAwait(false)).ToArray();
         }
 
         protected override async Task Because()
@@ -574,15 +594,14 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_load_the_same_number_of_commits_which_have_been_persisted()
         {
-            _loaded.Count.Should().Be(_committed.Length);
+            Assert.Equal(_committed.Length, _loaded.Count);
         }
 
         [Fact]
         public void should_load_the_same_commits_which_have_been_persisted()
         {
-            _committed
-                .All(commit => _loaded.SingleOrDefault(loaded => loaded.CommitId == commit.CommitId) != null)
-                .Should().BeTrue();
+            Assert.All(_committed,
+                commit => Assert.NotNull(_loaded.SingleOrDefault(loaded => loaded.CommitId == commit.CommitId)));
         }
     }
 
@@ -594,7 +613,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Context()
         {
-            _committed = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1).ConfigureAwait(false)).Select(c => c.CommitId).ToList();
+            _committed = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1).ConfigureAwait(false))
+                .Select(c => c.CommitId).ToList();
         }
 
         protected override async Task Because()
@@ -606,13 +626,13 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_load_the_same_number_of_commits_which_have_been_persisted_starting_from_the_checkpoint()
         {
-            _loaded.Count.Should().Be(_committed.Count - CheckPoint);
+            Assert.Equal(_committed.Count - CheckPoint, _loaded.Count);
         }
 
         [Fact]
         public void should_load_only_the_commits_starting_from_the_checkpoint()
         {
-            _committed.Skip(CheckPoint).All(x => _loaded.Contains(x)).Should().BeTrue(); // all commits should be found in loaded collection
+            Assert.All(_committed.Skip(CheckPoint), x => Assert.True(_loaded.Contains(x)));
         }
     }
 
@@ -625,9 +645,14 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Context()
         {
-            _committedOnBucket1 = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1, null, "b1").ConfigureAwait(false)).Select(c => c.CommitId).ToList();
-            _committedOnBucket2 = (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1, null, "b2").ConfigureAwait(false)).Select(c => c.CommitId).ToList();
-            _committedOnBucket1.AddRange((await Persistence.CommitMany(4, null, "b1").ConfigureAwait(false)).Select(c => c.CommitId));
+            _committedOnBucket1 =
+                (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1, null, "b1").ConfigureAwait(false))
+                .Select(c => c.CommitId).ToList();
+            _committedOnBucket2 =
+                (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 1, null, "b2").ConfigureAwait(false))
+                .Select(c => c.CommitId).ToList();
+            _committedOnBucket1.AddRange(
+                (await Persistence.CommitMany(4, null, "b1").ConfigureAwait(false)).Select(c => c.CommitId));
         }
 
         protected override async Task Because()
@@ -639,19 +664,19 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_load_the_same_number_of_commits_which_have_been_persisted_starting_from_the_checkpoint()
         {
-            _loaded.Count.Should().Be(_committedOnBucket1.Count - CheckPoint);
+            Assert.Equal(_committedOnBucket1.Count - CheckPoint, _loaded.Count);
         }
 
         [Fact]
         public void should_load_only_the_commits_on_bucket1_starting_from_the_checkpoint()
         {
-            _committedOnBucket1.Skip(CheckPoint).All(x => _loaded.Contains(x)).Should().BeTrue(); // all commits should be found in loaded collection
+            Assert.All(_committedOnBucket1.Skip(CheckPoint), x => Assert.True(_loaded.Contains(x)));
         }
 
         [Fact]
         public void should_not_load_the_commits_from_bucket2()
         {
-            _committedOnBucket2.All(x => !_loaded.Contains(x)).Should().BeTrue();
+            Assert.All(_committedOnBucket2, x => Assert.True(!_loaded.Contains(x)));
         }
     }
 
@@ -674,28 +699,34 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_NOT_throw_an_exception()
         {
-            _thrown!.Should().BeNull();
+            Assert.Null(_thrown);
         }
     }
 
     public class WhenPurgingAllCommits : PersistenceEngineConcern
     {
-        protected override Task Context() => Persistence.CommitSingle();
-
-        protected override Task Because() => Persistence.Purge();
-
-        [Fact]
-        public async Task should_not_find_any_commits_stored()
+        protected override Task Context()
         {
-            var enumerable = Persistence.GetFrom(DateTimeOffset.MinValue);
-            (await enumerable.ToList(CancellationToken.None).ConfigureAwait(false)).Count().Should().Be(0);
+            return Persistence.CommitSingle();
+        }
+
+        protected override Task Because()
+        {
+            return Persistence.Purge();
         }
 
         [Fact]
-        public async Task should_not_find_any_streams_to_snapshot() =>
-            (await Persistence.GetStreamsToSnapshot(0, CancellationToken.None).Count().ConfigureAwait(false))
-            .Should()
-            .Be(0);
+        public void should_not_find_any_commits_stored()
+        {
+            Assert.Empty(Persistence.GetFrom(DateTimeOffset.MinValue).ToBlockingEnumerable());
+        }
+
+        [Fact]
+        public void should_not_find_any_streams_to_snapshot()
+        {
+            Assert.Empty(
+                Persistence.GetStreamsToSnapshot(0, CancellationToken.None).ToBlockingEnumerable());
+        }
     }
 
     public class WhenInvokingAfterDisposal : PersistenceEngineConcern
@@ -717,7 +748,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_throw_an_ObjectDisposedException()
         {
-            _thrown!.Should().BeOfType<ObjectDisposedException>();
+            Assert.IsType<ObjectDisposedException>(_thrown);
         }
     }
 
@@ -734,19 +765,20 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Persistence.Commit(_streamId.BuildAttempt())).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Persistence.Commit(_streamId.BuildAttempt()))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
         public void should_throw()
         {
-            _thrown.Should().NotBeNull();
+            Assert.NotNull(_thrown);
         }
 
         [Fact]
         public void should_be_duplicate_commit_exception()
         {
-            _thrown.Should().BeOfType<ConcurrencyException>();
+            Assert.IsType<ConcurrencyException>(_thrown);
         }
     }
 
@@ -779,7 +811,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_succeed()
         {
-            _thrown.Should().BeNull();
+            Assert.Null(_thrown);
         }
 
         [Fact]
@@ -787,8 +819,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         {
             var enumerable = Persistence.GetFrom(BucketBId, _streamId, 0, int.MaxValue, CancellationToken.None);
             var stream = await enumerable.ToList().ConfigureAwait(false);
-            stream.Should().NotBeNull();
-            stream.Count.Should().Be(1);
+            Assert.Single(stream);
         }
 
         [Fact]
@@ -796,9 +827,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         {
             var enumerable = Persistence.GetFrom(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
             var stream = await enumerable.ToList().ConfigureAwait(false);
-            stream.Should().NotBeNull();
-            stream.Count.Should().Be(1);
-            stream.First().CommitStamp.Should().Be(_attemptACommitStamp);
+            Assert.Single(stream);
+            Assert.Equal(_attemptACommitStamp, stream.First().CommitStamp);
         }
     }
 
@@ -825,13 +855,16 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         }
 
         [Fact]
-        public async Task should_affect_snapshots_from_another_bucket() =>
-            (await Persistence.GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None).ConfigureAwait(false))
-            .Should()
-            .BeNull();
+        public async Task should_affect_snapshots_from_another_bucket()
+        {
+            Assert.Null(await Persistence
+                .GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None)
+                .ConfigureAwait(false));
+        }
     }
 
-    public class WhenReadingAllCommitsFromAParticularPointInTimeAndThereAreStreamsInMultipleBuckets : PersistenceEngineConcern
+    public class
+        WhenReadingAllCommitsFromAParticularPointInTimeAndThereAreStreamsInMultipleBuckets : PersistenceEngineConcern
     {
         private const string BucketAId = "a";
         private const string BucketBId = "b";
@@ -863,9 +896,9 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         }
 
         [Fact]
-        public void should_not_return_commits_from_other_buckets()
+        public void Should_not_return_commits_from_other_buckets()
         {
-            _returnedCommits.Any(c => c.CommitId.Equals(_commitToBucketB.CommitId)).Should().BeFalse();
+            Assert.DoesNotContain(_returnedCommits, c => c.CommitId.Equals(_commitToBucketB.CommitId));
         }
     }
 
@@ -891,7 +924,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void should_not_be_empty()
         {
-            _commits.Should().NotBeEmpty();
+            Assert.NotEmpty(_commits);
         }
 
         [Fact]
@@ -901,7 +934,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             foreach (var commit in _commits)
             {
                 var commitCheckpoint = commit.CheckpointToken;
-                commitCheckpoint.Should().BeGreaterThan(checkpoint);
+                Assert.True(commitCheckpoint > checkpoint);
                 checkpoint = commit.CheckpointToken;
             }
         }
@@ -928,31 +961,35 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         }
 
         [Fact]
-        public async Task should_purge_all_commits_stored_in_bucket_a()
+        public void should_purge_all_commits_stored_in_bucket_a()
         {
             var asyncEnumerable = Persistence.GetFrom(BucketAId, DateTimeOffset.MinValue);
-            (await asyncEnumerable.Count().ConfigureAwait(false))
-                .Should()
-                .Be(0);
+            Assert.Empty(asyncEnumerable.ToBlockingEnumerable());
         }
 
         [Fact]
-        public async Task should_purge_all_commits_stored_in_bucket_b()
+        public void should_purge_all_commits_stored_in_bucket_b()
         {
             var enumerable = Persistence.GetFrom(BucketBId, DateTimeOffset.MinValue);
-            (await enumerable.Count().ConfigureAwait(false))
-                .Should()
-                .Be(0);
+            Assert.Empty(enumerable.ToBlockingEnumerable());
         }
 
         [Fact]
-        public async Task should_purge_all_streams_to_snapshot_in_bucket_a() => (await Persistence.GetStreamsToSnapshot(BucketAId, 0, CancellationToken.None).Count().ConfigureAwait(false)).Should().Be(0);
+        public void should_purge_all_streams_to_snapshot_in_bucket_a()
+        {
+            Assert.Empty(Persistence
+                .GetStreamsToSnapshot(BucketAId, 0, CancellationToken.None).ToBlockingEnumerable());
+        }
 
         [Fact]
-        public async Task should_purge_all_streams_to_snapshot_in_bucket_b() => (await Persistence.GetStreamsToSnapshot(BucketBId, 0, CancellationToken.None).Count().ConfigureAwait(false)).Should().Be(0);
+        public void should_purge_all_streams_to_snapshot_in_bucket_b()
+        {
+            Assert.Empty(Persistence
+                .GetStreamsToSnapshot(BucketBId, 0, CancellationToken.None).ToBlockingEnumerable());
+        }
     }
 
-    public class WhenGettingfromcheckpointAmountOfCommitsExceedsPagesize : PersistenceEngineConcern
+    public class WhenGettingFromCheckpointAmountOfCommitsExceedsPageSize : PersistenceEngineConcern
     {
         private ICommit[] _commits = null!;
         private int _moreThanPageSize;
@@ -960,7 +997,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         protected override async Task Because()
         {
             _moreThanPageSize = ConfiguredPageSizeForTesting + 1;
-            var eventStore = new OptimisticEventStore(Persistence, Enumerable.Empty<IPipelineHook>(), NullLogger.Instance);
+            var eventStore =
+                new OptimisticEventStore(Persistence, Enumerable.Empty<IPipelineHook>(), NullLogger.Instance);
             // TODO: Not sure how to set the actual page size to the const defined above
             for (var i = 0; i < _moreThanPageSize; i++)
             {
@@ -978,7 +1016,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
         [Fact]
         public void Should_have_expected_number_of_commits()
         {
-            _commits.Length.Should().Be(_moreThanPageSize);
+            Assert.Equal(_moreThanPageSize, _commits.Length);
         }
     }
 
@@ -1000,8 +1038,9 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
                 new List<EventMessage> { new EventMessage(new string('a', bodyLength)) });
             await Persistence.Commit(attempt).ConfigureAwait(false);
 
-            var commits = await Persistence.GetFrom(streamId, 0, int.MaxValue, CancellationToken.None).Single().ConfigureAwait(false);
-            commits!.Events.Single().Body.ToString()!.Length.Should().Be(bodyLength);
+            var commits = await Persistence.GetFrom(streamId, 0, int.MaxValue, CancellationToken.None).Single()
+                .ConfigureAwait(false);
+            Assert.Equal(bodyLength, commits.Events.Single().Body.ToString()!.Length);
         }
     }
 
@@ -1011,7 +1050,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
     /// - NUnit (.net core project)
     /// - MSTest (.net core project)
     /// </summary>
-    public abstract class PersistenceEngineConcern : SpecificationBase//, IClassFixture<PersistenceEngineFixture>
+    public abstract class PersistenceEngineConcern : SpecificationBase //, IClassFixture<PersistenceEngineFixture>
     {
         private PersistenceEngineFixture _fixture = null!;
 
@@ -1021,9 +1060,15 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
             OnStart().GetAwaiter().GetResult();
         }
 
-        protected IPersistStreams Persistence => _fixture.Persistence;
+        protected IPersistStreams Persistence
+        {
+            get { return _fixture.Persistence; }
+        }
 
-        protected static int ConfiguredPageSizeForTesting => 2;
+        protected static int ConfiguredPageSizeForTesting
+        {
+            get { return 2; }
+        }
 
         public void SetFixture()
         {

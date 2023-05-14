@@ -1,21 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\..\shared.proj" />
 	<PropertyGroup>
-		<TargetFrameworks>net6.0</TargetFrameworks>
+		<TargetFrameworks>net7.0</TargetFrameworks>
 		<RootNamespace>OpenMedStack.NEventStore</RootNamespace>
 		<AssemblyName>openmedstack.neventstore</AssemblyName>
 		<PackageId>openmedstack.neventstore</PackageId>
-		<PackageTags>OpenMedStack Architecture EventStore</PackageTags>
+		<PackageTags>OpenMedStack EventStore</PackageTags>
 		<PackageReleaseNotes>Moved from OpenMedStack Framework repo.</PackageReleaseNotes>
 		<Description>NEventStore for OpenMedStack based applications.</Description>
 		<langVersion>latest</langVersion>
 	</PropertyGroup>
-	<Import Project="..\..\shared.proj" />
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<DefineConstants>TRACE;DEBUG;</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

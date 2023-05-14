@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Tests
     using System.Linq;
     using System.Threading.Tasks;
     using FakeItEasy;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
@@ -50,50 +49,50 @@ namespace OpenMedStack.NEventStore.Tests
         protected override async Task Because()
         {
             Stream = await OptimisticEventStream
-                .Create(BucketId, StreamId, Persistence, MinRevision, MaxRevision, NullLogger.Instance, default)
+                .Create(BucketId, StreamId, Persistence, MinRevision, MaxRevision, NullLogger.Instance)
                 .ConfigureAwait(false);
         }
 
         [Fact]
         public void should_have_the_correct_stream_identifier()
         {
-            Stream.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, Stream.StreamId);
         }
 
         [Fact]
         public void should_have_the_correct_head_stream_revision()
         {
-            Stream.StreamRevision.Should().Be(MaxRevision);
+            Assert.Equal(MaxRevision, Stream.StreamRevision);
         }
 
         [Fact]
         public void should_have_the_correct_head_commit_sequence()
         {
-            Stream.CommitSequence.Should().Be(_committed.Last().CommitSequence);
+            Assert.Equal(_committed.Last().CommitSequence, Stream.CommitSequence);
         }
 
         [Fact]
         public void should_not_include_events_below_the_minimum_revision_indicated()
         {
-            Stream.CommittedEvents.First().Should().Be(_committed.First().Events.Last());
+            Assert.Equal(_committed.First().Events.Last(), Stream.CommittedEvents.First());
         }
 
         [Fact]
         public void should_not_include_events_above_the_maximum_revision_indicated()
         {
-            Stream.CommittedEvents.Last().Should().Be(_committed.Last().Events.First());
+            Assert.Equal(_committed.Last().Events.First(), Stream.CommittedEvents.Last());
         }
 
         [Fact]
         public void should_have_all_of_the_committed_events_up_to_the_stream_revision_specified()
         {
-            Stream.CommittedEvents.Count.Should().Be(MaxRevision - MinRevision + 1);
+            Assert.Equal(MaxRevision - MinRevision + 1, Stream.CommittedEvents.Count);
         }
 
         [Fact]
         public void should_contain_the_headers_from_the_underlying_commits()
         {
-            Stream.CommittedHeaders.Count.Should().Be(2);
+            Assert.Equal(2, Stream.CommittedHeaders.Count);
         }
     }
 
@@ -125,62 +124,17 @@ namespace OpenMedStack.NEventStore.Tests
 
         protected override async Task Because()
         {
-            Stream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger.Instance, default)
+            Stream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, 0, int.MaxValue,
+                    NullLogger.Instance)
                 .ConfigureAwait(false);
         }
 
         [Fact]
         public void should_set_the_stream_revision_to_the_revision_of_the_most_recent_event()
         {
-            Stream.StreamRevision.Should().Be(_committed.Last().StreamRevision);
+            Assert.Equal(_committed.Last().StreamRevision, Stream.StreamRevision);
         }
     }
-
-    //public class WhenAddingANullEventMessage : OnTheEventStream
-    //{
-    //    private Exception _thrown;
-
-    //    public WhenAddingANullEventMessage(FakeTimeFixture fixture)
-    //        : base(fixture)
-    //    {
-    //    }
-
-    //    protected override Task Because()
-    //    {
-    //        _thrown = Catch.Exception(() => Stream.Add(null))!;
-
-    //        return Task.CompletedTask;
-    //    }
-
-    //    [Fact]
-    //    public void should_throw()
-    //    {
-    //        _thrown.Should().BeOfType<ArgumentNullException>();
-    //    }
-    //}
-
-    //public class WhenAddingAnUnpopulatedEventMessage : OnTheEventStream
-    //{
-    //    private Exception _thrown;
-
-    //    public WhenAddingAnUnpopulatedEventMessage(FakeTimeFixture fixture)
-    //        : base(fixture)
-    //    {
-    //    }
-
-    //    protected override Task Because()
-    //    {
-    //        _thrown = (Catch.Exception(() => Stream.Add(new EventMessage(null))))!;
-
-    //        return Task.CompletedTask;
-    //    }
-
-    //    [Fact]
-    //    public void should_throw()
-    //    {
-    //        _thrown.Should().BeOfType<Exception>();
-    //    }
-    //}
 
     public class WhenAddingAFullyPopulatedEventMessage : OnTheEventStream
     {
@@ -199,7 +153,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_add_the_event_to_the_set_of_uncommitted_events()
         {
-            Stream.UncommittedEvents.Count.Should().Be(1);
+            Assert.Single(Stream.UncommittedEvents);
         }
     }
 
@@ -221,7 +175,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_add_all_of_the_events_provided_to_the_set_of_uncommitted_events()
         {
-            Stream.UncommittedEvents.Count.Should().Be(2);
+            Assert.Equal(2, Stream.UncommittedEvents.Count);
         }
     }
 
@@ -242,15 +196,15 @@ namespace OpenMedStack.NEventStore.Tests
         }
 
         [Fact]
-        public void should_add_the_uncommited_event_to_the_set_of_uncommitted_events()
+        public void should_add_the_uncommitted_event_to_the_set_of_uncommitted_events()
         {
-            Stream.UncommittedEvents.Count.Should().Be(1);
+            Assert.Single(Stream.UncommittedEvents);
         }
 
         [Fact]
-        public void should_wrap_the_uncommited_event_in_an_EventMessage_object()
+        public void should_wrap_the_uncommitted_event_in_an_EventMessage_object()
         {
-            Stream.UncommittedEvents.First().Body.Should().Be(MyEvent);
+            Assert.Equal(MyEvent, Stream.UncommittedEvents.First().Body);
         }
     }
 
@@ -278,7 +232,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_clear_all_uncommitted_events()
         {
-            Stream.UncommittedEvents.Count.Should().Be(0);
+            Assert.Empty(Stream.UncommittedEvents);
         }
     }
 
@@ -300,13 +254,13 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_not_increment_the_current_stream_revision()
         {
-            Stream.StreamRevision.Should().Be(0);
+            Assert.Equal(0, Stream.StreamRevision);
         }
 
         [Fact]
         public void should_not_increment_the_current_commit_sequence()
         {
-            Stream.CommitSequence.Should().Be(0);
+            Assert.Equal(0, Stream.CommitSequence);
         }
     }
 
@@ -357,97 +311,97 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_build_the_commit_with_the_correct_bucket_identifier()
         {
-            _constructed.BucketId.Should().Be(BucketId);
+            Assert.Equal(BucketId, _constructed.BucketId);
         }
 
         [Fact]
         public void should_build_the_commit_with_the_correct_stream_identifier()
         {
-            _constructed.StreamId.Should().Be(StreamId);
+            Assert.Equal(StreamId, _constructed.StreamId);
         }
 
         [Fact]
         public void should_build_the_commit_with_the_correct_stream_revision()
         {
-            _constructed.StreamRevision.Should().Be(DefaultStreamRevision);
+            Assert.Equal(DefaultStreamRevision, _constructed.StreamRevision);
         }
 
         [Fact]
         public void should_build_the_commit_with_the_correct_commit_identifier()
         {
-            _constructed.CommitId.Should().Be(_commitId);
+            Assert.Equal(_commitId, _constructed.CommitId);
         }
 
         [Fact]
         public void should_build_the_commit_with_an_incremented_commit_sequence()
         {
-            _constructed.CommitSequence.Should().Be(DefaultCommitSequence);
+            Assert.Equal(DefaultCommitSequence, _constructed.CommitSequence);
         }
 
         [Fact]
         public void should_build_the_commit_with_the_correct_commit_stamp()
         {
-            SystemTime.UtcNow.Should().BeCloseTo(_constructed.CommitStamp, TimeSpan.FromMilliseconds(10));
+            Assert.Equal(SystemTime.UtcNow.DateTime, _constructed.CommitStamp.DateTime, TimeSpan.FromMilliseconds(10));
         }
 
         [Fact]
         public void should_build_the_commit_with_the_headers_provided()
         {
-            _constructed.Headers[_headers.First().Key].Should().Be(_headers.First().Value);
+            Assert.Equal(_headers.First().Value, _constructed.Headers[_headers.First().Key]);
         }
 
         [Fact]
         public void should_build_the_commit_containing_all_uncommitted_events()
         {
-            _constructed.Events.Count.Should().Be(_headers.Count);
+            Assert.Equal(_headers.Count, _constructed.Events.Count);
         }
 
         [Fact]
         public void should_build_the_commit_using_the_event_messages_provided()
         {
-            _constructed.Events.First().Should().Be(_uncommitted);
+            Assert.Equal(_uncommitted, _constructed.Events.First());
         }
 
         [Fact]
         public void should_contain_a_copy_of_the_headers_provided()
         {
-            _constructed.Headers.Should().NotBeEmpty();
+            Assert.NotEmpty(_constructed.Headers);
         }
 
         [Fact]
         public void should_update_the_stream_revision()
         {
-            Stream.StreamRevision.Should().Be(_constructed.StreamRevision);
+            Assert.Equal(_constructed.StreamRevision, Stream.StreamRevision);
         }
 
         [Fact]
         public void should_update_the_commit_sequence()
         {
-            Stream.CommitSequence.Should().Be(_constructed.CommitSequence);
+            Assert.Equal(_constructed.CommitSequence, Stream.CommitSequence);
         }
 
         [Fact]
         public void should_add_the_uncommitted_events_the_committed_events()
         {
-            Stream.CommittedEvents.Last().Should().Be(_uncommitted);
+            Assert.Equal(_uncommitted, Stream.CommittedEvents.Last());
         }
 
         [Fact]
         public void should_clear_the_uncommitted_events_on_the_stream()
         {
-            Stream.UncommittedEvents.Should().BeEmpty();
+            Assert.Empty(Stream.UncommittedEvents);
         }
 
         [Fact]
         public void should_clear_the_uncommitted_headers_on_the_stream()
         {
-            Stream.UncommittedHeaders.Should().BeEmpty();
+            Assert.Empty(Stream.UncommittedHeaders);
         }
 
         [Fact]
         public void should_copy_the_uncommitted_headers_to_the_committed_stream_headers()
         {
-            Stream.CommittedHeaders.Count.Should().Be(_headers.Count);
+            Assert.Equal(_headers.Count, Stream.CommittedHeaders.Count);
         }
     }
 
@@ -474,7 +428,8 @@ namespace OpenMedStack.NEventStore.Tests
             A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default))
                 .Returns(_committed.ToAsyncEnumerable());
 
-            Stream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger.Instance)
+            Stream = await OptimisticEventStream
+                .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger.Instance)
                 .ConfigureAwait(false);
         }
 
@@ -487,7 +442,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_throw_a_DuplicateCommitException()
         {
-            _thrown.Should().BeOfType<DuplicateCommitException>();
+            Assert.IsType<DuplicateCommitException>(_thrown);
         }
     }
 
@@ -523,13 +478,14 @@ namespace OpenMedStack.NEventStore.Tests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
+            _thrown =
+                (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
         }
 
         [Fact]
         public void should_throw_a_ConcurrencyException()
         {
-            _thrown.Should().BeOfType<ConcurrencyException>();
+            Assert.IsType<ConcurrencyException>(_thrown);
         }
 
         [Fact]
@@ -542,19 +498,19 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_update_the_stream_revision_accordingly()
         {
-            Stream.StreamRevision.Should().Be(_discoveredOnCommit[0].StreamRevision);
+            Assert.Equal(_discoveredOnCommit[0].StreamRevision, Stream.StreamRevision);
         }
 
         [Fact]
         public void should_update_the_commit_sequence_accordingly()
         {
-            Stream.CommitSequence.Should().Be(_discoveredOnCommit[0].CommitSequence);
+            Assert.Equal(_discoveredOnCommit[0].CommitSequence, Stream.CommitSequence);
         }
 
         [Fact]
         public void should_add_the_newly_discovered_committed_events_to_the_set_of_committed_events_accordingly()
         {
-            Stream.CommittedEvents.Count.Should().Be(_discoveredOnCommit[0].Events.Count + 1);
+            Assert.Equal(_discoveredOnCommit[0].Events.Count + 1, Stream.CommittedEvents.Count);
         }
     }
 
@@ -576,13 +532,14 @@ namespace OpenMedStack.NEventStore.Tests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
+            _thrown =
+                (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
         }
 
         [Fact]
         public void should_throw_a_ObjectDisposedException()
         {
-            _thrown.Should().BeOfType<ObjectDisposedException>();
+            Assert.IsType<ObjectDisposedException>(_thrown);
         }
     }
 
@@ -596,37 +553,37 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_throw_an_exception_when_adding_to_the_committed_collection()
         {
-            Catch.Exception(() => Stream.CommittedEvents.Add(new EventMessage(new object()))).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Add(new EventMessage(new object())));
         }
 
         [Fact]
         public void should_throw_an_exception_when_adding_to_the_uncommitted_collection()
         {
-            Catch.Exception(() => Stream.UncommittedEvents.Add(new EventMessage(new object()))).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Add(new EventMessage(new object())));
         }
 
         [Fact]
         public void should_throw_an_exception_when_clearing_the_committed_collection()
         {
-            Catch.Exception(() => Stream.CommittedEvents.Clear()).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Clear());
         }
 
         [Fact]
         public void should_throw_an_exception_when_clearing_the_uncommitted_collection()
         {
-            Catch.Exception(() => Stream.UncommittedEvents.Clear()).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Clear());
         }
 
         [Fact]
         public void should_throw_an_exception_when_removing_from_the_committed_collection()
         {
-            Catch.Exception(() => Stream.CommittedEvents.Remove(new EventMessage(new object()))).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Remove(new EventMessage(new object())));
         }
 
         [Fact]
         public void should_throw_an_exception_when_removing_from_the_uncommitted_collection()
         {
-            Catch.Exception(() => Stream.UncommittedEvents.Remove(new EventMessage(new object()))).Should().BeOfType<NotSupportedException>();
+            Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Remove(new EventMessage(new object())));
         }
     }
 
@@ -649,7 +606,8 @@ namespace OpenMedStack.NEventStore.Tests
 
         protected OptimisticEventStream Stream
         {
-            get => _stream ??= OptimisticEventStream.Create(BucketId, StreamId, Persistence, NullLogger.Instance).Result;
+            get => _stream ??= OptimisticEventStream.Create(BucketId, StreamId, Persistence, NullLogger.Instance)
+                .GetAwaiter().GetResult();
             set => _stream = value;
         }
 
