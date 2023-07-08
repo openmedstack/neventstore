@@ -6,7 +6,6 @@ namespace OpenMedStack.NEventStore.Tests.Persistence.InMemory
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests.BDD;
@@ -63,7 +62,7 @@ namespace OpenMedStack.NEventStore.Tests.Persistence.InMemory
         [Fact]
         public void should_return_two_commits()
         {
-            _commits.Length.Should().Be(1);
+            Assert.Single(_commits);
         }
     }
 }

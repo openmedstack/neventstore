@@ -8,7 +8,6 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
     using System.Reflection;
     using System.Threading.Tasks;
     using Conversion;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence;
@@ -34,13 +33,13 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
         [Fact]
         public void should_not_be_converted()
         {
-            _converted.Should().BeSameAs(_commit);
+            Assert.Same(_commit, _converted);
         }
 
         [Fact]
         public void should_have_the_same_instance_of_the_event()
         {
-            _converted.Events.Single().Should().Be(_commit.Events.Single());
+            Assert.Equal(_converted.Events.Single(), _commit.Events.Single());
         }
     }
 
@@ -65,13 +64,13 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
         [Fact]
         public void should_be_of_the_converted_type()
         {
-            _converted.Events.Single().Body.GetType().Should().Be(typeof(ConvertingEvent3));
+            Assert.IsType<ConvertingEvent3>(_converted.Events.Single().Body);
         }
 
         [Fact]
         public void should_have_the_same_id_of_the_commited_event()
         {
-            ((ConvertingEvent3)_converted.Events.Single().Body).Id.Should().Be(_id);
+            Assert.Equal(_id, ((ConvertingEvent3)_converted.Events.Single().Body).Id);
         }
     }
 
@@ -99,13 +98,13 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
         [Fact]
         public void should_be_of_the_converted_type()
         {
-            _converted.Events.Single().Body.GetType().Should().Be(typeof(ConvertingEvent3));
+            Assert.IsType<ConvertingEvent3>(_converted.Events.Single().Body);
         }
 
         [Fact]
         public void should_have_the_same_id_of_the_commited_event()
         {
-            ((ConvertingEvent3)_converted.Events.Single().Body).Id.Should().Be(_id);
+            Assert.Equal(_id, ((ConvertingEvent3)_converted.Events.Single().Body).Id);
         }
     }
 
@@ -138,7 +137,8 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
                     let sourceType = i.GetGenericArguments().First()
                     let convertMethod = i.GetMethods(BindingFlags.Public | BindingFlags.Instance).First()
                     let instance = Activator.CreateInstance(t)
-                    select new KeyValuePair<Type, Func<object, object>>(sourceType, e => convertMethod.Invoke(instance, new[] { e })!);
+                    select new KeyValuePair<Type, Func<object, object>>(sourceType,
+                        e => convertMethod.Invoke(instance, new[] { e })!);
             try
             {
                 return c.ToDictionary(x => x.Key, x => x.Value);
@@ -152,7 +152,8 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
         private IEnumerable<Assembly> GetAllAssemblies()
         {
             return
-                Assembly.GetCallingAssembly().GetReferencedAssemblies().Select(Assembly.Load).Concat(new[] { Assembly.GetCallingAssembly() });
+                Assembly.GetCallingAssembly().GetReferencedAssemblies().Select(Assembly.Load)
+                    .Concat(new[] { Assembly.GetCallingAssembly() });
         }
 
         protected static ICommit CreateCommit(EventMessage eventMessage)
@@ -176,11 +177,13 @@ namespace OpenMedStack.NEventStore.Tests.ConversionTests
 
     public class ExplicitConvertingEventConverter : IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>
     {
-        ConvertingEvent3 IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>.Convert(ConvertingEvent2 sourceEvent) => new(sourceEvent.Id, "Temp", true);
+        ConvertingEvent3 IUpconvertEvents<ConvertingEvent2, ConvertingEvent3>.Convert(ConvertingEvent2 sourceEvent) =>
+            new(sourceEvent.Id, "Temp", true);
     }
 
     public class NonConvertingEvent
-    { }
+    {
+    }
 
     public class ConvertingEvent
     {

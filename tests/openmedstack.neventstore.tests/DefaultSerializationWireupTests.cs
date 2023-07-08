@@ -2,7 +2,6 @@
 {
     using System;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests;
@@ -44,7 +43,7 @@
             public void should_not_throw_an_argument_null_exception()
             {
                 // _exception.Should().NotBeOfType<ArgumentNullException>();
-                _exception.Should().BeNull();
+                Assert.Null(_exception);
             }
         }
     }

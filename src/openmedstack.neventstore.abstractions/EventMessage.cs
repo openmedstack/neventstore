@@ -14,7 +14,9 @@ namespace OpenMedStack.NEventStore.Abstractions
         /// </summary>
         public EventMessage(object body, IDictionary<string, object>? headers = null)
         {
-            Headers = headers == null ? new Dictionary<string, object>() : headers.ToDictionary(x => x.Key, x => x.Value);
+            Headers = headers == null
+                ? new Dictionary<string, object>()
+                : headers.ToDictionary(x => x.Key, x => x.Value);
             Body = body;
         }
 

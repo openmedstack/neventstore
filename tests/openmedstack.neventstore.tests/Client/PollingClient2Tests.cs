@@ -7,7 +7,6 @@ namespace OpenMedStack.NEventStore.Tests.Client
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests;
@@ -43,7 +42,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 1);
-            _commits.Count.Should().Be(1);
+            Assert.Single(_commits);
         }
     }
 
@@ -79,7 +78,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 16);
-            _commits.Count.Should().Be(16);
+            Assert.Equal(16, _commits.Count);
         }
     }
 
@@ -111,7 +110,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_correctly_dispatched()
         {
             WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(1);
+            Assert.Single(_commits);
         }
     }
 
@@ -148,8 +147,8 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_retried()
         {
             WaitForCondition(() => _commits.Count >= 3, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(3);
-            _commits.All(c => c.CheckpointToken == 1).Should().BeTrue();
+            Assert.Equal(3, _commits.Count);
+            Assert.All(_commits, c => Assert.Equal(1, c.CheckpointToken));
         }
     }
 
@@ -184,11 +183,9 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_retried_then_move_next()
         {
             WaitForCondition(() => _commits.Count >= 4, timeoutInSeconds: 1);
-            _commits.Count.Should().Be(4);
-            _commits
-                .Select(c => c.CheckpointToken)
-                .SequenceEqual(new[] { 1L, 1L, 1, 2 })
-                .Should().BeTrue();
+            Assert.Equal(4, _commits.Count);
+            Assert.Equal(new[] { 1L, 1L, 1, 2 }, _commits
+                .Select(c => c.CheckpointToken));
         }
     }
 
@@ -222,11 +219,9 @@ namespace OpenMedStack.NEventStore.Tests.Client
         public void commits_are_retried_then_move_next()
         {
             WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 3);
-            _commits.Count.Should().Be(2);
-            _commits
-                .Select(c => c.CheckpointToken)
-                .SequenceEqual(new[] { 1L, 2L })
-                .Should().BeTrue();
+            Assert.Equal(2, _commits.Count);
+            Assert.Equal(new[] { 1L, 2L }, _commits
+                .Select(c => c.CheckpointToken));
         }
     }
 
@@ -247,9 +242,10 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Context()
         {
-            HandleFunction = c => Task.FromResult(PollingClient.HandlingResult.MoveToNext);
+            HandleFunction = _ => Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
-            Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance, _pollingInterval);
+            Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
+                _pollingInterval);
             return Task.CompletedTask;
         }
 

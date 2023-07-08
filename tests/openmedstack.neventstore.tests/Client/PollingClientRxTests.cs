@@ -7,7 +7,6 @@ namespace OpenMedStack.NEventStore.Tests.Client
     using System.Reactive.Threading.Tasks;
     using System.Threading.Tasks;
     using FakeItEasy;
-    using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
     using NEventStore.Persistence.AcceptanceTests;
@@ -25,13 +24,11 @@ namespace OpenMedStack.NEventStore.Tests.Client
         [Fact]
         public void When_interval_less_than_zero_then_should_throw()
         {
-            Catch.Exception(
-                    () =>
-                    {
-                        var x = new PollingClientRx(A.Fake<IPersistStreams>(), TimeSpan.MinValue);
-                    })!
-                .Should()
-                .BeOfType<ArgumentException>();
+            Assert.Throws<ArgumentException>(
+                () =>
+                {
+                    _ = new PollingClientRx(A.Fake<IPersistStreams>(), TimeSpan.MinValue);
+                });
         }
     }
 
@@ -65,7 +62,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         [Fact]
         public void should_observe_commit()
         {
-            _commitObserved.Wait(PollingInterval * 2).Should().BeTrue();
+            Assert.True(_commitObserved.Wait(PollingInterval * 2));
         }
     }
 
@@ -100,7 +97,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         [Fact]
         public void should_observe_two_commits()
         {
-            _twoCommitsObserved.Wait(PollingInterval * 2).Should().BeTrue();
+            Assert.True(_twoCommitsObserved.Wait(PollingInterval * 2));
         }
     }
 
@@ -144,13 +141,13 @@ namespace OpenMedStack.NEventStore.Tests.Client
         [Fact]
         public void should_observe_commits_on_first_observer()
         {
-            _observeCommits1Complete.Wait(PollingInterval * 10).Should().BeTrue();
+            Assert.True(_observeCommits1Complete.Wait(PollingInterval * 10));
         }
 
         [Fact]
         public void should_observe_commits_on_second_observer()
         {
-            _observeCommits2Complete.Wait(PollingInterval * 10).Should().BeTrue();
+            Assert.True(_observeCommits2Complete.Wait(PollingInterval * 10));
         }
     }
 
@@ -183,8 +180,8 @@ namespace OpenMedStack.NEventStore.Tests.Client
         [Fact]
         public void should_observe_commit_from_bucket1()
         {
-            _commitObserved.Wait(PollingInterval * 2).Should().BeTrue();
-            _commitObserved.Result.BucketId.Should().Be("bucket_1");
+            Assert.True(_commitObserved.Wait(PollingInterval * 2));
+            Assert.Equal("bucket_1", _commitObserved.Result.BucketId);
         }
     }
 
