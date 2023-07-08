@@ -1,6 +1,4 @@
-using System.IO;
-
-namespace OpenMedStack.NEventStore.Serialization
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Provides the ability to serialize and deserialize an object graph.
@@ -25,5 +23,13 @@ namespace OpenMedStack.NEventStore.Serialization
         /// <param name="input">The stream of bytes from which the object will be reconstructed.</param>
         /// <returns>The reconstructed object.</returns>
         T? Deserialize<T>(Stream input);
+
+        /// <summary>
+        ///     Deserializes the stream provided and reconstructs the corresponding object graph.
+        /// </summary>
+        /// <typeparam name="T">The type of object to be deserialized.</typeparam>
+        /// <param name="input">The array of bytes from which the object will be reconstructed.</param>
+        /// <returns>The reconstructed object.</returns>
+        T? Deserialize<T>(byte[] input);
     }
 }

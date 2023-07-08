@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-
-namespace OpenMedStack.NEventStore
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Represents a series of events which have been fully committed as a single unit and which apply to the stream indicated.

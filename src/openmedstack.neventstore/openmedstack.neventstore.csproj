@@ -123,4 +123,8 @@
 	<ItemGroup>
 		<Folder Include="Persistence\Sql\SqlDialects\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj" />
+	</ItemGroup>
 </Project>

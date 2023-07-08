@@ -1,4 +1,4 @@
-namespace OpenMedStack.NEventStore
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Represents a materialized view of a stream at specific revision.

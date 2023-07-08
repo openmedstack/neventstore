@@ -1,3 +1,4 @@
+using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Persistence;
 
 namespace OpenMedStack.NEventStore

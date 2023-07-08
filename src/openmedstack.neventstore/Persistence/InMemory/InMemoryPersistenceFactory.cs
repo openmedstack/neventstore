@@ -1,3 +1,5 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.InMemory
 {
     using Microsoft.Extensions.Logging;

@@ -1,4 +1,4 @@
-namespace OpenMedStack.NEventStore.Persistence
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Indicates the most recent information representing the head of a given stream.

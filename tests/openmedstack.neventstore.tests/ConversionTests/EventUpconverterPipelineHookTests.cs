@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Tests.ConversionTests
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Tests.ConversionTests
 {
     using System;
     using System.Collections.Generic;

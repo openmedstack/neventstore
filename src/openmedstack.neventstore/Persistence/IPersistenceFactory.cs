@@ -1,7 +1,7 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence
 {
-    using Microsoft.Extensions.Logging;
-
     /// <summary>
     ///     Indicates the ability to build a ready-to-use persistence engine.
     /// </summary>

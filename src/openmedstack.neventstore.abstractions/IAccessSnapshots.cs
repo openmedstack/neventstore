@@ -1,11 +1,5 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using OpenMedStack.NEventStore.Persistence;
-
-namespace OpenMedStack.NEventStore
+namespace OpenMedStack.NEventStore.Abstractions
 {
-    using System.Threading;
-
     /// <summary>
     ///     Indicates the ability to get or retrieve a snapshot for a given stream.
     /// </summary>

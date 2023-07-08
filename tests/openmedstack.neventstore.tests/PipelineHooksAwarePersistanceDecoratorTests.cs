@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Tests
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Tests
 {
     using System;
     using System.Collections.Generic;

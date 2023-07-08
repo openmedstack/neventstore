@@ -1,5 +1,5 @@
 
-using OpenMedStack.NEventStore.Persistence;
+using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore
 {

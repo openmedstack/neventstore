@@ -1,3 +1,5 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore
 {
     using System;

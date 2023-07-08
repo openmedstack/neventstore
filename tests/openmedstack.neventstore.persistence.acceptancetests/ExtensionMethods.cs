@@ -1,10 +1,11 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using NEventStore;
-    using Persistence;
 
     public static class ExtensionMethods
     {

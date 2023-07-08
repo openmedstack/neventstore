@@ -1,8 +1,10 @@
 ﻿// ReSharper disable once CheckNamespace
+
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 {
     using System;
-    using OpenMedStack.NEventStore.Persistence;
 
     public abstract class PersistenceEngineFixtureBase : IDisposable
     {

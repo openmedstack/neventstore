@@ -1,7 +1,8 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore
 {
     using Microsoft.Extensions.Logging;
-    using Persistence;
     using Persistence.InMemory;
 
     public static class PersistenceWireupExtensions

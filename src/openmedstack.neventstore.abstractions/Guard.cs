@@ -1,8 +1,5 @@
-﻿namespace OpenMedStack.NEventStore
+﻿namespace OpenMedStack.NEventStore.Abstractions
 {
-    using System;
-    using System.Collections.Generic;
-
     internal static class Guard
     {
         internal static void NotNullOrWhiteSpace(string parameterName, string value)

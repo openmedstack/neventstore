@@ -1,3 +1,5 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.InMemory
 {
     using System;
@@ -203,17 +205,15 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                     headers,
                     events)
             {
-
             }
-
         }
 
         private class IdentityForConcurrencyConflictDetection
         {
             protected bool Equals(IdentityForConcurrencyConflictDetection other) =>
                 string.Equals(_streamId, other._streamId)
-                && string.Equals(_bucketId, other._bucketId)
-                && _commitSequence == other._commitSequence;
+             && string.Equals(_bucketId, other._bucketId)
+             && _commitSequence == other._commitSequence;
 
             public override bool Equals(object? obj)
             {
@@ -257,8 +257,8 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
         {
             protected bool Equals(IdentityForDuplicationDetection other) =>
                 string.Equals(_streamId, other._streamId)
-                && string.Equals(_bucketId, other._bucketId)
-                && _commitId.Equals(other._commitId);
+             && string.Equals(_bucketId, other._bucketId)
+             && _commitId.Equals(other._commitId);
 
             public override bool Equals(object? obj)
             {
@@ -333,8 +333,8 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                     return _commits
                         .Where(
                             x => x.StreamId == streamId
-                                 && x.StreamRevision >= minRevision
-                                 && (x.StreamRevision - x.Events.Count + 1) <= maxRevision)
+                             && x.StreamRevision >= minRevision
+                             && (x.StreamRevision - x.Events.Count + 1) <= maxRevision)
                         .OrderBy(c => c.CommitSequence)
                         .ToArray();
                 }
@@ -444,8 +444,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                 lock (_commits)
                 {
                     return _snapshots.Where(x => x.StreamId == streamId && x.StreamRevision <= maxRevision)
-                        .OrderByDescending(x => x.StreamRevision)
-                        .FirstOrDefault();
+                        .MaxBy(x => x.StreamRevision);
                 }
             }
 

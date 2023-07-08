@@ -1,15 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<RootNamespace>OpenMedStack.NEventStore.PollingClient</RootNamespace>
-	</PropertyGroup>
-	<Import Project="../../shared.proj" />
+    <Import Project="../../shared.proj" />
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>OpenMedStack.NEventStore.PollingClient</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Condition="'$(TargetFramework)'=='net6.0'" Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+      <PackageReference Condition="'$(TargetFramework)'=='net7.0'" Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\openmedstack.neventstore\openmedstack.neventstore.csproj" />
-	</ItemGroup>
+<!--    <ItemGroup>-->
+<!--        <ProjectReference Include="..\openmedstack.neventstore\openmedstack.neventstore.csproj"/>-->
+<!--    </ItemGroup>-->
 
 </Project>

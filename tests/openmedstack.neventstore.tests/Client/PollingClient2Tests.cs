@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Tests.Client
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Tests.Client
 {
     using System;
     using System.Collections.Generic;
@@ -12,7 +14,7 @@
     using NEventStore.Persistence.AcceptanceTests.BDD;
     using PollingClient;
     using Xunit;
-    
+
     public class BaseHandlingCommittedEvents : UsingPollingClient2
     {
         private readonly List<ICommit> _commits = new();
@@ -23,7 +25,7 @@
             HandleFunction = c =>
             {
                 _commits.Add(c);
-                return Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             };
             StoreEvents.Advanced.CommitSingle();
 
@@ -55,7 +57,7 @@
             HandleFunction = c =>
             {
                 _commits.Add(c);
-                return Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             };
             StoreEvents.Advanced.CommitSingle();
 
@@ -91,7 +93,7 @@
             HandleFunction = c =>
             {
                 _commits.Add(c);
-                return Task.FromResult(PollingClient2.HandlingResult.Stop);
+                return Task.FromResult(PollingClient.HandlingResult.Stop);
             };
             await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
             await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
@@ -125,10 +127,10 @@
                 _commits.Add(c);
                 if (_commits.Count < 3)
                 {
-                    return Task.FromResult(PollingClient2.HandlingResult.Retry);
+                    return Task.FromResult(PollingClient.HandlingResult.Retry);
                 }
 
-                return Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             };
             StoreEvents.Advanced.CommitSingle();
 
@@ -162,8 +164,8 @@
             {
                 _commits.Add(c);
                 return Task.FromResult(_commits.Count < 3 && c.CheckpointToken == 1
-                    ? PollingClient2.HandlingResult.Retry
-                    : PollingClient2.HandlingResult.MoveToNext);
+                    ? PollingClient.HandlingResult.Retry
+                    : PollingClient.HandlingResult.MoveToNext);
             };
             StoreEvents.Advanced.CommitSingle();
             StoreEvents.Advanced.CommitSingle();
@@ -200,7 +202,7 @@
             HandleFunction = c =>
             {
                 _commits.Add(c);
-                return Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             };
             StoreEvents.Advanced.CommitSingle();
             StoreEvents.Advanced.CommitSingle();
@@ -237,17 +239,17 @@
             OnStart().Wait();
         }
 
-        protected PollingClient2 Sut { get; private set; } = null!;
+        protected PollingClient Sut { get; private set; } = null!;
 
         protected IStoreEvents StoreEvents { get; private set; } = null!;
 
-        protected Func<ICommit, Task<PollingClient2.HandlingResult>> HandleFunction = null!;
+        protected Func<ICommit, Task<PollingClient.HandlingResult>> HandleFunction = null!;
 
         protected override Task Context()
         {
-            HandleFunction = c => Task.FromResult(PollingClient2.HandlingResult.MoveToNext);
+            HandleFunction = c => Task.FromResult(PollingClient.HandlingResult.MoveToNext);
             StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
-            Sut = new PollingClient2(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance, _pollingInterval);
+            Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance, _pollingInterval);
             return Task.CompletedTask;
         }
 

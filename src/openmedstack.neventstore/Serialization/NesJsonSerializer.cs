@@ -1,3 +1,5 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Serialization
 {
     using System;
@@ -53,6 +55,12 @@ namespace OpenMedStack.NEventStore.Serialization
             _logger.LogTrace(Messages.DeserializingStream, typeof(T));
             using var streamReader = new StreamReader(input, Encoding.UTF8);
             return Deserialize<T>(new JsonTextReader(streamReader));
+        }
+
+        public virtual T? Deserialize<T>(byte[] input)
+        {
+            using var ms = new MemoryStream(input, false);
+            return Deserialize<T>(ms);
         }
 
         protected virtual void Serialize<T>(JsonWriter writer, T graph)

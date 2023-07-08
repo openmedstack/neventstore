@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Serialization
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Serialization
 {
     using NEventStore;
 

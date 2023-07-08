@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
-namespace OpenMedStack.NEventStore
+namespace OpenMedStack.NEventStore.Abstractions
 {
-    using System.Linq;
-
     /// <summary>
     ///     Represents a single element in a stream of events.
     /// </summary>

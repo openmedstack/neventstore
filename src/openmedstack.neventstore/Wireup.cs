@@ -1,10 +1,11 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore
 {
     using System.Collections.Generic;
     using System.Linq;
     using System.Transactions;
     using OpenMedStack.NEventStore.Conversion;
-    using OpenMedStack.NEventStore.Persistence;
     using OpenMedStack.NEventStore.Persistence.InMemory;
     using System;
     using Microsoft.Extensions.Logging;

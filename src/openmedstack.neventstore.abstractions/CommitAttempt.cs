@@ -1,11 +1,7 @@
-namespace OpenMedStack.NEventStore
+using System.Collections.ObjectModel;
+
+namespace OpenMedStack.NEventStore.Abstractions
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Linq;
-
-
     public class CommitAttempt
     {
         /// <summary>

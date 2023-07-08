@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore
 {

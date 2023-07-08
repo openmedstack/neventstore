@@ -1,10 +1,11 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.Sql
 {
     using System;
     using System.Data;
     using Microsoft.Extensions.Logging;
     using NEventStore;
-    using Serialization;
 
     internal static class SnapshotExtensions
     {

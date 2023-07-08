@@ -1,4 +1,7 @@
 // ReSharper disable once CheckNamespace
+
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace NEventStore
 {
     using System;
@@ -6,7 +9,6 @@ namespace NEventStore
     using OpenMedStack.NEventStore;
 
     using OpenMedStack.NEventStore.Persistence.Sql;
-    using OpenMedStack.NEventStore.Serialization;
 
     public class SqlPersistenceWireup : PersistenceWireup
     {

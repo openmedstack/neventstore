@@ -1,13 +1,13 @@
-﻿namespace OpenMedStack.NEventStore.PollingClient
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.PollingClient
 {
     using Microsoft.Extensions.Logging;
-    using NEventStore;
-    using Persistence;
 
     /// <summary>
     /// This is the new polling client that does not depends on RX.
     /// </summary>
-    public class PollingClient2 : IDisposable
+    public class PollingClient : IDisposable
     {
         public enum HandlingResult
         {
@@ -17,7 +17,7 @@
         }
 
         private static readonly TaskStatus[] DisposableStatuses =
-            new[] { TaskStatus.RanToCompletion, TaskStatus.Faulted, TaskStatus.Canceled };
+            { TaskStatus.RanToCompletion, TaskStatus.Faulted, TaskStatus.Canceled };
 
         private readonly CancellationTokenSource _cts = new();
         private readonly ILogger _logger;
@@ -29,14 +29,14 @@
         private long _checkpointToken;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="persistStreams"></param>
         /// <param name="callback"></param>
         /// <param name="logger">The <see cref="ILogger"/>.</param>
         /// <param name="waitInterval">Interval in Milliseconds to wait when the provider
         /// return no more commit and the next request</param>
-        public PollingClient2(
+        public PollingClient(
             IPersistStreams persistStreams,
             Func<ICommit, Task<HandlingResult>> callback,
             ILogger logger,
@@ -46,13 +46,13 @@
             _waitInterval = waitInterval == default ? TimeSpan.FromMilliseconds(300) : waitInterval;
 
             _commitCallback = callback
-                              ?? throw new ArgumentNullException(
-                                  nameof(callback),
-                                  "Cannot use polling client without callback");
+             ?? throw new ArgumentNullException(
+                    nameof(callback),
+                    "Cannot use polling client without callback");
             _persistStreams = persistStreams
-                              ?? throw new ArgumentNullException(
-                                  nameof(persistStreams),
-                                  "PersistStreams cannot be null");
+             ?? throw new ArgumentNullException(
+                    nameof(persistStreams),
+                    "PersistStreams cannot be null");
             LastActivityTimestamp = DateTime.UtcNow;
         }
 
@@ -103,8 +103,8 @@
         {
             _cts.Cancel();
             if (_pollingThread != null
-                && _pollingThread.Status != TaskStatus.WaitingForActivation
-                && _pollingThread.Status != TaskStatus.WaitingToRun)
+             && _pollingThread.Status != TaskStatus.WaitingForActivation
+             && _pollingThread.Status != TaskStatus.WaitingToRun)
             {
                 await _pollingThread.ConfigureAwait(false);
             }

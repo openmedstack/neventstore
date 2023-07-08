@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace OpenMedStack.NEventStore.Persistence
+namespace OpenMedStack.NEventStore.Abstractions
 {
     using System.Threading;
 

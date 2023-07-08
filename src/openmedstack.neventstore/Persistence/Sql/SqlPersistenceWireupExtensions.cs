@@ -2,7 +2,6 @@
 namespace NEventStore
 {
     using System.Data.Common;
-    using Microsoft.Extensions.Logging;
     using OpenMedStack.NEventStore;
     using OpenMedStack.NEventStore.Persistence.Sql;
 

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Persistence
 {
@@ -27,10 +29,7 @@ namespace OpenMedStack.NEventStore.Persistence
 
         public int GetHashCode(IStreamHead obj)
         {
-            unchecked
-            {
-                return ((obj.StreamId != null ? obj.StreamId.GetHashCode() : 0) * 397) ^ (obj.BucketId != null ? obj.BucketId.GetHashCode() : 0);
-            }
+            return HashCode.Combine(obj.StreamId, obj.BucketId);
         }
     }
 }

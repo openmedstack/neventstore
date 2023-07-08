@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Tests.Client
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Tests.Client
 {
     using System;
     using System.Reactive.Linq;
@@ -8,7 +10,6 @@
     using FluentAssertions;
     using Microsoft.Extensions.Logging.Abstractions;
     using NEventStore;
-    using NEventStore.Persistence;
     using NEventStore.Persistence.AcceptanceTests;
     using NEventStore.Persistence.AcceptanceTests.BDD;
     using Xunit;

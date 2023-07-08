@@ -1,3 +1,5 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Serialization
 {
     using System.IO;

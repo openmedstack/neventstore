@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Persistence
 {

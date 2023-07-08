@@ -1,11 +1,11 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.Sql
 {
     using System;
     using System.Collections.Generic;
     using System.Data;
-    using NEventStore;
     using Persistence;
-    using Serialization;
 
     public static class CommitExtensions
     {

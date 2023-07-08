@@ -1,9 +1,10 @@
+using OpenMedStack.NEventStore.Abstractions;
+
 namespace OpenMedStack.NEventStore.Persistence.Sql
 {
     using System;
     using Microsoft.Extensions.Logging;
     using Persistence;
-    using Serialization;
 
     public class SqlPersistenceFactory : IPersistenceFactory
     {

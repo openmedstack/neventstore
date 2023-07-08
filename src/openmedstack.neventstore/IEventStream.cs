@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Persistence;
 
 namespace OpenMedStack.NEventStore

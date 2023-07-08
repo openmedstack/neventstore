@@ -25,6 +25,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.pollingclient", "src\openmedstack.neventstore.pollingclient\openmedstack.neventstore.pollingclient.csproj", "{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.postgresclient", "src\openmedstack.neventstore.postgresclient\openmedstack.neventstore.postgresclient.csproj", "{941CE6AB-13B9-4E91-8E07-F6931F94F266}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.postgresclient.tests", "tests\openmedstack.neventstore.postgresclient.tests\openmedstack.neventstore.postgresclient.tests.csproj", "{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.abstractions", "src\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj", "{F8015247-40AA-4764-9E0A-D598BEDC59BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +61,18 @@ Global
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{941CE6AB-13B9-4E91-8E07-F6931F94F266}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{941CE6AB-13B9-4E91-8E07-F6931F94F266}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{941CE6AB-13B9-4E91-8E07-F6931F94F266}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{941CE6AB-13B9-4E91-8E07-F6931F94F266}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -64,6 +82,7 @@ Global
 		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{FAB3D477-2916-43CF-B006-0D2CBECCBD24} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{045829E3-4CF6-4F71-8F82-DF419074A476} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67B44C3E-DC8A-4BB3-9CD4-5D81241AC7A5}
