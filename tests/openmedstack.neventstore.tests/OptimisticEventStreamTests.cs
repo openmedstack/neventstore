@@ -127,7 +127,7 @@ namespace OpenMedStack.NEventStore.Tests
         protected override async Task Because()
         {
             Stream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, 0, int.MaxValue,
-                    NullLogger.Instance, default)
+                    NullLogger.Instance)
                 .ConfigureAwait(false);
         }
 
@@ -155,7 +155,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_add_the_event_to_the_set_of_uncommitted_events()
         {
-            Assert.Equal(1, Stream.UncommittedEvents.Count);
+            Assert.Single(Stream.UncommittedEvents);
         }
     }
 
@@ -200,7 +200,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_add_the_uncommitted_event_to_the_set_of_uncommitted_events()
         {
-            Assert.Equal(1, Stream.UncommittedEvents.Count);
+            Assert.Single(Stream.UncommittedEvents);
         }
 
         [Fact]
@@ -234,7 +234,7 @@ namespace OpenMedStack.NEventStore.Tests
         [Fact]
         public void should_clear_all_uncommitted_events()
         {
-            Assert.Equal(0, Stream.UncommittedEvents.Count);
+            Assert.Empty(Stream.UncommittedEvents);
         }
     }
 
