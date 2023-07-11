@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.PostgresClient
@@ -46,6 +47,10 @@ namespace OpenMedStack.NEventStore.PostgresClient
                     cancellationToken: cancellationToken);
 
                 _logger.LogInformation("Replication slot created");
+            }
+            catch (PostgresException)
+            {
+                _logger.LogInformation("Replication slot already created");
             }
             catch (Exception e)
             {

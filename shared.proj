@@ -1,12 +1,12 @@
 <Project>
     <PropertyGroup>
-        <Version>1.4.0</Version>
+        <Version>1.5.0</Version>
         <Authors>Jacob Reimers</Authors>
         <Company>Reimers.dk</Company>
         <Product>OpenMedStack NEventstore</Product>
-        <Copyright>Reimers.dk © 2016 - 2021</Copyright>
+        <Copyright>Reimers.dk © 2016 - 2023</Copyright>
         <RepositoryType>git</RepositoryType>
-        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
         <langVersion>latest</langVersion>
