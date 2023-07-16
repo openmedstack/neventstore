@@ -21,7 +21,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
 
         private Bucket this[string bucketId]
         {
-            get { return _buckets.GetOrAdd(bucketId ?? NEventStore.Bucket.Default, _ => new Bucket(_logger)); }
+            get { return _buckets.GetOrAdd(bucketId, static (_,logger) => new Bucket(logger), _logger); }
         }
 
         public void Dispose()
@@ -132,7 +132,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
             return Task.FromResult(this[snapshot.BucketId].AddSnapshot(snapshot));
         }
 
-        public Task Purge()
+        public Task<bool> Purge()
         {
             ThrowWhenDisposed();
             _logger.LogWarning(Resources.PurgingStore);
@@ -141,22 +141,22 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                 bucket.Purge();
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task Purge(string bucketId)
+        public Task<bool> Purge(string bucketId)
         {
             _buckets.TryRemove(bucketId, out var _);
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task Drop()
+        public Task<bool> Drop()
         {
             _buckets.Clear();
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task DeleteStream(string bucketId, string streamId)
+        public Task<bool> DeleteStream(string bucketId, string streamId)
         {
             _logger.LogWarning(Resources.DeletingStream, streamId, bucketId);
             if (_buckets.TryGetValue(bucketId, out var bucket))
@@ -164,7 +164,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                 bucket.DeleteStream(streamId);
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public bool IsDisposed { get; private set; }
@@ -203,17 +203,15 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                     headers,
                     events)
             {
-
             }
-
         }
 
         private class IdentityForConcurrencyConflictDetection
         {
             protected bool Equals(IdentityForConcurrencyConflictDetection other) =>
                 string.Equals(_streamId, other._streamId)
-                && string.Equals(_bucketId, other._bucketId)
-                && _commitSequence == other._commitSequence;
+             && string.Equals(_bucketId, other._bucketId)
+             && _commitSequence == other._commitSequence;
 
             public override bool Equals(object? obj)
             {
@@ -257,8 +255,8 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
         {
             protected bool Equals(IdentityForDuplicationDetection other) =>
                 string.Equals(_streamId, other._streamId)
-                && string.Equals(_bucketId, other._bucketId)
-                && _commitId.Equals(other._commitId);
+             && string.Equals(_bucketId, other._bucketId)
+             && _commitId.Equals(other._commitId);
 
             public override bool Equals(object? obj)
             {
@@ -333,8 +331,8 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                     return _commits
                         .Where(
                             x => x.StreamId == streamId
-                                 && x.StreamRevision >= minRevision
-                                 && (x.StreamRevision - x.Events.Count + 1) <= maxRevision)
+                             && x.StreamRevision >= minRevision
+                             && (x.StreamRevision - x.Events.Count + 1) <= maxRevision)
                         .OrderBy(c => c.CommitSequence)
                         .ToArray();
                 }

@@ -25,7 +25,7 @@ namespace OpenMedStack.NEventStore
             _logger = logger;
 
             _pipelineHooks = pipelineHooks;
-            _persistence = new PipelineHooksAwarePersistanceDecorator(persistence, _pipelineHooks, _logger);
+            _persistence = new PipelineHooksAwarePersistenceDecorator(persistence, _pipelineHooks, _logger);
         }
 
         public virtual IAsyncEnumerable<ICommit> GetFrom(
