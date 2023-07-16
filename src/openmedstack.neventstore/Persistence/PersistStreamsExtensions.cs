@@ -24,6 +24,7 @@ namespace OpenMedStack.NEventStore.Persistence
             {
                 throw new ArgumentException("persistStreams is null");
             }
+
             return persistStreams.GetFrom(Bucket.Default, start);
         }
 
@@ -36,12 +37,17 @@ namespace OpenMedStack.NEventStore.Persistence
         /// <returns>All commits that have occurred on or after the specified starting time and before the end time.</returns>
         /// <exception cref="StorageException" />
         /// <exception cref="StorageUnavailableException" />
-        public static IAsyncEnumerable<ICommit> GetFromTo(this IPersistStreams persistStreams, DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken)
+        public static IAsyncEnumerable<ICommit> GetFromTo(
+            this IPersistStreams persistStreams,
+            DateTimeOffset start,
+            DateTimeOffset end,
+            CancellationToken cancellationToken)
         {
             if (persistStreams == null)
             {
                 throw new ArgumentException("persistStreams is null");
             }
+
             return persistStreams.GetFromTo(Bucket.Default, start, end, cancellationToken);
         }
 
@@ -56,6 +62,7 @@ namespace OpenMedStack.NEventStore.Persistence
             {
                 throw new ArgumentException("persistStreams is null");
             }
+
             persistStreams.DeleteStream(Bucket.Default, streamId);
         }
 
@@ -63,7 +70,10 @@ namespace OpenMedStack.NEventStore.Persistence
         ///     Gets all commits after from start checkpoint.
         /// </summary>
         /// <param name="persistStreams">The IPersistStreams instance.</param>
-        public static async IAsyncEnumerable<ICommit> GetFromStart(this IPersistStreams persistStreams, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public static async IAsyncEnumerable<ICommit> GetFromStart(
+            this IPersistStreams persistStreams,
+            string bucketId,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             if (persistStreams == null)
             {
@@ -71,12 +81,13 @@ namespace OpenMedStack.NEventStore.Persistence
             }
 
             await Task.Yield();
-            await foreach (var item in persistStreams.GetFrom())
+            await foreach (var item in persistStreams.GetFrom(bucketId, 0, cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
                     yield break;
                 }
+
                 yield return item;
             }
         }

@@ -32,7 +32,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         }
     }
 
-    public class WhenCommitIsComittedBeforeSubscribing : UsingPollingClient
+    public class WhenCommitIsCommittedBeforeSubscribing : UsingPollingClient
     {
         private IObservable<ICommit> _observeCommits = null!;
         private Task<ICommit> _commitObserved = null!;
@@ -66,7 +66,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
         }
     }
 
-    public class WhenCommitIsComittedBeforeAndAfterSubscribing : UsingPollingClient
+    public class WhenCommitIsCommittedBeforeAndAfterSubscribing : UsingPollingClient
     {
         private IObservable<ICommit> _observeCommits = null!;
         private Task<ICommit> _twoCommitsObserved = null!;

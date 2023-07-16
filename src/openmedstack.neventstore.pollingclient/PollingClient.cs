@@ -63,28 +63,14 @@ namespace OpenMedStack.NEventStore.PollingClient
         /// </summary>
         public DateTime LastActivityTimestamp { get; private set; }
 
-        public void StartFrom(long checkpointToken = 0)
-        {
-            if (_pollingThread != null)
-            {
-                throw new PollingClientException("Polling client already started");
-            }
-
-            _checkpointToken = checkpointToken;
-            ConfigurePollingFunction();
-            _pollingThread = InnerPollingLoop();
-        }
-
-        public void ConfigurePollingFunction(string? bucketId = null)
+        public void ConfigurePollingFunction(string bucketId)
         {
             if (_pollingThread != null)
             {
                 throw new PollingClientException("Cannot configure when polling client already started polling");
             }
 
-            _pollingFunc = bucketId == null
-                ? (Func<IAsyncEnumerable<ICommit>>)(() => _persistStreams.GetFrom(_checkpointToken))
-                : () => _persistStreams.GetFrom(bucketId, _checkpointToken, _cts.Token);
+            _pollingFunc = () => _persistStreams.GetFrom(bucketId, _checkpointToken, _cts.Token);
         }
 
         public void StartFromBucket(string bucketId, long checkpointToken = 0)

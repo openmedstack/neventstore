@@ -34,14 +34,6 @@ namespace OpenMedStack.NEventStore.Abstractions
         IAsyncEnumerable<ICommit> GetFrom(string bucketId, DateTimeOffset start, CancellationToken cancellationToken = default);
 
         /// <summary>
-        ///     Gets all commits after the specified checkpoint. Use null to get from the beginning.
-        /// </summary>
-        /// <param name="checkpointToken">The checkpoint token.</param>
-        /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
-        /// <returns>An enumerable of Commits.</returns>
-        IAsyncEnumerable<ICommit> GetFrom(long checkpointToken = 0, CancellationToken cancellationToken = default);
-
-        /// <summary>
         ///     Gets all commits after from the specified checkpoint. Use null to get from the beginning.
         /// </summary>
         /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
@@ -65,26 +57,26 @@ namespace OpenMedStack.NEventStore.Abstractions
         /// <summary>
         ///     Completely DESTROYS the contents of ANY and ALL streams that have been successfully persisted.  Use with caution.
         /// </summary>
-        Task Purge();
+        Task<bool> Purge();
 
         /// <summary>
         ///     Completely DESTROYS the contents of ANY and ALL streams that have been successfully persisted
         ///     in the specified bucket.  Use with caution.
         /// </summary>
-        Task Purge(string bucketId);
+        Task<bool> Purge(string bucketId);
 
         /// <summary>
-        ///     Completely DESTROYS the contents and schema (if applicable) containting ANY and ALL streams that have been
+        ///     Completely DESTROYS the contents and schema (if applicable) containing ANY and ALL streams that have been
         ///     successfully persisted
         ///     in the specified bucket.  Use with caution.
         /// </summary>
-        Task Drop();
+        Task<bool> Drop();
 
         /// <summary>
         /// Deletes a stream.
         /// </summary>
         /// <param name="bucketId">The bucket Id from which the stream is to be deleted.</param>
         /// <param name="streamId">The stream Id of the stream that is to be deleted.</param>
-        Task DeleteStream(string bucketId, string streamId);
+        Task<bool> DeleteStream(string bucketId, string streamId);
     }
 }

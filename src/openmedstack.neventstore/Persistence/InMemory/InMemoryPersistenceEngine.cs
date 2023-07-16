@@ -23,7 +23,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
 
         private Bucket this[string bucketId]
         {
-            get { return _buckets.GetOrAdd(bucketId ?? NEventStore.Bucket.Default, _ => new Bucket(_logger)); }
+            get { return _buckets.GetOrAdd(bucketId, static (_,logger) => new Bucket(logger), _logger); }
         }
 
         public void Dispose()
@@ -134,7 +134,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
             return Task.FromResult(this[snapshot.BucketId].AddSnapshot(snapshot));
         }
 
-        public Task Purge()
+        public Task<bool> Purge()
         {
             ThrowWhenDisposed();
             _logger.LogWarning(Resources.PurgingStore);
@@ -143,22 +143,22 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                 bucket.Purge();
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task Purge(string bucketId)
+        public Task<bool> Purge(string bucketId)
         {
             _buckets.TryRemove(bucketId, out var _);
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task Drop()
+        public Task<bool> Drop()
         {
             _buckets.Clear();
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task DeleteStream(string bucketId, string streamId)
+        public Task<bool> DeleteStream(string bucketId, string streamId)
         {
             _logger.LogWarning(Resources.DeletingStream, streamId, bucketId);
             if (_buckets.TryGetValue(bucketId, out var bucket))
@@ -166,7 +166,7 @@ namespace OpenMedStack.NEventStore.Persistence.InMemory
                 bucket.DeleteStream(streamId);
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public bool IsDisposed { get; private set; }

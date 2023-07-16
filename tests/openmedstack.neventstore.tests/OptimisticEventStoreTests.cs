@@ -190,7 +190,7 @@ namespace OpenMedStack.NEventStore.Tests
         }
 
         [Fact]
-        public void should_return_an_event_stream_containing_the_correct_stream_identifer()
+        public void should_return_an_event_stream_containing_the_correct_stream_identifier()
         {
             Assert.Equal(StreamId, _stream.StreamId);
         }

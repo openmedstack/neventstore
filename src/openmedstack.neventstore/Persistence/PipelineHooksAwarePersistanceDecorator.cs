@@ -4,20 +4,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using OpenMedStack.NEventStore.Abstractions;
 
-
 namespace OpenMedStack.NEventStore.Persistence
 {
     using System.Runtime.CompilerServices;
     using System.Threading;
     using Microsoft.Extensions.Logging;
 
-    public class PipelineHooksAwarePersistanceDecorator : IPersistStreams
+    public class PipelineHooksAwarePersistenceDecorator : IPersistStreams
     {
         private readonly ILogger _logger;
         private readonly IPersistStreams _original;
         private readonly IEnumerable<IPipelineHook> _pipelineHooks;
 
-        public PipelineHooksAwarePersistanceDecorator(
+        public PipelineHooksAwarePersistenceDecorator(
             IPersistStreams original,
             IEnumerable<IPipelineHook> pipelineHooks,
             ILogger logger)
@@ -70,14 +69,6 @@ namespace OpenMedStack.NEventStore.Persistence
             ExecuteHooks(_original.GetFrom(bucketId, start, cancellationToken), cancellationToken);
 
         public IAsyncEnumerable<ICommit> GetFrom(
-            long checkpointToken = 0L,
-            CancellationToken cancellationToken = default)
-        {
-            var enumerable = _original.GetFrom(checkpointToken, cancellationToken);
-            return ExecuteHooks(enumerable, cancellationToken);
-        }
-
-        public IAsyncEnumerable<ICommit> GetFrom(
             string bucketId,
             long checkpointToken,
             CancellationToken cancellationToken)
@@ -93,33 +84,39 @@ namespace OpenMedStack.NEventStore.Persistence
             CancellationToken cancellationToken) =>
             ExecuteHooks(_original.GetFromTo(bucketId, start, end, cancellationToken), cancellationToken);
 
-        public async Task Purge()
+        public async Task<bool> Purge()
         {
-            await _original.Purge().ConfigureAwait(false);
+            var result = await _original.Purge().ConfigureAwait(false);
             foreach (var pipelineHook in _pipelineHooks)
             {
                 pipelineHook.OnPurge();
             }
+
+            return result;
         }
 
-        public async Task Purge(string bucketId)
+        public async Task<bool> Purge(string bucketId)
         {
-            await _original.Purge(bucketId).ConfigureAwait(false);
+            var result = await _original.Purge(bucketId).ConfigureAwait(false);
             foreach (var pipelineHook in _pipelineHooks)
             {
                 await pipelineHook.OnPurge(bucketId).ConfigureAwait(false);
             }
+
+            return result;
         }
 
-        public Task Drop() => _original.Drop();
+        public Task<bool> Drop() => _original.Drop();
 
-        public async Task DeleteStream(string bucketId, string streamId)
+        public async Task<bool> DeleteStream(string bucketId, string streamId)
         {
-            await _original.DeleteStream(bucketId, streamId).ConfigureAwait(false);
+            var result = await _original.DeleteStream(bucketId, streamId).ConfigureAwait(false);
             foreach (var pipelineHook in _pipelineHooks)
             {
                 await pipelineHook.OnDeleteStream(bucketId, streamId).ConfigureAwait(false);
             }
+
+            return result;
         }
 
         public bool IsDisposed => _original.IsDisposed;

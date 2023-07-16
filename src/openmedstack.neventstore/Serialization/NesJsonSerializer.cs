@@ -1,4 +1,9 @@
-using OpenMedStack.NEventStore.Abstractions;
+using System.Reflection;
+using System.Runtime.Serialization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using System.Threading;
 
 namespace OpenMedStack.NEventStore.Serialization
 {
@@ -8,25 +13,23 @@ namespace OpenMedStack.NEventStore.Serialization
     using System.Linq;
     using System.Text;
     using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
 
     internal class NesJsonSerializer : ISerialize
     {
         private readonly ILogger _logger;
         private readonly IEnumerable<Type> _knownTypes = new[] { typeof(List<EventMessage>), typeof(Dictionary<string, object>) };
 
-        private readonly JsonSerializer _typedSerializer = new()
+        private readonly JsonSerializerOptions _serializerOptions = new()
         {
-            TypeNameHandling = TypeNameHandling.All,
-            DefaultValueHandling = DefaultValueHandling.Ignore,
-            NullValueHandling = NullValueHandling.Ignore
-        };
-
-        private readonly JsonSerializer _untypedSerializer = new()
-        {
-            TypeNameHandling = TypeNameHandling.All,
-            DefaultValueHandling = DefaultValueHandling.Ignore,
-            NullValueHandling = NullValueHandling.Ignore
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = false,
+            IgnoreReadOnlyFields = true,
+            IgnoreReadOnlyProperties = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString |
+                JsonNumberHandling.AllowNamedFloatingPointLiterals,
+            AllowTrailingCommas = true,
+            TypeInfoResolver = DataContractResolver.Default
         };
 
         public NesJsonSerializer(ILogger logger, params Type[] knownTypes)
@@ -54,13 +57,27 @@ namespace OpenMedStack.NEventStore.Serialization
         {
             _logger.LogTrace(Messages.DeserializingStream, typeof(T));
             using var streamReader = new StreamReader(input, Encoding.UTF8);
-            return Deserialize<T>(new JsonTextReader(streamReader));
+            return JsonSerializer.Deserialize<T>(input, _serializerOptions);
         }
+    }
 
-        public virtual T? Deserialize<T>(byte[] input)
+    public class DataContractResolver : IJsonTypeInfoResolver
+    {
+        private static DataContractResolver? _defaultInstance;
+
+        public static DataContractResolver Default
         {
-            using var ms = new MemoryStream(input, false);
-            return Deserialize<T>(ms);
+            get
+            {
+                if (_defaultInstance is { } result)
+                {
+                    return result;
+                }
+
+                DataContractResolver newInstance = new();
+                DataContractResolver? originalInstance = Interlocked.CompareExchange(ref _defaultInstance, newInstance, comparand: null);
+                return originalInstance ?? newInstance;
+            }
         }
 
         protected virtual void Serialize<T>(JsonWriter writer, T graph)

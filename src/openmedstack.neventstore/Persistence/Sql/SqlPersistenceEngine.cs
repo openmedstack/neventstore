@@ -213,13 +213,13 @@ namespace OpenMedStack.NEventStore.Persistence.Sql
                 query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
                 query.AddParameter(_dialect.Threshold, maxThreshold);
                 await foreach (var record in query.ExecuteWithQuery(
-                                       statement,
-                                       //(q, s) => q.SetParameter(
-                                       //    _dialect.StreamId,
-                                       //    s == null ? null : _dialect.CoalesceParameterValue(s.StreamId()),
-                                       //    DbType.AnsiString),
-                                       token)
-                                   .ConfigureAwait(false))
+                        statement,
+                        //(q, s) => q.SetParameter(
+                        //    _dialect.StreamId,
+                        //    s == null ? null : _dialect.CoalesceParameterValue(s.StreamId()),
+                        //    DbType.AnsiString),
+                        token)
+                    .ConfigureAwait(false))
                 {
                     if (token.IsCancellationRequested)
                     {
@@ -270,54 +270,54 @@ namespace OpenMedStack.NEventStore.Persistence.Sql
             _logger.LogDebug(PersistenceMessages.AddingSnapshot, snapshot.StreamId, snapshot.StreamRevision);
             var streamId = _streamIdHasher.GetHash(snapshot.StreamId);
             return await ExecuteCommand(
-                           async (connection, cmd) =>
-                           {
-                               cmd.AddParameter(_dialect.BucketId, snapshot.BucketId, DbType.AnsiString);
-                               cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
-                               cmd.AddParameter(_dialect.StreamRevision, snapshot.StreamRevision);
-                               var payload = _serializer.Serialize(snapshot.Payload);
-                               _dialect.AddPayloadParamater(_connectionFactory, connection, cmd, payload);
-                               return await cmd.ExecuteWithoutExceptions(_dialect.AppendSnapshotToCommit)
-                                   .ConfigureAwait(false);
-                           })
-                       .ConfigureAwait(false)
-                   > 0;
+                        async (connection, cmd) =>
+                        {
+                            cmd.AddParameter(_dialect.BucketId, snapshot.BucketId, DbType.AnsiString);
+                            cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
+                            cmd.AddParameter(_dialect.StreamRevision, snapshot.StreamRevision);
+                            var payload = _serializer.Serialize(snapshot.Payload);
+                            _dialect.AddPayloadParamater(_connectionFactory, connection, cmd, payload);
+                            return await cmd.ExecuteWithoutExceptions(_dialect.AppendSnapshotToCommit)
+                                .ConfigureAwait(false);
+                        })
+                    .ConfigureAwait(false)
+              > 0;
         }
 
-        public virtual Task Purge()
+        public virtual async Task<bool> Purge()
         {
             _logger.LogWarning(PersistenceMessages.PurgingStorage);
-            return ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.PurgeStorage));
+            return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.PurgeStorage)) > 0;
         }
 
-        public Task Purge(string bucketId)
+        public async Task<bool> Purge(string bucketId)
         {
             _logger.LogWarning(PersistenceMessages.PurgingBucket, bucketId);
-            return ExecuteCommand(
+            return await ExecuteCommand(
                 cmd =>
                 {
                     cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
                     return cmd.ExecuteNonQuery(_dialect.PurgeBucket);
-                });
+                }) > 0;
         }
 
-        public Task Drop()
+        public async Task<bool> Drop()
         {
             _logger.LogWarning(PersistenceMessages.DroppingTables);
-            return ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.Drop));
+            return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.Drop)) > 0;
         }
 
-        public Task DeleteStream(string bucketId, string streamId)
+        public async Task<bool> DeleteStream(string bucketId, string streamId)
         {
             _logger.LogWarning(PersistenceMessages.DeletingStream, streamId, bucketId);
             streamId = _streamIdHasher.GetHash(streamId);
-            return ExecuteCommand(
+            return await ExecuteCommand(
                 cmd =>
                 {
                     cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                     return cmd.ExecuteNonQuery(_dialect.DeleteStream);
-                });
+                }) > 0;
         }
 
         public IAsyncEnumerable<ICommit> GetFrom(
