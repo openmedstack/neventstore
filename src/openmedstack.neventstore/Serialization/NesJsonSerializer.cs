@@ -4,6 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
+using Newtonsoft.Json;
+using OpenMedStack.NEventStore.Abstractions;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace OpenMedStack.NEventStore.Serialization
 {
@@ -50,7 +53,7 @@ namespace OpenMedStack.NEventStore.Serialization
         {
             _logger.LogTrace(Messages.SerializingGraph, typeof(T));
             using var streamWriter = new StreamWriter(output, Encoding.UTF8);
-            Serialize(new JsonTextWriter(streamWriter), graph);
+            JsonSerializer.Serialize(output, graph, _serializerOptions);
         }
 
         public virtual T? Deserialize<T>(Stream input)
@@ -58,6 +61,12 @@ namespace OpenMedStack.NEventStore.Serialization
             _logger.LogTrace(Messages.DeserializingStream, typeof(T));
             using var streamReader = new StreamReader(input, Encoding.UTF8);
             return JsonSerializer.Deserialize<T>(input, _serializerOptions);
+        }
+
+        public T? Deserialize<T>(byte[] input)
+        {
+            using var stream = new MemoryStream(input);
+            return Deserialize<T>(stream);
         }
     }
 
@@ -80,35 +89,135 @@ namespace OpenMedStack.NEventStore.Serialization
             }
         }
 
-        protected virtual void Serialize<T>(JsonWriter writer, T graph)
+        private static bool IsNullOrDefault(object? obj)
         {
-            using (writer)
+            if (obj is null)
             {
-                GetSerializer(typeof(T)).Serialize(writer, graph);
+                return true;
+            }
+
+            Type type = obj.GetType();
+
+            return type.IsValueType && FormatterServices.GetUninitializedObject(type).Equals(obj);
+        }
+
+        private static IEnumerable<MemberInfo> EnumerateFieldsAndProperties(Type type, BindingFlags bindingFlags)
+        {
+            foreach (FieldInfo fieldInfo in type.GetFields(bindingFlags))
+            {
+                yield return fieldInfo;
+            }
+
+            foreach (PropertyInfo propertyInfo in type.GetProperties(bindingFlags))
+            {
+                yield return propertyInfo;
             }
         }
 
-        protected virtual T? Deserialize<T>(JsonReader reader)
+        private static IEnumerable<JsonPropertyInfo> CreateDataMembers(JsonTypeInfo jsonTypeInfo)
         {
-            var type = typeof(T);
+            bool isDataContract = jsonTypeInfo.Type.GetCustomAttribute<DataContractAttribute>() != null;
+            BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public;
 
-            using (reader)
+            if (isDataContract)
             {
-                var item = GetSerializer(type).Deserialize(reader, type);
-                return item == null ? default : (T) item;
+                bindingFlags |= BindingFlags.NonPublic;
+            }
+
+            foreach (MemberInfo memberInfo in EnumerateFieldsAndProperties(jsonTypeInfo.Type, bindingFlags))
+            {
+                DataMemberAttribute? attr = null;
+                if (isDataContract)
+                {
+                    attr = memberInfo.GetCustomAttribute<DataMemberAttribute>();
+                    if (attr == null)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    if (memberInfo.GetCustomAttribute<IgnoreDataMemberAttribute>() != null)
+                    {
+                        continue;
+                    }
+                }
+
+                if (memberInfo == null)
+                {
+                    continue;
+                }
+
+                Func<object, object?>? getValue = null;
+                Action<object, object?>? setValue = null;
+                Type? propertyType = null;
+                string? propertyName = null;
+
+                if (memberInfo.MemberType == MemberTypes.Field && memberInfo is FieldInfo fieldInfo)
+                {
+                    propertyName = attr?.Name ?? fieldInfo.Name;
+                    propertyType = fieldInfo.FieldType;
+                    getValue = fieldInfo.GetValue;
+                    setValue = (obj, value) => fieldInfo.SetValue(obj, value);
+                }
+                else
+                if (memberInfo.MemberType == MemberTypes.Property && memberInfo is PropertyInfo propertyInfo)
+                {
+                    propertyName = attr?.Name ?? propertyInfo.Name;
+                    propertyType = propertyInfo.PropertyType;
+                    if (propertyInfo.CanRead)
+                    {
+                        getValue = propertyInfo.GetValue;
+                    }
+                    if (propertyInfo.CanWrite)
+                    {
+                        setValue = (obj, value) => propertyInfo.SetValue(obj, value);
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+
+                JsonPropertyInfo jsonPropertyInfo = jsonTypeInfo.CreateJsonPropertyInfo(propertyType, propertyName);
+                if (jsonPropertyInfo == null)
+                {
+                    continue;
+                }
+
+                jsonPropertyInfo.Get = getValue;
+                jsonPropertyInfo.Set = setValue;
+
+                if (attr != null)
+                {
+                    jsonPropertyInfo.Order = attr.Order;
+                    jsonPropertyInfo.ShouldSerialize = !attr.EmitDefaultValue ? ((_, obj) => !IsNullOrDefault(obj)) : null;
+                }
+
+                yield return jsonPropertyInfo;
             }
         }
 
-        protected virtual JsonSerializer GetSerializer(Type typeToSerialize)
+        public static JsonTypeInfo GetTypeInfo(JsonTypeInfo jsonTypeInfo)
         {
-            if (_knownTypes.Contains(typeToSerialize))
+            if (jsonTypeInfo.Kind == JsonTypeInfoKind.Object)
             {
-                _logger.LogTrace(SerializerMessages.UsingUntypedSerializer, typeToSerialize);
-                return _untypedSerializer;
+                jsonTypeInfo.CreateObject = () => Activator.CreateInstance(jsonTypeInfo.Type)!;
+
+                foreach (var jsonPropertyInfo in CreateDataMembers(jsonTypeInfo).OrderBy((x) => x.Order))
+                {
+                    jsonTypeInfo.Properties.Add(jsonPropertyInfo);
+                }
             }
 
-            _logger.LogTrace(SerializerMessages.UsingTypedSerializer, typeToSerialize);
-            return _typedSerializer;
+            return jsonTypeInfo;
+        }
+
+        public JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            JsonTypeInfo jsonTypeInfo = JsonTypeInfo.CreateJsonTypeInfo(type, options);
+
+            return GetTypeInfo(jsonTypeInfo);
         }
     }
 }

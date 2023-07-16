@@ -614,7 +614,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            var enumerable = Persistence.GetFrom(CheckPoint);
+            var enumerable = Persistence.GetFrom(Bucket.Default, CheckPoint, CancellationToken.None);
             _loaded = (await enumerable.ToList()).Select(c => c.CommitId).ToList();
         }
 
@@ -905,7 +905,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
         protected override async Task Because()
         {
-            var enumerable = Persistence.GetFromStart();
+            var enumerable = Persistence.GetFromStart("a");
             _commits = await enumerable.ToArray().ConfigureAwait(false);
         }
 
@@ -991,7 +991,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
 
             var enumerable = Persistence.GetFrom(DateTimeOffset.MinValue);
             _ = await enumerable.ToArray().ConfigureAwait(false);
-            var asyncEnumerable = Persistence.GetFrom();
+            var asyncEnumerable = Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None);
             _commits = await asyncEnumerable.ToArray().ConfigureAwait(false);
         }
 

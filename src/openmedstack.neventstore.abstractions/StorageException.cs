@@ -1,7 +1,6 @@
-using System;
 using System.Runtime.Serialization;
 
-namespace OpenMedStack.NEventStore.Persistence
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Represents a general failure of the storage engine or persistence infrastructure.

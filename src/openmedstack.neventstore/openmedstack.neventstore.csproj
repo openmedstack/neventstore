@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="..\..\shared.proj"/>
 	<PropertyGroup>
-		<TargetFrameworks>net6.0</TargetFrameworks>
+		<TargetFramework>net7.0</TargetFramework>
 		<RootNamespace>OpenMedStack.NEventStore</RootNamespace>
 		<AssemblyName>openmedstack.neventstore</AssemblyName>
 		<PackageId>openmedstack.neventstore</PackageId>
@@ -9,7 +10,6 @@
 		<Description>NEventStore for OpenMedStack based applications.</Description>
 		<langVersion>latest</langVersion>
 	</PropertyGroup>
-	<Import Project="..\..\shared.proj" />
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<DefineConstants>TRACE;DEBUG;</DefineConstants>
 	</PropertyGroup>

@@ -1,7 +1,6 @@
-using System;
 using System.Runtime.Serialization;
 
-namespace OpenMedStack.NEventStore.Persistence
+namespace OpenMedStack.NEventStore.Abstractions
 {
     /// <summary>
     ///     Indicates that the underlying persistence medium is unavailable or offline.

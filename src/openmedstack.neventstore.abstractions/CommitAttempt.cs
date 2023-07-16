@@ -40,9 +40,7 @@ namespace OpenMedStack.NEventStore.Abstractions
             CommitSequence = commitSequence;
             CommitStamp = commitStamp;
             Headers = headers ?? new Dictionary<string, object>();
-            Events = events == null ?
-                new ReadOnlyCollection<EventMessage>(new List<EventMessage>()) :
-                new ReadOnlyCollection<EventMessage>(events.ToList());
+            Events = new ReadOnlyCollection<EventMessage>(events.ToArray());
         }
 
         /// <summary>

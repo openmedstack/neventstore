@@ -33,7 +33,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.StartFrom();
+            Sut.StartFromBucket(Bucket.Default);
 
             return Task.CompletedTask;
         }
@@ -65,7 +65,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.StartFrom();
+            Sut.StartFromBucket(Bucket.Default);
             for (var i = 0; i < 15; i++)
             {
                 StoreEvents.Advanced.CommitSingle();
@@ -101,7 +101,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.StartFrom();
+            Sut.StartFromBucket(Bucket.Default);
 
             return Task.CompletedTask;
         }
@@ -138,7 +138,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.StartFrom();
+            Sut.StartFromBucket(Bucket.Default);
 
             return Task.CompletedTask;
         }
@@ -174,7 +174,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.StartFrom();
+            Sut.StartFromBucket(Bucket.Default);
 
             return Task.CompletedTask;
         }
@@ -209,7 +209,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         protected override Task Because()
         {
-            Sut.ConfigurePollingFunction();
+            Sut.ConfigurePollingFunction(Bucket.Default);
             Sut.PollNow();
 
             return Task.CompletedTask;

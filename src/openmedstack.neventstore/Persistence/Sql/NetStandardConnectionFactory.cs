@@ -1,4 +1,6 @@
-﻿namespace OpenMedStack.NEventStore.Persistence.Sql
+﻿using OpenMedStack.NEventStore.Abstractions;
+
+namespace OpenMedStack.NEventStore.Persistence.Sql
 {
     using System;
     using System.Data;

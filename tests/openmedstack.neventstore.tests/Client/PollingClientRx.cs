@@ -54,7 +54,7 @@ namespace OpenMedStack.NEventStore.Tests.Client
 
         internal void Start()
         {
-            _pollingClient2.StartFrom(_checkpointToObserveFrom);
+            _pollingClient2.StartFromBucket(Bucket.Default, _checkpointToObserveFrom);
         }
 
         internal void Dispose()

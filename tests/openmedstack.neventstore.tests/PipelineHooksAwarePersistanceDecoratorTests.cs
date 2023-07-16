@@ -274,7 +274,7 @@ namespace OpenMedStack.NEventStore.Tests
                 A.CallTo(() => _hook2.Select(_commit)).Returns(_commit);
                 PipelineHooks.Add(_hook2);
 
-                A.CallTo(() => Persistence.GetFrom(0, A.Dummy<CancellationToken>()))
+                A.CallTo(() => Persistence.GetFrom(Bucket.Default, 0, A.Dummy<CancellationToken>()))
                     .Returns(new List<ICommit> { _commit }.ToAsyncEnumerable());
 
                 return Task.CompletedTask;
@@ -282,7 +282,7 @@ namespace OpenMedStack.NEventStore.Tests
 
             protected override async Task Because()
             {
-                _ = await Decorator.GetFrom(0, A.Dummy<CancellationToken>())
+                _ = await Decorator.GetFrom(Bucket.Default, 0, A.Dummy<CancellationToken>())
                     .ToList(A.Dummy<CancellationToken>())
                     .ConfigureAwait(false);
             }
@@ -290,7 +290,7 @@ namespace OpenMedStack.NEventStore.Tests
             [Fact]
             public void should_call_the_underlying_persistence_to_get_events()
             {
-                A.CallTo(() => Persistence.GetFrom(0, CancellationToken.None)).MustHaveHappened(1, Times.Exactly);
+                A.CallTo(() => Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None)).MustHaveHappened(1, Times.Exactly);
             }
 
             [Fact]
@@ -369,7 +369,7 @@ namespace OpenMedStack.NEventStore.Tests
 
         public abstract class UsingUnderlyingPersistence : SpecificationBase
         {
-            private PipelineHooksAwarePersistanceDecorator? _decorator;
+            private PipelineHooksAwarePersistenceDecorator? _decorator;
             protected readonly IPersistStreams Persistence = A.Fake<IPersistStreams>();
             protected readonly List<IPipelineHook> PipelineHooks = new();
             protected readonly string UnderlyingStreamId = Guid.NewGuid().ToString();
@@ -379,11 +379,11 @@ namespace OpenMedStack.NEventStore.Tests
                 OnStart().Wait();
             }
 
-            public PipelineHooksAwarePersistanceDecorator Decorator
+            public PipelineHooksAwarePersistenceDecorator Decorator
             {
                 get
                 {
-                    return _decorator ??= new PipelineHooksAwarePersistanceDecorator(
+                    return _decorator ??= new PipelineHooksAwarePersistenceDecorator(
                         Persistence,
                         PipelineHooks.Select(x => x),
                         NullLogger.Instance);
