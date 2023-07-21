@@ -1,267 +1,266 @@
 ﻿using OpenMedStack.NEventStore.Abstractions;
 
-namespace OpenMedStack.NEventStore.Tests.Client
+namespace OpenMedStack.NEventStore.Tests.Client;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using NEventStore;
+using NEventStore.Persistence.AcceptanceTests;
+using NEventStore.Persistence.AcceptanceTests.BDD;
+using PollingClient;
+using Xunit;
+
+public class BaseHandlingCommittedEvents : UsingPollingClient2
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging.Abstractions;
-    using NEventStore;
-    using NEventStore.Persistence.AcceptanceTests;
-    using NEventStore.Persistence.AcceptanceTests.BDD;
-    using PollingClient;
-    using Xunit;
+    private readonly List<ICommit> _commits = new();
 
-    public class BaseHandlingCommittedEvents : UsingPollingClient2
+    protected override Task Context()
     {
-        private readonly List<ICommit> _commits = new();
-
-        protected override Task Context()
+        base.Context();
+        HandleFunction = c =>
         {
-            base.Context();
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
-            };
-            StoreEvents.Advanced.CommitSingle();
+            _commits.Add(c);
+            return Task.FromResult(HandlingResult.MoveToNext);
+        };
+        StoreEvents.Advanced.CommitSingle();
 
-            return Task.CompletedTask;
-        }
-
-        protected override Task Because()
-        {
-            Sut.StartFromBucket(Bucket.Default);
-
-            return Task.CompletedTask;
-        }
-
-        [Fact]
-        public void commits_are_correctly_dispatched()
-        {
-            WaitForCondition(() => _commits.Count >= 1);
-            Assert.Single(_commits);
-        }
+        return Task.CompletedTask;
     }
 
-    public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
+    protected override Task Because()
     {
-        private readonly List<ICommit> _commits = new();
+        Sut.StartFromBucket(Bucket.Default);
 
-        protected override Task Context()
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void commits_are_correctly_dispatched()
+    {
+        WaitForCondition(() => _commits.Count >= 1);
+        Assert.Single(_commits);
+    }
+}
+
+public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
+{
+    private readonly List<ICommit> _commits = new();
+
+    protected override Task Context()
+    {
+        base.Context();
+        HandleFunction = c =>
         {
-            base.Context();
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
-            };
-            StoreEvents.Advanced.CommitSingle();
+            _commits.Add(c);
+            return Task.FromResult(HandlingResult.MoveToNext);
+        };
+        StoreEvents.Advanced.CommitSingle();
 
-            return Task.CompletedTask;
+        return Task.CompletedTask;
+    }
+
+    protected override Task Because()
+    {
+        Sut.StartFromBucket(Bucket.Default);
+        for (var i = 0; i < 15; i++)
+        {
+            StoreEvents.Advanced.CommitSingle();
         }
 
-        protected override Task Because()
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void commits_are_correctly_dispatched()
+    {
+        WaitForCondition(() => _commits.Count >= 16);
+        Assert.Equal(16, _commits.Count);
+    }
+}
+
+public class VerifyStoppingCommitPollingClient : UsingPollingClient2
+{
+    private readonly List<ICommit> _commits = new();
+
+    protected override async Task Context()
+    {
+        await base.Context().ConfigureAwait(false);
+        HandleFunction = c =>
         {
-            Sut.StartFromBucket(Bucket.Default);
-            for (var i = 0; i < 15; i++)
+            _commits.Add(c);
+            return Task.FromResult(HandlingResult.Stop);
+        };
+        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
+        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
+        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
+    }
+
+    protected override Task Because()
+    {
+        Sut.StartFromBucket(Bucket.Default);
+
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void commits_are_correctly_dispatched()
+    {
+        WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 1);
+        Assert.Single(_commits);
+    }
+}
+
+public class VerifyRetryCommitPollingClient : UsingPollingClient2
+{
+    private readonly List<ICommit> _commits = new();
+
+    protected override Task Context()
+    {
+        base.Context();
+        HandleFunction = c =>
+        {
+            _commits.Add(c);
+            if (_commits.Count < 3)
             {
-                StoreEvents.Advanced.CommitSingle();
+                return Task.FromResult(HandlingResult.Retry);
             }
 
-            return Task.CompletedTask;
-        }
+            return Task.FromResult(HandlingResult.MoveToNext);
+        };
+        StoreEvents.Advanced.CommitSingle();
 
-        [Fact]
-        public void commits_are_correctly_dispatched()
-        {
-            WaitForCondition(() => _commits.Count >= 16);
-            Assert.Equal(16, _commits.Count);
-        }
+        return Task.CompletedTask;
     }
 
-    public class VerifyStoppingCommitPollingClient : UsingPollingClient2
+    protected override Task Because()
     {
-        private readonly List<ICommit> _commits = new();
+        Sut.StartFromBucket(Bucket.Default);
 
-        protected override async Task Context()
-        {
-            await base.Context().ConfigureAwait(false);
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                return Task.FromResult(PollingClient.HandlingResult.Stop);
-            };
-            await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
-            await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
-            await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
-        }
-
-        protected override Task Because()
-        {
-            Sut.StartFromBucket(Bucket.Default);
-
-            return Task.CompletedTask;
-        }
-
-        [Fact]
-        public void commits_are_correctly_dispatched()
-        {
-            WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 1);
-            Assert.Single(_commits);
-        }
+        return Task.CompletedTask;
     }
 
-    public class VerifyRetryCommitPollingClient : UsingPollingClient2
+    [Fact]
+    public void commits_are_retried()
     {
-        private readonly List<ICommit> _commits = new();
+        WaitForCondition(() => _commits.Count >= 3, timeoutInSeconds: 1);
+        Assert.Equal(3, _commits.Count);
+        Assert.All(_commits, c => Assert.Equal(1, c.CheckpointToken));
+    }
+}
 
-        protected override Task Context()
+public class VerifyRetryThenMoveNext : UsingPollingClient2
+{
+    private readonly List<ICommit> _commits = new();
+
+    protected override Task Context()
+    {
+        base.Context();
+        HandleFunction = c =>
         {
-            base.Context();
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                if (_commits.Count < 3)
-                {
-                    return Task.FromResult(PollingClient.HandlingResult.Retry);
-                }
+            _commits.Add(c);
+            return Task.FromResult(_commits.Count < 3 && c.CheckpointToken == 1
+                ? HandlingResult.Retry
+                : HandlingResult.MoveToNext);
+        };
+        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.Advanced.CommitSingle();
 
-                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
-            };
-            StoreEvents.Advanced.CommitSingle();
-
-            return Task.CompletedTask;
-        }
-
-        protected override Task Because()
-        {
-            Sut.StartFromBucket(Bucket.Default);
-
-            return Task.CompletedTask;
-        }
-
-        [Fact]
-        public void commits_are_retried()
-        {
-            WaitForCondition(() => _commits.Count >= 3, timeoutInSeconds: 1);
-            Assert.Equal(3, _commits.Count);
-            Assert.All(_commits, c => Assert.Equal(1, c.CheckpointToken));
-        }
+        return Task.CompletedTask;
     }
 
-    public class VerifyRetryThenMoveNext : UsingPollingClient2
+    protected override Task Because()
     {
-        private readonly List<ICommit> _commits = new();
+        Sut.StartFromBucket(Bucket.Default);
 
-        protected override Task Context()
-        {
-            base.Context();
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                return Task.FromResult(_commits.Count < 3 && c.CheckpointToken == 1
-                    ? PollingClient.HandlingResult.Retry
-                    : PollingClient.HandlingResult.MoveToNext);
-            };
-            StoreEvents.Advanced.CommitSingle();
-            StoreEvents.Advanced.CommitSingle();
-
-            return Task.CompletedTask;
-        }
-
-        protected override Task Because()
-        {
-            Sut.StartFromBucket(Bucket.Default);
-
-            return Task.CompletedTask;
-        }
-
-        [Fact]
-        public void commits_are_retried_then_move_next()
-        {
-            WaitForCondition(() => _commits.Count >= 4, timeoutInSeconds: 1);
-            Assert.Equal(4, _commits.Count);
-            Assert.Equal(new[] { 1L, 1L, 1, 2 }, _commits
-                .Select(c => c.CheckpointToken));
-        }
+        return Task.CompletedTask;
     }
 
-    public class VerifyManualPlling : UsingPollingClient2
+    [Fact]
+    public void commits_are_retried_then_move_next()
     {
-        private readonly List<ICommit> _commits = new();
+        WaitForCondition(() => _commits.Count >= 4, timeoutInSeconds: 1);
+        Assert.Equal(4, _commits.Count);
+        Assert.Equal(new[] { 1L, 1L, 1, 2 }, _commits
+            .Select(c => c.CheckpointToken));
+    }
+}
 
-        protected override Task Context()
+public class VerifyManualPlling : UsingPollingClient2
+{
+    private readonly List<ICommit> _commits = new();
+
+    protected override Task Context()
+    {
+        base.Context();
+        HandleFunction = c =>
         {
-            base.Context();
-            HandleFunction = c =>
-            {
-                _commits.Add(c);
-                return Task.FromResult(PollingClient.HandlingResult.MoveToNext);
-            };
-            StoreEvents.Advanced.CommitSingle();
-            StoreEvents.Advanced.CommitSingle();
+            _commits.Add(c);
+            return Task.FromResult(HandlingResult.MoveToNext);
+        };
+        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.Advanced.CommitSingle();
 
-            return Task.CompletedTask;
-        }
-
-        protected override Task Because()
-        {
-            Sut.ConfigurePollingFunction(Bucket.Default);
-            Sut.PollNow();
-
-            return Task.CompletedTask;
-        }
-
-        [Fact]
-        public void commits_are_retried_then_move_next()
-        {
-            WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 3);
-            Assert.Equal(2, _commits.Count);
-            Assert.Equal(new[] { 1L, 2L }, _commits
-                .Select(c => c.CheckpointToken));
-        }
+        return Task.CompletedTask;
     }
 
-    public abstract class UsingPollingClient2 : SpecificationBase
+    protected override Task Because()
     {
-        private readonly TimeSpan _pollingInterval = TimeSpan.FromMilliseconds(100);
+        Sut.ConfigurePollingFunction(Bucket.Default);
+        Sut.PollNow();
 
-        public UsingPollingClient2()
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void commits_are_retried_then_move_next()
+    {
+        WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 3);
+        Assert.Equal(2, _commits.Count);
+        Assert.Equal(new[] { 1L, 2L }, _commits
+            .Select(c => c.CheckpointToken));
+    }
+}
+
+public abstract class UsingPollingClient2 : SpecificationBase
+{
+    private readonly TimeSpan _pollingInterval = TimeSpan.FromMilliseconds(100);
+
+    public UsingPollingClient2()
+    {
+        OnStart().Wait();
+    }
+
+    protected PollingClient Sut { get; private set; } = null!;
+
+    protected IStoreEvents StoreEvents { get; private set; } = null!;
+
+    protected Func<ICommit, Task<HandlingResult>> HandleFunction = null!;
+
+    protected override Task Context()
+    {
+        HandleFunction = _ => Task.FromResult(HandlingResult.MoveToNext);
+        StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
+        Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
+            _pollingInterval);
+        return Task.CompletedTask;
+    }
+
+    protected override void Cleanup()
+    {
+        StoreEvents.Dispose();
+        Sut.Dispose();
+    }
+
+    protected static void WaitForCondition(Func<bool> predicate, int timeoutInSeconds = 4)
+    {
+        var startTest = DateTime.Now;
+        while (!predicate() && DateTime.Now.Subtract(startTest).TotalSeconds < timeoutInSeconds)
         {
-            OnStart().Wait();
-        }
-
-        protected PollingClient Sut { get; private set; } = null!;
-
-        protected IStoreEvents StoreEvents { get; private set; } = null!;
-
-        protected Func<ICommit, Task<PollingClient.HandlingResult>> HandleFunction = null!;
-
-        protected override Task Context()
-        {
-            HandleFunction = _ => Task.FromResult(PollingClient.HandlingResult.MoveToNext);
-            StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
-            Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
-                _pollingInterval);
-            return Task.CompletedTask;
-        }
-
-        protected override void Cleanup()
-        {
-            StoreEvents.Dispose();
-            Sut.Dispose();
-        }
-
-        protected static void WaitForCondition(Func<bool> predicate, int timeoutInSeconds = 4)
-        {
-            var startTest = DateTime.Now;
-            while (!predicate() && DateTime.Now.Subtract(startTest).TotalSeconds < timeoutInSeconds)
-            {
-                Thread.Sleep(100);
-            }
+            Thread.Sleep(100);
         }
     }
 }

@@ -1,16 +1,15 @@
-namespace OpenMedStack.NEventStore.Persistence.Sql
+namespace OpenMedStack.NEventStore.Persistence.Sql;
+
+using System;
+
+public class DelegateStreamIdHasher : IStreamIdHasher
 {
-    using System;
+    private readonly Func<string, string> _getHash;
 
-    public class DelegateStreamIdHasher : IStreamIdHasher
+    public DelegateStreamIdHasher(Func<string, string> getHash)
     {
-        private readonly Func<string, string> _getHash;
-
-        public DelegateStreamIdHasher(Func<string, string> getHash)
-        {
-            _getHash = getHash ?? throw new ArgumentNullException(nameof(getHash));
-        }
-
-        public string GetHash(string streamId) => _getHash(streamId);
+        _getHash = getHash ?? throw new ArgumentNullException(nameof(getHash));
     }
+
+    public string GetHash(string streamId) => _getHash(streamId);
 }

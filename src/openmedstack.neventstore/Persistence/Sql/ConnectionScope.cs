@@ -1,57 +1,56 @@
-namespace OpenMedStack.NEventStore.Persistence.Sql
+namespace OpenMedStack.NEventStore.Persistence.Sql;
+
+using System;
+using System.Data;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
+
+public class ConnectionScope : ThreadScope<IDbConnection>, IDbConnection
 {
-    using System;
-    using System.Data;
-    using System.Diagnostics.CodeAnalysis;
-    using Microsoft.Extensions.Logging;
+    public ConnectionScope(string connectionName, Func<IDbConnection> factory, ILogger logger)
+        : base(connectionName, factory, logger)
+    { }
 
-    public class ConnectionScope : ThreadScope<IDbConnection>, IDbConnection
+    IDbTransaction IDbConnection.BeginTransaction() => Current.BeginTransaction();
+
+    IDbTransaction IDbConnection.BeginTransaction(IsolationLevel il) => Current.BeginTransaction(il);
+
+    void IDbConnection.Close()
     {
-        public ConnectionScope(string connectionName, Func<IDbConnection> factory, ILogger logger)
-            : base(connectionName, factory, logger)
-        { }
+        // no-op--let Dispose do the real work.
+    }
 
-        IDbTransaction IDbConnection.BeginTransaction() => Current.BeginTransaction();
+    void IDbConnection.ChangeDatabase(string databaseName)
+    {
+        Current.ChangeDatabase(databaseName);
+    }
 
-        IDbTransaction IDbConnection.BeginTransaction(IsolationLevel il) => Current.BeginTransaction(il);
+    IDbCommand IDbConnection.CreateCommand() => Current.CreateCommand();
 
-        void IDbConnection.Close()
-        {
-            // no-op--let Dispose do the real work.
-        }
+    void IDbConnection.Open()
+    {
+        Current.Open();
+    }
 
-        void IDbConnection.ChangeDatabase(string databaseName)
-        {
-            Current.ChangeDatabase(databaseName);
-        }
-
-        IDbCommand IDbConnection.CreateCommand() => Current.CreateCommand();
-
-        void IDbConnection.Open()
-        {
-            Current.Open();
-        }
-
-        [AllowNull]
-        string IDbConnection.ConnectionString
-        {
-            get => Current.ConnectionString;
-            set => Current.ConnectionString = value;
-        }
+    [AllowNull]
+    string IDbConnection.ConnectionString
+    {
+        get => Current.ConnectionString;
+        set => Current.ConnectionString = value;
+    }
         
-        int IDbConnection.ConnectionTimeout => Current.ConnectionTimeout;
+    int IDbConnection.ConnectionTimeout => Current.ConnectionTimeout;
 
-        string IDbConnection.Database => Current.Database;
+    string IDbConnection.Database => Current.Database;
 
-        ConnectionState IDbConnection.State => Current.State;
+    ConnectionState IDbConnection.State => Current.State;
 
-        protected override void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
+    {
+        if (Current.State != ConnectionState.Closed && Current?.State != ConnectionState.Broken)
         {
-            if (Current.State != ConnectionState.Closed && Current?.State != ConnectionState.Broken)
-            {
-                Current?.Close();
-            }
-            base.Dispose(disposing);
+            Current?.Close();
         }
+        base.Dispose(disposing);
     }
 }

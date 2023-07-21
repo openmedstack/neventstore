@@ -1,7 +1,6 @@
-namespace OpenMedStack.NEventStore.Tests
+namespace OpenMedStack.NEventStore.Tests;
+
+internal static class IntExtensions
 {
-    internal static class IntExtensions
-    {
-        public static int Events(this int events) => events;
-    }
+    public static int Events(this int events) => events;
 }

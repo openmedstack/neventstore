@@ -1,15 +1,14 @@
 ﻿using OpenMedStack.NEventStore.Abstractions;
 
-namespace OpenMedStack.NEventStore.Serialization
+namespace OpenMedStack.NEventStore.Serialization;
+
+using NEventStore;
+
+public static class JsonSerializationWireupExtension
 {
-    using NEventStore;
+    public static Wireup UsingCustomSerialization(this PersistenceWireup wireup, ISerialize serializer) =>
+        wireup.With(serializer);
 
-    public static class JsonSerializationWireupExtension
-    {
-        public static Wireup UsingCustomSerialization(this PersistenceWireup wireup, ISerialize serializer) =>
-            wireup.With(serializer);
-
-        public static Wireup UsingJsonSerialization(this PersistenceWireup wireup) =>
-            wireup.With<ISerialize>(new NesJsonSerializer(wireup.Logger));
-    }
+    public static Wireup UsingJsonSerialization(this PersistenceWireup wireup) =>
+        wireup.With<ISerialize>(new NesJsonSerializer(wireup.Logger));
 }

@@ -1,12 +1,11 @@
-namespace OpenMedStack.NEventStore.Persistence.Sql
+namespace OpenMedStack.NEventStore.Persistence.Sql;
+
+using System;
+using System.Data;
+
+public interface IConnectionFactory
 {
-    using System;
-    using System.Data;
+    IDbConnection Open();
 
-    public interface IConnectionFactory
-    {
-        IDbConnection Open();
-
-        Type GetDbProviderFactoryType();
-    }
+    Type GetDbProviderFactoryType();
 }

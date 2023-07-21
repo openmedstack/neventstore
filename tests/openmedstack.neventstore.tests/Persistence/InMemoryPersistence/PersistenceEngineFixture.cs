@@ -2,30 +2,29 @@
 
 using OpenMedStack.NEventStore.Abstractions;
 
-namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
+namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
+
+using System;
+
+public abstract class PersistenceEngineFixtureBase : IDisposable
 {
-    using System;
+    protected Func<int, IPersistStreams> CreatePersistence = null!;
 
-    public abstract class PersistenceEngineFixtureBase : IDisposable
+    public void Initialize(int pageSize)
     {
-        protected Func<int, IPersistStreams> CreatePersistence = null!;
+        Persistence = CreatePersistence(pageSize);
+        Persistence.Initialize();
+    }
 
-        public void Initialize(int pageSize)
+    public IPersistStreams Persistence { get; private set; } = null!;
+
+    public void Dispose()
+    {
+        if (Persistence != null && !Persistence.IsDisposed)
         {
-            Persistence = CreatePersistence(pageSize);
-            Persistence.Initialize();
+            Persistence.Drop();
+            Persistence.Dispose();
         }
-
-        public IPersistStreams Persistence { get; private set; } = null!;
-
-        public void Dispose()
-        {
-            if (Persistence != null && !Persistence.IsDisposed)
-            {
-                Persistence.Drop();
-                Persistence.Dispose();
-            }
-            GC.SuppressFinalize(this);
-        }
+        GC.SuppressFinalize(this);
     }
 }

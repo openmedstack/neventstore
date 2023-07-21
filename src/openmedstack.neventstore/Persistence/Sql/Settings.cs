@@ -1,10 +1,9 @@
-﻿namespace OpenMedStack.NEventStore.Persistence.Sql
+﻿namespace OpenMedStack.NEventStore.Persistence.Sql;
+
+/// <summary>
+/// keeps global driver settings
+/// </summary>
+internal static class Settings
 {
-    /// <summary>
-    /// keeps global driver settings
-    /// </summary>
-    internal static class Settings
-    {
-        public static int CommandTimeout;
-    }
+    public static int CommandTimeout;
 }

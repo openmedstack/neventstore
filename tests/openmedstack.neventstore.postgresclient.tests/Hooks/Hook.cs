@@ -1,7 +1,6 @@
-namespace openmedstack.neventstore.postgresclient.tests.Hooks
+namespace openmedstack.neventstore.postgresclient.tests.Hooks;
+
+[Binding]
+public class Hooks
 {
-    [Binding]
-    public class Hooks
-    {
-    }
 }

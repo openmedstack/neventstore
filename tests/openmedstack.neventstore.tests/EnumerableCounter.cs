@@ -1,26 +1,25 @@
-namespace OpenMedStack.NEventStore.Tests
+namespace OpenMedStack.NEventStore.Tests;
+
+using System.Collections;
+using System.Collections.Generic;
+
+internal class EnumerableCounter<T> : IEnumerable<T>
 {
-    using System.Collections;
-    using System.Collections.Generic;
+    private readonly IEnumerable<T> _enumerable;
 
-    internal class EnumerableCounter<T> : IEnumerable<T>
+    public EnumerableCounter(IEnumerable<T> enumerable)
     {
-        private readonly IEnumerable<T> _enumerable;
-
-        public EnumerableCounter(IEnumerable<T> enumerable)
-        {
-            _enumerable = enumerable;
-            GetEnumeratorCallCount = 0;
-        }
-
-        public int GetEnumeratorCallCount { get; private set; }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            GetEnumeratorCallCount++;
-            return _enumerable.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        _enumerable = enumerable;
+        GetEnumeratorCallCount = 0;
     }
+
+    public int GetEnumeratorCallCount { get; private set; }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        GetEnumeratorCallCount++;
+        return _enumerable.GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

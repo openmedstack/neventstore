@@ -1,36 +1,35 @@
-﻿namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests
+﻿namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
+
+using System;
+using System.Threading.Tasks;
+
+public static class Catch
 {
-    using System;
-    using System.Threading.Tasks;
-
-    public static class Catch
+    public static Exception? Exception(Action action)
     {
-        public static Exception? Exception(Action action)
+        try
         {
-            try
-            {
-                action();
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
-
-            return null;
+            action();
+        }
+        catch (Exception ex)
+        {
+            return ex;
         }
 
-        public static async Task<Exception?> Exception(Func<Task> action)
-        {
-            try
-            {
-                await action().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+        return null;
+    }
 
-            return null;
+    public static async Task<Exception?> Exception(Func<Task> action)
+    {
+        try
+        {
+            await action().ConfigureAwait(false);
         }
+        catch (Exception ex)
+        {
+            return ex;
+        }
+
+        return null;
     }
 }

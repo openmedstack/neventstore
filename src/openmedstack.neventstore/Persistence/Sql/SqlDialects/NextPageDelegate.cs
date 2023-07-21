@@ -1,6 +1,5 @@
-namespace OpenMedStack.NEventStore.Persistence.Sql.SqlDialects
-{
-    using System.Data;
+namespace OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 
-    public delegate void NextPageDelegate(IDbCommand command, IDataRecord? current);
-}
+using System.Data;
+
+public delegate void NextPageDelegate(IDbCommand command, IDataRecord? current);

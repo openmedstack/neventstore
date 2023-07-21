@@ -1,81 +1,80 @@
-namespace OpenMedStack.NEventStore.Persistence.Sql
+namespace OpenMedStack.NEventStore.Persistence.Sql;
+
+using System;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+
+// HttpContext.Current is not a good idea, it's not supported in netstandard, possible alternatives (that requires some setup):
+// https://www.strathweb.com/2016/12/accessing-httpcontext-outside-of-framework-components-in-asp-net-core/
+
+public class ThreadScope<T> : IDisposable
+    where T : class
 {
-    using System;
-    using System.Threading;
-    using Microsoft.Extensions.Logging;
+    private readonly ILogger _logger;
+    private readonly bool _rootScope;
+    private readonly string _threadKey;
+    private bool _disposed;
 
-    // HttpContext.Current is not a good idea, it's not supported in netstandard, possible alternatives (that requires some setup):
-    // https://www.strathweb.com/2016/12/accessing-httpcontext-outside-of-framework-components-in-asp-net-core/
-
-    public class ThreadScope<T> : IDisposable
-        where T : class
+    public ThreadScope(string key, Func<T> factory, ILogger logger)
     {
-        private readonly ILogger _logger;
-        private readonly bool _rootScope;
-        private readonly string _threadKey;
-        private bool _disposed;
+        _logger = logger;
+        _threadKey = typeof(ThreadScope<T>).Name + $":[{key ?? string.Empty}]";
 
-        public ThreadScope(string key, Func<T> factory, ILogger logger)
+        var parent = Load();
+        _rootScope = parent == null;
+        _logger.LogDebug(PersistenceMessages.OpeningThreadScope, _threadKey, _rootScope);
+
+        Current = parent ?? factory();
+
+        if (Current == null)
         {
-            _logger = logger;
-            _threadKey = typeof(ThreadScope<T>).Name + $":[{key ?? string.Empty}]";
-
-            var parent = Load();
-            _rootScope = parent == null;
-            _logger.LogDebug(PersistenceMessages.OpeningThreadScope, _threadKey, _rootScope);
-
-            Current = parent ?? factory();
-
-            if (Current == null)
-            {
-                throw new ArgumentException(PersistenceMessages.BadFactoryResult, nameof(factory));
-            }
-
-            if (_rootScope)
-            {
-                Store(Current);
-            }
+            throw new ArgumentException(PersistenceMessages.BadFactoryResult, nameof(factory));
         }
 
-        public T Current { get; }
-
-        public void Dispose()
+        if (_rootScope)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            Store(Current);
+        }
+    }
+
+    public T Current { get; }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposing || _disposed)
+        {
+            return;
         }
 
-        protected virtual void Dispose(bool disposing)
+        _logger.LogDebug(PersistenceMessages.DisposingThreadScope, _rootScope);
+        _disposed = true;
+        if (!_rootScope)
         {
-            if (!disposing || _disposed)
-            {
-                return;
-            }
-
-            _logger.LogDebug(PersistenceMessages.DisposingThreadScope, _rootScope);
-            _disposed = true;
-            if (!_rootScope)
-            {
-                return;
-            }
-
-            _logger.LogTrace(PersistenceMessages.CleaningRootThreadScope);
-            Store(null);
-
-            if (Current is not IDisposable resource)
-            {
-                return;
-            }
-
-            _logger.LogTrace(PersistenceMessages.DisposingRootThreadScopeResources);
-            resource.Dispose();
+            return;
         }
 
-        private T? Load() => (Thread.GetData(Thread.GetNamedDataSlot(_threadKey)) as T)!;
+        _logger.LogTrace(PersistenceMessages.CleaningRootThreadScope);
+        Store(null);
 
-        private void Store(T? value)
+        if (Current is not IDisposable resource)
         {
-            Thread.SetData(Thread.GetNamedDataSlot(_threadKey), value);
+            return;
         }
+
+        _logger.LogTrace(PersistenceMessages.DisposingRootThreadScopeResources);
+        resource.Dispose();
+    }
+
+    private T? Load() => (Thread.GetData(Thread.GetNamedDataSlot(_threadKey)) as T)!;
+
+    private void Store(T? value)
+    {
+        Thread.SetData(Thread.GetNamedDataSlot(_threadKey), value);
     }
 }

@@ -1,6 +1,5 @@
-namespace openmedstack.neventstore.postgresclient.tests.Drivers
+namespace openmedstack.neventstore.postgresclient.tests.Drivers;
+
+public class Driver
 {
-    public class Driver
-    {
-    }
 }

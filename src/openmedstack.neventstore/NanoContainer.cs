@@ -1,110 +1,109 @@
-namespace OpenMedStack.NEventStore
+namespace OpenMedStack.NEventStore;
+
+using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+
+public class NanoContainer
 {
-    using System;
-    using System.Collections.Generic;
-    using Microsoft.Extensions.Logging;
+    private readonly ILogger _logger;
 
-    public class NanoContainer
+    private readonly IDictionary<Type, ContainerRegistration> _registrations =
+        new Dictionary<Type, ContainerRegistration>();
+
+    public NanoContainer(ILogger logger)
     {
-        private readonly ILogger _logger;
-
-        private readonly IDictionary<Type, ContainerRegistration> _registrations =
-            new Dictionary<Type, ContainerRegistration>();
-
-        public NanoContainer(ILogger logger)
-        {
-            _logger = logger;
-            Register(logger);
-        }
-
-        public virtual ContainerRegistration? Register<TService>(Func<NanoContainer, TService?> resolve)
-            where TService : class
-        {
-            _logger.LogDebug(Messages.RegisteringWireupCallback, typeof(TService));
-            var registration = new ContainerRegistration(c => (object?)resolve(c), _logger);
-            _registrations[typeof(TService)] = registration;
-            return registration;
-        }
-
-        public ContainerRegistration Register<TService>(TService instance)
-        {
-            if (Equals(instance, null))
-            {
-                throw new ArgumentNullException(nameof(instance), Messages.InstanceCannotBeNull);
-            }
-
-            if (!typeof(TService).IsValueType && !typeof(TService).IsInterface)
-            {
-                throw new ArgumentException(Messages.TypeMustBeInterface, nameof(instance));
-            }
-
-            _logger.LogDebug(Messages.RegisteringServiceInstance, typeof(TService));
-            var registration = new ContainerRegistration(instance, _logger);
-            _registrations[typeof(TService)] = registration;
-            return registration;
-        }
-
-        public virtual TService? Resolve<TService>()
-        {
-            _logger.LogDebug(Messages.ResolvingService, typeof(TService));
-
-            if (_registrations.TryGetValue(typeof(TService), out var registration))
-            {
-                var resolved = registration.Resolve(this);
-                return resolved == null ? default : (TService?)resolved;
-            }
-
-            _logger.LogDebug(Messages.UnableToResolve, typeof(TService));
-            return default;
-        }
+        _logger = logger;
+        Register(logger);
     }
 
-    public class ContainerRegistration
+    public virtual ContainerRegistration? Register<TService>(Func<NanoContainer, TService?> resolve)
+        where TService : class
     {
-        private readonly ILogger _logger;
-        private readonly Func<NanoContainer, object?>? _resolve;
-        private object? _instance;
-        private bool _instancePerCall;
+        _logger.LogDebug(Messages.RegisteringWireupCallback, typeof(TService));
+        var registration = new ContainerRegistration(c => (object?)resolve(c), _logger);
+        _registrations[typeof(TService)] = registration;
+        return registration;
+    }
 
-        public ContainerRegistration(Func<NanoContainer, object?> resolve, ILogger logger)
+    public ContainerRegistration Register<TService>(TService instance)
+    {
+        if (Equals(instance, null))
         {
-            _logger = logger;
-            _logger.LogTrace(Messages.AddingWireupCallback);
-            _resolve = resolve;
+            throw new ArgumentNullException(nameof(instance), Messages.InstanceCannotBeNull);
         }
 
-        public ContainerRegistration(object instance, ILogger logger)
+        if (!typeof(TService).IsValueType && !typeof(TService).IsInterface)
         {
-            _logger = logger;
-            _logger.LogTrace(Messages.AddingWireupRegistration, instance.GetType());
-            _instance = instance;
+            throw new ArgumentException(Messages.TypeMustBeInterface, nameof(instance));
         }
 
-        public virtual ContainerRegistration InstancePerCall()
+        _logger.LogDebug(Messages.RegisteringServiceInstance, typeof(TService));
+        var registration = new ContainerRegistration(instance, _logger);
+        _registrations[typeof(TService)] = registration;
+        return registration;
+    }
+
+    public virtual TService? Resolve<TService>()
+    {
+        _logger.LogDebug(Messages.ResolvingService, typeof(TService));
+
+        if (_registrations.TryGetValue(typeof(TService), out var registration))
         {
-            _logger.LogTrace(Messages.ConfiguringInstancePerCall);
-            _instancePerCall = true;
-            return this;
+            var resolved = registration.Resolve(this);
+            return resolved == null ? default : (TService?)resolved;
         }
 
-        public virtual object? Resolve(NanoContainer container)
+        _logger.LogDebug(Messages.UnableToResolve, typeof(TService));
+        return default;
+    }
+}
+
+public class ContainerRegistration
+{
+    private readonly ILogger _logger;
+    private readonly Func<NanoContainer, object?>? _resolve;
+    private object? _instance;
+    private bool _instancePerCall;
+
+    public ContainerRegistration(Func<NanoContainer, object?> resolve, ILogger logger)
+    {
+        _logger = logger;
+        _logger.LogTrace(Messages.AddingWireupCallback);
+        _resolve = resolve;
+    }
+
+    public ContainerRegistration(object instance, ILogger logger)
+    {
+        _logger = logger;
+        _logger.LogTrace(Messages.AddingWireupRegistration, instance.GetType());
+        _instance = instance;
+    }
+
+    public virtual ContainerRegistration InstancePerCall()
+    {
+        _logger.LogTrace(Messages.ConfiguringInstancePerCall);
+        _instancePerCall = true;
+        return this;
+    }
+
+    public virtual object? Resolve(NanoContainer container)
+    {
+        _logger.LogTrace(Messages.ResolvingInstance);
+        if (_instancePerCall)
         {
-            _logger.LogTrace(Messages.ResolvingInstance);
-            if (_instancePerCall)
-            {
-                _logger.LogTrace(Messages.BuildingNewInstance);
-                return _resolve?.Invoke(container);
-            }
-
-            _logger.LogTrace(Messages.AttemptingToResolveInstance);
-
-            if (_instance != null)
-            {
-                return _instance;
-            }
-
-            _logger.LogTrace(Messages.BuildingAndStoringNewInstance);
-            return _instance = _resolve!(container);
+            _logger.LogTrace(Messages.BuildingNewInstance);
+            return _resolve?.Invoke(container);
         }
+
+        _logger.LogTrace(Messages.AttemptingToResolveInstance);
+
+        if (_instance != null)
+        {
+            return _instance;
+        }
+
+        _logger.LogTrace(Messages.BuildingAndStoringNewInstance);
+        return _instance = _resolve!(container);
     }
 }
