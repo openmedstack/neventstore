@@ -217,17 +217,7 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
         public override bool Equals(object? obj)
         {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            return obj.GetType() == GetType() && Equals((IdentityForConcurrencyConflictDetection)obj);
+            return obj is IdentityForConcurrencyConflictDetection other && Equals(other);
         }
 
         public override int GetHashCode() => HashCode.Combine(_streamId, _bucketId, _commitSequence);
@@ -262,17 +252,7 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
         public override bool Equals(object? obj)
         {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            return obj.GetType() == GetType() && Equals((IdentityForDuplicationDetection)obj);
+            return obj is IdentityForDuplicationDetection other && Equals(other);
         }
 
         public override int GetHashCode() => HashCode.Combine(_streamId, _bucketId, _commitId);

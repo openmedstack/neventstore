@@ -168,12 +168,7 @@ public sealed class OptimisticEventStream : IEventStream
         IAsyncEnumerable<ICommit> commits,
         CancellationToken cancellationToken)
     {
-        if (commits == null)
-        {
-            return;
-        }
-
-        await foreach (var commit in commits.ConfigureAwait(false))
+        await foreach (var commit in commits.ConfigureAwait(false).WithCancellation(cancellationToken))
         {
             if (cancellationToken.IsCancellationRequested)
             {

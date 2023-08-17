@@ -24,4 +24,4 @@ solution=$(realpath "./openmedstack-neventstore.sln")
 
 dotnet clean $solution
 dotnet build $solution -c $config
-dotnet pack $solution -c $config -o $outputPath --include-symbols
+dotnet pack $solution -c $config -o "$outputPath" --include-symbols
