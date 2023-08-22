@@ -23,7 +23,7 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
     private Bucket this[string bucketId]
     {
-        get { return _buckets.GetOrAdd(bucketId, static (_,logger) => new Bucket(logger), _logger); }
+        get { return _buckets.GetOrAdd(bucketId, static (_, logger) => new Bucket(logger), _logger); }
     }
 
     public void Dispose()
@@ -322,21 +322,27 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
         public IEnumerable<ICommit> GetFrom(DateTimeOffset start)
         {
-            var commitId = _stamps.Where(x => x.Value >= start).Select(x => x.Key).FirstOrDefault();
-            if (commitId == Guid.Empty)
+            lock (_commits)
             {
-                return Enumerable.Empty<ICommit>();
-            }
+                var commitId = _stamps.Where(x => x.Value >= start).Select(x => x.Key).FirstOrDefault();
+                if (commitId == Guid.Empty)
+                {
+                    return Enumerable.Empty<ICommit>();
+                }
 
-            var startingCommit = _commits.FirstOrDefault(x => x.CommitId == commitId);
-            return _commits.Skip(startingCommit is null ? 0 : _commits.IndexOf(startingCommit));
+                var startingCommit = _commits.FirstOrDefault(x => x.CommitId == commitId);
+                return _commits.Skip(startingCommit is null ? 0 : _commits.IndexOf(startingCommit));
+            }
         }
 
         public IEnumerable<ICommit> GetFrom(long checkpoint)
         {
-            var startingCommit = _commits.FirstOrDefault(x => x.CheckpointToken.CompareTo(checkpoint) == 0);
-            var skip = startingCommit == null ? -1 : _commits.IndexOf(startingCommit);
-            return _commits.Skip(skip + 1 /* GetFrom => after the checkpoint*/);
+            lock (_commits)
+            {
+                var startingCommit = _commits.FirstOrDefault(x => x.CheckpointToken.CompareTo(checkpoint) == 0);
+                var skip = startingCommit == null ? -1 : _commits.IndexOf(startingCommit);
+                return _commits.Skip(skip + 1 /* GetFrom => after the checkpoint*/);
+            }
         }
 
         public IEnumerable<ICommit> GetFromTo(DateTimeOffset start, DateTimeOffset end)
@@ -350,51 +356,55 @@ public class InMemoryPersistenceEngine : IPersistStreams
                 return Enumerable.Empty<ICommit>();
             }
 
-            var startingCommit = _commits.FirstOrDefault(x => x.CommitId == firstCommitId);
-            var endingCommit = _commits.FirstOrDefault(x => x.CommitId == lastCommitId);
-            var startingCommitIndex = (startingCommit == null) ? 0 : _commits.IndexOf(startingCommit);
-            var endingCommitIndex = (endingCommit == null) ? _commits.Count - 1 : _commits.IndexOf(endingCommit);
-            var numberToTake = endingCommitIndex - startingCommitIndex + 1;
+            lock (_commits)
+            {
+                var startingCommit = _commits.FirstOrDefault(x => x.CommitId == firstCommitId);
+                var endingCommit = _commits.FirstOrDefault(x => x.CommitId == lastCommitId);
+                var startingCommitIndex = (startingCommit == null) ? 0 : _commits.IndexOf(startingCommit);
+                var endingCommitIndex = (endingCommit == null) ? _commits.Count - 1 : _commits.IndexOf(endingCommit);
+                var numberToTake = endingCommitIndex - startingCommitIndex + 1;
 
-            return _commits.Skip(startingCommitIndex).Take(numberToTake);
+                return _commits.Skip(startingCommitIndex).Take(numberToTake);
+            }
         }
 
         public ICommit Commit(CommitAttempt attempt, long checkpoint)
         {
+            DetectDuplicate(attempt);
+            var commit = new InMemoryCommit(
+                attempt.BucketId,
+                attempt.StreamId,
+                attempt.StreamRevision,
+                attempt.CommitId,
+                attempt.CommitSequence,
+                attempt.CommitStamp,
+                checkpoint,
+                attempt.Headers,
+                attempt.Events);
+            if (_potentialConflicts.Contains(new IdentityForConcurrencyConflictDetection(commit)))
+            {
+                throw new ConcurrencyException();
+            }
+
+            _stamps[commit.CommitId] = commit.CommitStamp;
             lock (_commits)
             {
-                DetectDuplicate(attempt);
-                var commit = new InMemoryCommit(
-                    attempt.BucketId,
-                    attempt.StreamId,
-                    attempt.StreamRevision,
-                    attempt.CommitId,
-                    attempt.CommitSequence,
-                    attempt.CommitStamp,
-                    checkpoint,
-                    attempt.Headers,
-                    attempt.Events);
-                if (_potentialConflicts.Contains(new IdentityForConcurrencyConflictDetection(commit)))
-                {
-                    throw new ConcurrencyException();
-                }
-
-                _stamps[commit.CommitId] = commit.CommitStamp;
                 _commits.Add(commit);
-                _potentialDuplicates.Add(new IdentityForDuplicationDetection(commit));
-                _potentialConflicts.Add(new IdentityForConcurrencyConflictDetection(commit));
-                var head = _heads.FirstOrDefault(x => x.StreamId == commit.StreamId);
-                if (head != null)
-                {
-                    _heads.Remove(head);
-                }
-
-                _logger.LogDebug(Resources.UpdatingStreamHead, commit.StreamId);
-                var snapshotRevision = head?.SnapshotRevision ?? 0;
-                _heads.Add(
-                    new StreamHead(commit.BucketId, commit.StreamId, commit.StreamRevision, snapshotRevision));
-                return commit;
             }
+
+            _potentialDuplicates.Add(new IdentityForDuplicationDetection(commit));
+            _potentialConflicts.Add(new IdentityForConcurrencyConflictDetection(commit));
+            var head = _heads.FirstOrDefault(x => x.StreamId == commit.StreamId);
+            if (head != null)
+            {
+                _heads.Remove(head);
+            }
+
+            _logger.LogDebug(Resources.UpdatingStreamHead, commit.StreamId);
+            var snapshotRevision = head?.SnapshotRevision ?? 0;
+            _heads.Add(
+                new StreamHead(commit.BucketId, commit.StreamId, commit.StreamRevision, snapshotRevision));
+            return commit;
         }
 
         private void DetectDuplicate(CommitAttempt attempt)
@@ -430,7 +440,7 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
         public bool AddSnapshot(ISnapshot snapshot)
         {
-            lock (_commits)
+            lock (_heads)
             {
                 var currentHead = _heads.FirstOrDefault(h => h.StreamId == snapshot.StreamId);
                 if (currentHead == null)
@@ -456,11 +466,16 @@ public class InMemoryPersistenceEngine : IPersistStreams
             lock (_commits)
             {
                 _commits.Clear();
-                _snapshots.Clear();
-                _heads.Clear();
-                _potentialConflicts.Clear();
-                _potentialDuplicates.Clear();
             }
+
+            _snapshots.Clear();
+            lock (_heads)
+            {
+                _heads.Clear();
+            }
+
+            _potentialConflicts.Clear();
+            _potentialDuplicates.Clear();
         }
 
         public void DeleteStream(string streamId)
@@ -472,13 +487,16 @@ public class InMemoryPersistenceEngine : IPersistStreams
                 {
                     _commits.Remove(commit);
                 }
+            }
 
-                var snapshots = _snapshots.Where(s => s.StreamId == streamId).ToArray();
-                foreach (var snapshot in snapshots)
-                {
-                    _snapshots.Remove(snapshot);
-                }
+            var snapshots = _snapshots.Where(s => s.StreamId == streamId).ToArray();
+            foreach (var snapshot in snapshots)
+            {
+                _snapshots.Remove(snapshot);
+            }
 
+            lock (_heads)
+            {
                 var streamHead = _heads.SingleOrDefault(s => s.StreamId == streamId);
                 if (streamHead != null)
                 {
