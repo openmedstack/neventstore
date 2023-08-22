@@ -2,7 +2,6 @@
 
     <Import Project="..\..\shared.proj" />
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <RootNamespace>OpenMedStack.NEventStore.PostgresClient</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
