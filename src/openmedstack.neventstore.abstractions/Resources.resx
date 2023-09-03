@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root>
+    <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+        <xsd:element name="root" msdata:IsDataSet="true">
+
+        </xsd:element>
+    </xsd:schema>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
+            PublicKeyToken=b77a5c561934e089
+        </value>
+    </resheader>
+    <data name="AppendingUncommittedToStream" xml:space="preserve">
+        <value>Appending uncommitted event '{0}' to stream '{1}'</value>
+    </data>
+    <data name="AttemptingToCommitChanges" xml:space="preserve">
+    <value>Attempting to commit all changes on stream '{0}' to the underlying store.</value>
+  </data>
+    <data name="UnderlyingStreamHasChanged" xml:space="preserve">
+    <value>The underlying stream '{0}' has changed since the last known commit, refreshing the stream. Exception Message: {1}</value>
+  </data>
+    <data name="ClearingUncommittedChanges" xml:space="preserve">
+    <value>Clearing all uncommitted changes on stream '{0}'.</value>
+  </data>
+    <data name="AddingCommitsToStream" xml:space="preserve">
+    <value>Adding commit '{0}' with {1} events to stream '{2}'.</value>
+  </data>
+    <data name="IgnoringBeyondRevision" xml:space="preserve">
+    <value>Ignoring some events on commit '{0}' of stream '{1}' because they go beyond revision {2}.</value>
+  </data>
+    <data name="IgnoringBeforeRevision" xml:space="preserve">
+    <value>Ignoring some events on commit '{0}' of stream '{1}' because they starting before revision {2}.</value>
+  </data>
+    <data name="AlreadyDisposed" xml:space="preserve">
+    <value>The object has already been disposed.</value>
+  </data>
+    <data name="NoChangesToCommit" xml:space="preserve">
+    <value>There are no outstanding changes to be committed stream '{0}'.</value>
+  </data>
+    <data name="PersistingCommit" xml:space="preserve">
+    <value>Pushing attempt '{0}' on stream '{1}' with '{2}' events to the underlying store.</value>
+  </data>
+    <data name="BuildingCommitAttempt" xml:space="preserve">
+    <value>Building a commit attempt '{0}' on stream '{1}'.</value>
+  </data>
+    <data name="StreamNotFoundException" xml:space="preserve">
+    <value>Stream not found: StreamId {0} bucket {1}.</value>
+  </data>
+    <data name="DuplicateCommitIdException" xml:space="preserve">
+    <value>Duplicate commit id {0}.</value>
+  </data>
+</root>

@@ -1,7 +1,6 @@
-using System;
 using System.Runtime.Serialization;
 
-namespace OpenMedStack.NEventStore;
+namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
 ///     Represents an attempt to commit the same information more than once.

@@ -1,14 +1,8 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading.Tasks;
-using OpenMedStack.NEventStore.Abstractions;
-
-namespace OpenMedStack.NEventStore;
-
-using System.Threading;
 using Microsoft.Extensions.Logging;
+
+namespace OpenMedStack.NEventStore.Abstractions;
 
 [SuppressMessage(
     "Microsoft.Naming",
@@ -22,8 +16,8 @@ public sealed class OptimisticEventStream : IEventStream
     private readonly ICollection<Guid> _identifiers = new HashSet<Guid>();
     private readonly ICommitEvents _persistence;
     private bool _disposed;
-    private readonly ImmutableCollection<EventMessage> _immutableCollection;
-    private readonly ImmutableCollection<EventMessage> _uncommittedEvents;
+    private readonly ImmutableArray<EventMessage> _immutableCollection;
+    private readonly ImmutableArray<EventMessage> _uncommittedEvents;
 
     private OptimisticEventStream(string bucketId, string streamId, ICommitEvents persistence, ILogger logger)
     {
@@ -31,11 +25,15 @@ public sealed class OptimisticEventStream : IEventStream
         StreamId = streamId;
         _persistence = persistence;
         _logger = logger;
-        _immutableCollection = new ImmutableCollection<EventMessage>(_committed);
-        _uncommittedEvents = new ImmutableCollection<EventMessage>(_events);
+        _immutableCollection = ImmutableArray.CreateRange(_committed);
+        _uncommittedEvents = ImmutableArray.CreateRange(_events);
     }
 
-    public static Task<OptimisticEventStream> Create(string bucketId, string streamId, ICommitEvents persistence, ILogger logger) =>
+    public static Task<OptimisticEventStream> Create(
+        string bucketId,
+        string streamId,
+        ICommitEvents persistence,
+        ILogger logger) =>
         Task.FromResult(new OptimisticEventStream(bucketId, streamId, persistence, logger));
 
     public static async Task<OptimisticEventStream> Create(
@@ -54,7 +52,7 @@ public sealed class OptimisticEventStream : IEventStream
         if (minRevision > 0 && instance._committed.Count == 0)
         {
             throw new StreamNotFoundException(
-                string.Format(Messages.StreamNotFoundException, streamId, instance.BucketId));
+                string.Format(Resources.StreamNotFoundException, streamId, instance.BucketId));
         }
 
         return instance;
@@ -122,7 +120,7 @@ public sealed class OptimisticEventStream : IEventStream
 
         if (_identifiers.Contains(commitId))
         {
-            throw new DuplicateCommitException(string.Format(Messages.DuplicateCommitIdException, commitId));
+            throw new DuplicateCommitException(string.Format(Resources.DuplicateCommitIdException, commitId));
         }
 
         if (!HasChanges())

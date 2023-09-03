@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Persistence;

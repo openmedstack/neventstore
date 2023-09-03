@@ -1,12 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Persistence;
-
-namespace OpenMedStack.NEventStore;
-
-using System.Threading;
+namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
 ///     Indicates the ability to track a series of events and commit them to durable storage.
@@ -67,7 +59,7 @@ public interface IEventStream : IDisposable
     /// </summary>
     /// <param name="commitId">The value which uniquely identifies the commit.</param>
     /// <param name="cancellationToken"></param>
-    /// <exception cref="DuplicateCommitException" />
+    /// <exception cref="OpenMedStack.NEventStore.DuplicateCommitException" />
     /// <exception cref="ConcurrencyException" />
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />

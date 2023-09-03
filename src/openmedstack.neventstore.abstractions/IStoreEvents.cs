@@ -1,11 +1,4 @@
-using System;
-using System.Threading.Tasks;
-using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Persistence;
-
-namespace OpenMedStack.NEventStore;
-
-using System.Threading;
+namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
 ///     Indicates the ability to store and retreive a stream of events.
@@ -40,7 +33,7 @@ public interface IStoreEvents : IDisposable
     /// <returns>A series of committed events represented as a stream.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    /// <exception cref="StreamNotFoundException" />
+    /// <exception cref="OpenMedStack.NEventStore.StreamNotFoundException" />
     Task<IEventStream> OpenStream(string bucketId, string streamId, int minRevision, int maxRevision, CancellationToken cancellationToken);
 
     /// <summary>

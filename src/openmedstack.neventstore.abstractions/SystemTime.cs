@@ -1,6 +1,4 @@
-using System;
-
-namespace OpenMedStack.NEventStore;
+namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
 ///     Provides the ability to override the current moment in time to facilitate testing.
