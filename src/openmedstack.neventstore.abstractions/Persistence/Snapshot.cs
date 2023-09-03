@@ -1,7 +1,6 @@
 using System.Runtime.Serialization;
-using OpenMedStack.NEventStore.Abstractions;
 
-namespace OpenMedStack.NEventStore;
+namespace OpenMedStack.NEventStore.Abstractions.Persistence;
 
 /// <summary>
 ///     Represents a materialized view of a stream at specific revision.

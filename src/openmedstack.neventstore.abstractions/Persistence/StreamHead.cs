@@ -1,6 +1,4 @@
-using OpenMedStack.NEventStore.Abstractions;
-
-namespace OpenMedStack.NEventStore.Persistence;
+namespace OpenMedStack.NEventStore.Abstractions.Persistence;
 
 /// <summary>
 ///     Indicates the most recent information representing the head of a given stream.
@@ -22,9 +20,6 @@ public class StreamHead : IStreamHead
         HeadRevision = headRevision;
         SnapshotRevision = snapshotRevision;
     }
-
-
-    public static IEqualityComparer<StreamHead> StreamIdBucketIdComparer { get; } = new StreamHeadEqualityComparer();
 
     ///// <summary>
     /////     Initializes a new instance of the StreamHead class.

@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
-using OpenMedStack.NEventStore.Abstractions;
 
-namespace OpenMedStack.NEventStore.Persistence;
+namespace OpenMedStack.NEventStore.Abstractions.Persistence;
 
 public class Commit : ICommit
 {
