@@ -9,6 +9,6 @@ public class PersistenceEngineFixture : PersistenceEngineFixtureBase
     public PersistenceEngineFixture()
     {
         CreatePersistence = _ =>
-            new InMemoryPersistenceEngine(NullLogger.Instance);
+            new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
     }
 }

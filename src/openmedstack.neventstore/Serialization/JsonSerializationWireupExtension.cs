@@ -3,6 +3,7 @@
 namespace OpenMedStack.NEventStore.Serialization;
 
 using NEventStore;
+using Microsoft.Extensions.Logging;
 
 public static class JsonSerializationWireupExtension
 {
@@ -10,5 +11,5 @@ public static class JsonSerializationWireupExtension
         wireup.With(serializer);
 
     public static Wireup UsingJsonSerialization(this PersistenceWireup wireup) =>
-        wireup.With<ISerialize>(new NesJsonSerializer(wireup.Logger));
+        wireup.With<ISerialize>(new NesJsonSerializer(wireup.Logger.CreateLogger<NesJsonSerializer>()));
 }

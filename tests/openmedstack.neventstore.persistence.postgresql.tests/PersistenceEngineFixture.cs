@@ -15,8 +15,8 @@ public class PersistenceEngineFixture : PersistenceEngineFixtureBase
             new NetStandardConnectionFactory(
                 NpgsqlFactory.Instance,
                 "Server=127.0.0.1;Keepalive=1;Pooling=true;MinPoolSize=1;MaxPoolSize=20;Port=5432;Database=eventdb;User Id=openmedstack;Password=openmedstack;",
-                NullLogger.Instance),
-            new NesJsonSerializer(NullLogger.Instance),
+                NullLogger<NetStandardConnectionFactory>.Instance),
+            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
             new PostgreSqlDialect(NullLogger.Instance),
             NullLogger.Instance,
             pageSize: pageSize).Build();

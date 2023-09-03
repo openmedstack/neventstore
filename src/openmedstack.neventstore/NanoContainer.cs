@@ -6,22 +6,25 @@ using Microsoft.Extensions.Logging;
 
 public class NanoContainer
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<NanoContainer> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     private readonly IDictionary<Type, ContainerRegistration> _registrations =
         new Dictionary<Type, ContainerRegistration>();
 
-    public NanoContainer(ILogger logger)
+    public NanoContainer(ILoggerFactory logger)
     {
-        _logger = logger;
+        _loggerFactory = logger;
+        _logger = logger.CreateLogger<NanoContainer>();
         Register(logger);
+        Register(logger.CreateLogger("EventStore"));
     }
 
     public virtual ContainerRegistration? Register<TService>(Func<NanoContainer, TService?> resolve)
         where TService : class
     {
         _logger.LogDebug(Messages.RegisteringWireupCallback, typeof(TService));
-        var registration = new ContainerRegistration(c => (object?)resolve(c), _logger);
+        var registration = new ContainerRegistration(c => (object?)resolve(c), _loggerFactory);
         _registrations[typeof(TService)] = registration;
         return registration;
     }
@@ -66,9 +69,9 @@ public class ContainerRegistration
     private object? _instance;
     private bool _instancePerCall;
 
-    public ContainerRegistration(Func<NanoContainer, object?> resolve, ILogger logger)
+    public ContainerRegistration(Func<NanoContainer, object?> resolve, ILoggerFactory logger)
     {
-        _logger = logger;
+        _logger = logger.CreateLogger<ContainerRegistration>();
         _logger.LogTrace(Messages.AddingWireupCallback);
         _resolve = resolve;
     }

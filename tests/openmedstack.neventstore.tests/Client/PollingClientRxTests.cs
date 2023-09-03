@@ -200,7 +200,7 @@ public abstract class UsingPollingClient : SpecificationBase
 
     protected override Task Context()
     {
-        StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
+        StoreEvents = Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence().Build();
         PollingClient = new PollingClientRx(StoreEvents.Advanced, PollingInterval);
         return Task.CompletedTask;
     }

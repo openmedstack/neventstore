@@ -26,7 +26,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
 
     protected override Task Context()
     {
-        _engine = new InMemoryPersistenceEngine(NullLogger.Instance);
+        _engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
         _engine.Initialize();
         var streamId = Guid.NewGuid().ToString();
         _engine.Commit(

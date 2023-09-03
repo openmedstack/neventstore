@@ -8,19 +8,23 @@ using Microsoft.Extensions.Logging;
 
 public class OptimisticEventStore : IStoreEvents, ICommitEvents
 {
-    private readonly ILogger _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<OptimisticEventStore> _logger;
     private readonly IPersistStreams _persistence;
     private readonly IEnumerable<IPipelineHook> _pipelineHooks;
 
-    public OptimisticEventStore(IPersistStreams persistence, IEnumerable<IPipelineHook> pipelineHooks, ILogger logger)
+    public OptimisticEventStore(
+        IPersistStreams persistence,
+        IEnumerable<IPipelineHook> pipelineHooks,
+        ILoggerFactory loggerFactory)
     {
         if (persistence == null)
         {
             throw new ArgumentNullException(nameof(persistence));
         }
 
-        _logger = logger;
-
+        _loggerFactory = loggerFactory;
+        _logger = _loggerFactory.CreateLogger<OptimisticEventStore>();
         _pipelineHooks = pipelineHooks;
         _persistence = new PipelineHooksAwarePersistenceDecorator(persistence, _pipelineHooks, _logger);
     }
@@ -72,7 +76,9 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
     public virtual async Task<IEventStream> CreateStream(string bucketId, string streamId)
     {
         _logger.LogDebug(Resources.CreatingStream, streamId, bucketId);
-        return await OptimisticEventStream.Create(bucketId, streamId, this, _logger).ConfigureAwait(false);
+        return await OptimisticEventStream
+            .Create(bucketId, streamId, this, _loggerFactory.CreateLogger<OptimisticEventStream>())
+            .ConfigureAwait(false);
     }
 
     public virtual async Task<IEventStream> OpenStream(
@@ -91,7 +97,8 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
 
         _logger.LogTrace(Resources.OpeningStreamAtRevision, streamId, bucketId, minRevision, maxRevision);
         return await OptimisticEventStream
-            .Create(bucketId, streamId, this, minRevision, maxRevision, _logger, cancellationToken)
+            .Create(bucketId, streamId, this, minRevision, maxRevision,
+                _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -111,7 +118,8 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
             snapshot.StreamRevision,
             maxRevision);
         maxRevision = maxRevision <= 0 ? int.MaxValue : maxRevision;
-        return await OptimisticEventStream.Create(snapshot, this, maxRevision, _logger, cancellationToken)
+        return await OptimisticEventStream.Create(snapshot, this, maxRevision,
+                _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken)
             .ConfigureAwait(false);
     }
 

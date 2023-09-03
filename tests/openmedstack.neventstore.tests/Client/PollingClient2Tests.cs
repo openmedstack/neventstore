@@ -243,7 +243,7 @@ public abstract class UsingPollingClient2 : SpecificationBase
     protected override Task Context()
     {
         HandleFunction = _ => Task.FromResult(HandlingResult.MoveToNext);
-        StoreEvents = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence().Build();
+        StoreEvents = Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence().Build();
         Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
             _pollingInterval);
         return Task.CompletedTask;

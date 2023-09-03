@@ -10,30 +10,33 @@ namespace OpenMedStack.NEventStore.Abstractions;
     Justification = "This behaves like a stream--not a .NET 'Stream' object, but a stream nonetheless.")]
 public sealed class OptimisticEventStream : IEventStream
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<OptimisticEventStream> _logger;
     private readonly ICollection<EventMessage> _committed = new LinkedList<EventMessage>();
     private readonly ICollection<EventMessage> _events = new LinkedList<EventMessage>();
     private readonly ICollection<Guid> _identifiers = new HashSet<Guid>();
     private readonly ICommitEvents _persistence;
-    private bool _disposed;
-    private readonly ImmutableArray<EventMessage> _immutableCollection;
-    private readonly ImmutableArray<EventMessage> _uncommittedEvents;
 
-    private OptimisticEventStream(string bucketId, string streamId, ICommitEvents persistence, ILogger logger)
+    private bool _disposed;
+//    private readonly ImmutableArray<EventMessage> _immutableCollection;
+//    private readonly ImmutableArray<EventMessage> _uncommittedEvents;
+
+    private OptimisticEventStream(
+        string bucketId,
+        string streamId,
+        ICommitEvents persistence,
+        ILogger<OptimisticEventStream> logger)
     {
         BucketId = bucketId;
         StreamId = streamId;
         _persistence = persistence;
         _logger = logger;
-        _immutableCollection = ImmutableArray.CreateRange(_committed);
-        _uncommittedEvents = ImmutableArray.CreateRange(_events);
     }
 
     public static Task<OptimisticEventStream> Create(
         string bucketId,
         string streamId,
         ICommitEvents persistence,
-        ILogger logger) =>
+        ILogger<OptimisticEventStream> logger) =>
         Task.FromResult(new OptimisticEventStream(bucketId, streamId, persistence, logger));
 
     public static async Task<OptimisticEventStream> Create(
@@ -42,7 +45,7 @@ public sealed class OptimisticEventStream : IEventStream
         ICommitEvents persistence,
         int minRevision,
         int maxRevision,
-        ILogger logger,
+        ILogger<OptimisticEventStream> logger,
         CancellationToken cancellationToken = default)
     {
         var instance = await Create(bucketId, streamId, persistence, logger).ConfigureAwait(false);
@@ -62,7 +65,7 @@ public sealed class OptimisticEventStream : IEventStream
         ISnapshot snapshot,
         ICommitEvents persistence,
         int maxRevision,
-        ILogger logger,
+        ILogger<OptimisticEventStream> logger,
         CancellationToken cancellationToken)
     {
         var instance = await Create(snapshot.BucketId, snapshot.StreamId, persistence, logger).ConfigureAwait(false);
@@ -84,16 +87,16 @@ public sealed class OptimisticEventStream : IEventStream
     public int StreamRevision { get; private set; }
     public int CommitSequence { get; private set; }
 
-    public ICollection<EventMessage> CommittedEvents
+    public IReadOnlyCollection<EventMessage> CommittedEvents
     {
-        get { return _immutableCollection; }
+        get { return ImmutableArray.CreateRange(_committed); }
     }
 
     public IDictionary<string, object> CommittedHeaders { get; } = new Dictionary<string, object>();
 
-    public ICollection<EventMessage> UncommittedEvents
+    public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
-        get { return _uncommittedEvents; }
+        get { return ImmutableArray.CreateRange(_events); }
     }
 
     public IDictionary<string, object> UncommittedHeaders { get; } = new Dictionary<string, object>();

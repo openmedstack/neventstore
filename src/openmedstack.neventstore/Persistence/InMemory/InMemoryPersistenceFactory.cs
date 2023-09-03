@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 
 public class InMemoryPersistenceFactory : IPersistenceFactory
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<InMemoryPersistenceEngine> _logger;
 
-    public InMemoryPersistenceFactory(ILogger logger)
+    public InMemoryPersistenceFactory(ILogger<InMemoryPersistenceEngine> logger)
     {
         _logger = logger;
     }

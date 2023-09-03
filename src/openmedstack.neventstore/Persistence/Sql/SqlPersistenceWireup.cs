@@ -12,14 +12,14 @@ using OpenMedStack.NEventStore.Persistence.Sql;
 
 public class SqlPersistenceWireup : PersistenceWireup
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<SqlPersistenceWireup> _logger;
     private const int DefaultPageSize = 512;
     private int _pageSize = DefaultPageSize;
 
     public SqlPersistenceWireup(Wireup wireup, IConnectionFactory connectionFactory)
         : base(wireup)
     {
-        _logger = wireup.Logger;
+        _logger = wireup.Logger.CreateLogger<SqlPersistenceWireup>();
         _logger.LogDebug(PersistenceMessages.ConnectionFactorySpecified, connectionFactory);
 
         _logger.LogTrace(PersistenceMessages.AutoDetectDialect);

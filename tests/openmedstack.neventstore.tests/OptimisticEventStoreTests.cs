@@ -533,7 +533,7 @@ public abstract class UsingPersistence : SpecificationBase
         get
         {
             return _store ??=
-                new OptimisticEventStore(Persistence, PipelineHooks.Select(x => x), NullLogger.Instance);
+                new OptimisticEventStore(Persistence, PipelineHooks.Select(x => x), NullLoggerFactory.Instance);
         }
     }
 

@@ -1,4 +1,7 @@
 // ReSharper disable once CheckNamespace
+
+using Microsoft.Extensions.Logging;
+
 namespace NEventStore;
 
 using System.Data.Common;
@@ -12,7 +15,8 @@ public static class SqlPersistenceWireupExtensions
         DbProviderFactory providerFactory,
         string connectionString)
     {
-        var factory = new NetStandardConnectionFactory(providerFactory, connectionString, wireup.Logger);
+        var factory = new NetStandardConnectionFactory(providerFactory, connectionString,
+            wireup.Logger.CreateLogger<NetStandardConnectionFactory>());
         return wireup.UsingSqlPersistence(factory);
     }
 

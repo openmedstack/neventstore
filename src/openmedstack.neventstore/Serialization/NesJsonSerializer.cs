@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 internal class NesJsonSerializer : ISerialize
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<NesJsonSerializer> _logger;
     private readonly JsonSerializer _jsonSerializer;
 
     private readonly JsonSerializerSettings _serializerOptions = new()
@@ -20,7 +20,7 @@ internal class NesJsonSerializer : ISerialize
         MissingMemberHandling = MissingMemberHandling.Ignore
     };
 
-    public NesJsonSerializer(ILogger logger)
+    public NesJsonSerializer(ILogger<NesJsonSerializer> logger)
     {
         _logger = logger;
         _jsonSerializer = JsonSerializer.Create(_serializerOptions);

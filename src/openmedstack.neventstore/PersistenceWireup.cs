@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 
 public class PersistenceWireup : Wireup
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<PersistenceWireup> _logger;
     private bool _initialize;
 
     public PersistenceWireup(Wireup inner)
         : base(inner)
     {
-        _logger = inner.Logger;
+        _logger = inner.Logger.CreateLogger<PersistenceWireup>();
     }
 
     public virtual PersistenceWireup WithPersistence(IPersistStreams instance)

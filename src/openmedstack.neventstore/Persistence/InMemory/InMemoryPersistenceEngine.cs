@@ -12,11 +12,11 @@ using Microsoft.Extensions.Logging;
 
 public class InMemoryPersistenceEngine : IPersistStreams
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<InMemoryPersistenceEngine> _logger;
     private readonly ConcurrentDictionary<string, Bucket> _buckets = new();
     private int _checkpoint;
 
-    public InMemoryPersistenceEngine(ILogger logger)
+    public InMemoryPersistenceEngine(ILogger<InMemoryPersistenceEngine> logger)
     {
         _logger = logger;
     }

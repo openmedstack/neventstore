@@ -9,11 +9,14 @@ using Microsoft.Extensions.Logging;
 
 public class NetStandardConnectionFactory : IConnectionFactory
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<NetStandardConnectionFactory> _logger;
     private readonly DbProviderFactory _providerFactory;
     private readonly string _connectionString;
 
-    public NetStandardConnectionFactory(DbProviderFactory providerFactory, string connectionString, ILogger logger)
+    public NetStandardConnectionFactory(
+        DbProviderFactory providerFactory,
+        string connectionString,
+        ILogger<NetStandardConnectionFactory> logger)
     {
         _providerFactory = providerFactory;
         _connectionString = connectionString;

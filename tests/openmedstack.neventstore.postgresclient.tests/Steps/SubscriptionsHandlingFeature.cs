@@ -24,7 +24,7 @@ public class SubscriptionsHandlingFeature : IDisposable
     [Given(@"a postgres server for NEventStore")]
     public void GivenAPostgresServerForNEventStore()
     {
-        _eventStore = OpenMedStack.NEventStore.Wireup.Init(NullLogger.Instance)
+        _eventStore = OpenMedStack.NEventStore.Wireup.Init(NullLoggerFactory.Instance)
             .UsingSqlPersistence(NpgsqlFactory.Instance, ConnectionString)
             .WithDialect(new PostgreSqlDialect(NullLogger.Instance))
             .WithStreamIdHasher(new Sha1StreamIdHasher())
@@ -66,7 +66,7 @@ public class SubscriptionsHandlingFeature : IDisposable
         }
 
         _client = new DelegatePgPublicationClient(ConnectionString,
-            new NesJsonSerializer(NullLogger.Instance), Handler);
+            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance), Handler);
         await _client.CreateSubscriptionSlot(_cancellationTokenSource.Token);
         _subscriptionTask = _client.Subscribe(_cancellationTokenSource.Token);
     }

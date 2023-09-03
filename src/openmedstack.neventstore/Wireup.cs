@@ -14,9 +14,9 @@ public class Wireup
 {
     private readonly NanoContainer? _container;
     private readonly Wireup? _inner;
-    private readonly ILogger _logger;
+    private readonly ILoggerFactory _logger;
 
-    protected Wireup(NanoContainer container, ILogger logger)
+    protected Wireup(NanoContainer container, ILoggerFactory logger)
     {
         _container = container;
         _logger = logger;
@@ -28,16 +28,17 @@ public class Wireup
         _logger = inner.Logger;
     }
 
-    public ILogger Logger => _logger;
+    public ILoggerFactory Logger => _logger;
 
     protected NanoContainer Container => _container ?? _inner!.Container;
 
-    public static Wireup Init(ILogger logger)
+    public static Wireup Init(ILoggerFactory logger)
     {
         var container = new NanoContainer(logger);
         container.Register(TransactionScopeAsyncFlowOption.Enabled);
 
-        container.Register<IPersistStreams>(new InMemoryPersistenceEngine(logger));
+        container.Register<IPersistStreams>(
+            new InMemoryPersistenceEngine(logger.CreateLogger<InMemoryPersistenceEngine>()));
         container.Register(BuildEventStore);
 
         return new Wireup(container, logger);
@@ -55,7 +56,8 @@ public class Wireup
 
     public virtual Wireup HookIntoPipelineUsing(params IPipelineHook[] hooks)
     {
-        _logger.LogInformation(Resources.WireupHookIntoPipeline, string.Join(", ", hooks.Select(h => h.GetType())));
+        _logger.CreateLogger<Wireup>().LogInformation(Resources.WireupHookIntoPipeline,
+            string.Join(", ", hooks.Select(h => h.GetType())));
         ICollection<IPipelineHook> collection = hooks.ToArray();
         Container.Register(collection);
         return this;
@@ -85,6 +87,6 @@ public class Wireup
 
         var persistStreams = context.Resolve<IPersistStreams>()
          ?? throw new Exception($"Could not resolve {nameof(IPersistStreams)}");
-        return new OptimisticEventStore(persistStreams, hooks, context.Resolve<ILogger>()!);
+        return new OptimisticEventStore(persistStreams, hooks, context.Resolve<ILoggerFactory>()!);
     }
 }

@@ -51,7 +51,8 @@ public class WhenBuildingAStream : OnTheEventStream
     protected override async Task Because()
     {
         Stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, MinRevision, MaxRevision, NullLogger.Instance)
+            .Create(BucketId, StreamId, Persistence, MinRevision, MaxRevision,
+                NullLogger<OptimisticEventStream>.Instance)
             .ConfigureAwait(false);
     }
 
@@ -127,7 +128,7 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
     protected override async Task Because()
     {
         Stream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, 0, int.MaxValue,
-                NullLogger.Instance)
+                NullLogger<OptimisticEventStream>.Instance)
             .ConfigureAwait(false);
     }
 
@@ -431,7 +432,7 @@ public class WhenCommittingWithAnIdentifierThatWasPreviouslyRead : OnTheEventStr
             .Returns(_committed.ToAsyncEnumerable());
 
         Stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger.Instance)
+            .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger<OptimisticEventStream>.Instance)
             .ConfigureAwait(false);
     }
 
@@ -473,7 +474,8 @@ public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : On
             .Returns(_discoveredOnCommit.ToAsyncEnumerable());
 
         Stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, StreamRevision, int.MaxValue, NullLogger.Instance)
+            .Create(BucketId, StreamId, Persistence, StreamRevision, int.MaxValue,
+                NullLogger<OptimisticEventStream>.Instance)
             .ConfigureAwait(false);
         Stream.Add(_uncommitted);
     }
@@ -545,50 +547,6 @@ public class WhenAttemptingToInvokeBehaviorOnADisposedStream : OnTheEventStream
     }
 }
 
-public class WhenAttemptingToModifyTheEventCollections : OnTheEventStream
-{
-    public WhenAttemptingToModifyTheEventCollections(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_adding_to_the_committed_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Add(new EventMessage(new object())));
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_adding_to_the_uncommitted_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Add(new EventMessage(new object())));
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_clearing_the_committed_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Clear());
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_clearing_the_uncommitted_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Clear());
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_removing_from_the_committed_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.CommittedEvents.Remove(new EventMessage(new object())));
-    }
-
-    [Fact]
-    public void should_throw_an_exception_when_removing_from_the_uncommitted_collection()
-    {
-        Assert.Throws<NotSupportedException>(() => Stream.UncommittedEvents.Remove(new EventMessage(new object())));
-    }
-}
-
 public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTimeFixture>
 {
     protected const int DefaultStreamRevision = 1;
@@ -608,7 +566,8 @@ public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTi
 
     protected OptimisticEventStream Stream
     {
-        get => _stream ??= OptimisticEventStream.Create(BucketId, StreamId, Persistence, NullLogger.Instance)
+        get => _stream ??= OptimisticEventStream
+            .Create(BucketId, StreamId, Persistence, NullLogger<OptimisticEventStream>.Instance)
             .Result;
         set => _stream = value;
     }

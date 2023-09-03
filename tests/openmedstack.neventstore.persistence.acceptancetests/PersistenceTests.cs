@@ -980,7 +980,7 @@ public class WhenGettingFromCheckpointAmountOfCommitsExceedsPageSize : Persisten
     {
         _moreThanPageSize = ConfiguredPageSizeForTesting + 1;
         var eventStore =
-            new OptimisticEventStore(Persistence, Enumerable.Empty<IPipelineHook>(), NullLogger.Instance);
+            new OptimisticEventStore(Persistence, Enumerable.Empty<IPipelineHook>(), NullLoggerFactory.Instance);
         // TODO: Not sure how to set the actual page size to the const defined above
         for (var i = 0; i < _moreThanPageSize; i++)
         {

@@ -25,7 +25,7 @@ public class DefaultSerializationWireupTests
 
         protected override Task Context()
         {
-            _wireup = Wireup.Init(NullLogger.Instance).UsingInMemoryPersistence();
+            _wireup = Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence();
             return Task.CompletedTask;
         }
 

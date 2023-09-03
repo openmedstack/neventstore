@@ -9,8 +9,10 @@ public static class PersistenceWireupExtensions
 {
     public static PersistenceWireup UsingInMemoryPersistence(this Wireup wireup)
     {
-        wireup.Logger.LogInformation(Resources.WireupSetPersistenceEngine, "InMemoryPersistenceEngine");
-        wireup.With<IPersistStreams>(new InMemoryPersistenceEngine(wireup.Logger));
+        wireup.Logger.CreateLogger<PersistenceWireup>()
+            .LogInformation(Resources.WireupSetPersistenceEngine, "InMemoryPersistenceEngine");
+        wireup.With<IPersistStreams>(
+            new InMemoryPersistenceEngine(wireup.Logger.CreateLogger<InMemoryPersistenceEngine>()));
 
         return new PersistenceWireup(wireup);
     }
