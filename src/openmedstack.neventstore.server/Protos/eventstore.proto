@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+option csharp_namespace = "OpenMedStack.NEventStore.Grpc";
+
+package EventStore;
+import "google/protobuf/wrappers.proto";
+
+service EventStore {
+  rpc GetFromMinMax(GetFromMinMaxRequest) returns (stream CommitInfo);
+  rpc GetFromCheckpointToken(GetFromCheckpointTokenRequest) returns (stream CommitInfo);
+  rpc GetFromTimestamp(GetFromTimestampRequest) returns (stream CommitInfo);
+  rpc GetFromTo(GetFromToTimestampsRequest) returns (stream CommitInfo);
+  rpc Commit(CommitInfo) returns (CommitInfo);
+  rpc AddSnapshot(SnapshotInfo) returns (google.protobuf.BoolValue);
+  rpc GetSnapshot(GetSnapshotRequest) returns (SnapshotInfo);
+  rpc GetStreamsToSnapshot(StreamToSnapshotRequest) returns (stream StreamHeadInfo);
+  rpc Purge(PurgeRequest) returns (google.protobuf.BoolValue);
+  rpc DeleteStream(DeleteStreamRequest) returns (google.protobuf.BoolValue);
+}
+
+message StreamToSnapshotRequest {
+  string bucketId = 1;
+  int32 maxRevision = 2;
+}
+
+message GetSnapshotRequest {
+  string bucketId = 1;
+  string streamId = 2;
+  int32 maxRevision = 3;
+}
+
+message GetFromMinMaxRequest {
+  string bucketId = 1;
+  string streamId = 2;
+  int32 minRevision = 3;
+  int32 maxRevision = 4;
+}
+
+message GetFromTimestampRequest {
+  string bucketId = 1;
+  int64 timestamp = 2;
+}
+
+message GetFromCheckpointTokenRequest {
+  string bucketId = 1;
+  int64 checkpointToken = 2;
+}
+
+message GetFromToTimestampsRequest{
+  string bucketId = 1;
+  int64 from = 2;
+  int64 to = 3;
+}
+
+message PurgeRequest {
+  string bucketId = 1;
+}
+
+message DeleteStreamRequest {
+  string bucketId = 1;
+  string streamId = 2;
+}
+
+message SnapshotInfo{
+  string BucketId = 1;
+  string StreamId = 2;
+  int32 StreamRevision = 3;
+  string base64Payload = 4;
+}
+
+message CommitInfo {
+  string bucketId = 1;
+  string streamId = 2;
+  int32 streamRevision = 3;
+  string commitId = 4;
+  int32 commitSequence = 5;
+  int64 commitStamp = 6;
+  int64 checkpointToken = 7;
+  repeated EventMessageInfo events = 8;
+  map<string, string> headers = 9;
+}
+
+message EventMessageInfo {
+  map<string, string> headers = 2;
+  string base64Payload = 3;
+}
+
+message StreamHeadInfo {
+  string bucketId = 1;
+  string streamId = 2;
+  int32 headRevision = 3;
+  int32 snapshotRevision = 4;
+}
