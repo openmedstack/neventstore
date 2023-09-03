@@ -1,9 +1,7 @@
-﻿using System.Linq;
+﻿namespace OpenMedStack.NEventStore.PostgresClient;
+
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
-
-namespace OpenMedStack.NEventStore.PostgresClient;
-
 using System.IO;
 using Microsoft.Extensions.Logging;
 using System;
