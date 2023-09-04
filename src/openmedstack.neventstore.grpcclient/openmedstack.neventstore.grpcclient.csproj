@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\shared.proj"/>
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <RootNamespace>OpenMedStack.NEventStore.GrpcClient</RootNamespace>
     </PropertyGroup>
 

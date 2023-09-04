@@ -1,10 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\shared.proj"/>
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
         <RootNamespace>OpenMedStack.NEventStore.HttpClient</RootNamespace>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
