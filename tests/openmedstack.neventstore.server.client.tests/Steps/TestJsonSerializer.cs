@@ -6,9 +6,6 @@ namespace OpenMedStack.NEventStore.Server.Tests.Steps;
 
 internal class TestJsonSerializer : ISerialize
 {
-    private readonly IEnumerable<Type> _knownTypes = new[]
-        { typeof(List<EventMessage>), typeof(Dictionary<string, object>) };
-
     private readonly JsonSerializerSettings _serializerOptions = new()
     {
         Formatting = Formatting.None, DateFormatHandling = DateFormatHandling.IsoDateFormat,
@@ -16,14 +13,6 @@ internal class TestJsonSerializer : ISerialize
         TypeNameHandling = TypeNameHandling.Auto, MetadataPropertyHandling = MetadataPropertyHandling.Default,
         MissingMemberHandling = MissingMemberHandling.Ignore
     };
-
-    public TestJsonSerializer( params Type[] knownTypes)
-    {
-        if (knownTypes.Length > 0)
-        {
-            _knownTypes = knownTypes;
-        }
-    }
 
     public virtual void Serialize<T>(Stream output, T graph)
     {
@@ -40,9 +29,11 @@ internal class TestJsonSerializer : ISerialize
         return serializer.Deserialize<T>(jsonReader);
     }
 
-    public T? Deserialize<T>(byte[] input)
+    public T? Deserialize<T>(Span<byte> input)
     {
-        using var stream = new MemoryStream(input);
-        return Deserialize<T>(stream);
+        var stringReader = new StringReader(Encoding.UTF8.GetString(input));
+        var jsonReader = new JsonTextReader(stringReader);
+        var serializer = JsonSerializer.Create(_serializerOptions);
+        return serializer.Deserialize<T>(jsonReader);
     }
 }

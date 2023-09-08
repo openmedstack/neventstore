@@ -28,6 +28,7 @@ internal class Program
             .UsingNEventStore()
             .UsingSqlEventStore<EventStoreConfiguration, PostgreSqlDialect>(NpgsqlFactory.Instance)
             .AddAutofacModules((c, _) => new ServerModule(c))
+            //.UsingMassTransitOverRabbitMq()
             .UsingInMemoryMassTransit()
             .UsingWebServer(_ => new DelegateWebApplicationConfiguration(
                 collection =>

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using OpenMedStack.NEventStore.Abstractions;
 
@@ -41,9 +42,11 @@ internal class NesJsonSerializer : ISerialize
         return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 
-    public T? Deserialize<T>(byte[] input)
+    public T? Deserialize<T>(Span<byte> input)
     {
-        using var stream = new MemoryStream(input);
-        return Deserialize<T>(stream);
+        _logger.LogTrace(Messages.DeserializingStream, typeof(T));
+        var stringReader = new StringReader(Encoding.UTF8.GetString(input));
+        var jsonReader = new JsonTextReader(stringReader);
+        return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 }
