@@ -1,9 +1,7 @@
-using System.Runtime.InteropServices;
-using Newtonsoft.Json;
-using OpenMedStack.NEventStore.Abstractions;
-
 namespace OpenMedStack.NEventStore.Serialization;
 
+using Newtonsoft.Json;
+using OpenMedStack.NEventStore.Abstractions;
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -32,6 +30,7 @@ internal class NesJsonSerializer : ISerialize
         _logger.LogTrace(Messages.SerializingGraph, typeof(T));
         using var streamWriter = new StreamWriter(output, Encoding.UTF8);
         _jsonSerializer.Serialize(streamWriter, graph, typeof(T));
+        streamWriter.Flush();
     }
 
     public virtual T? Deserialize<T>(Stream input)
@@ -42,11 +41,12 @@ internal class NesJsonSerializer : ISerialize
         return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 
-    public T? Deserialize<T>(Span<byte> input)
+    public T? Deserialize<T>(byte[] input)
     {
         _logger.LogTrace(Messages.DeserializingStream, typeof(T));
-        var stringReader = new StringReader(Encoding.UTF8.GetString(input));
-        var jsonReader = new JsonTextReader(stringReader);
+        using var stream = new MemoryStream(input);
+        var streamReader = new StreamReader(stream);
+        var jsonReader = new JsonTextReader(streamReader);
         return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 }

@@ -30,5 +30,5 @@ public interface ISerialize
     /// <typeparam name="T">The type of object to be deserialized.</typeparam>
     /// <param name="input">The array of bytes from which the object will be reconstructed.</param>
     /// <returns>The reconstructed object.</returns>
-    T? Deserialize<T>(Span<byte> input);
+    T? Deserialize<T>(byte[] input);
 }

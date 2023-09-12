@@ -2,7 +2,6 @@
 
     <Import Project="..\..\shared.proj" />
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <RootNamespace>OpenMedStack.NEventStore.Persistence.AcceptanceTests</RootNamespace>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

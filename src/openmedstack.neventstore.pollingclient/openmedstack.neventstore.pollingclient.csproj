@@ -12,8 +12,4 @@
       <PackageReference Condition="'$(TargetFramework)'=='net7.0'" Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     </ItemGroup>
 
-<!--    <ItemGroup>-->
-<!--        <ProjectReference Include="..\openmedstack.neventstore\openmedstack.neventstore.csproj"/>-->
-<!--    </ItemGroup>-->
-
 </Project>

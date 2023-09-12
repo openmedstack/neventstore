@@ -72,7 +72,8 @@ internal class HttpEventStorePersistence : IPersistStreams
     {
         return new Commit(commit.BucketId, commit.StreamId, commit.StreamRevision, commit.CommitId,
             commit.CommitSequence, commit.CommitStamp, commit.CheckpointToken, commit.Headers,
-            commit.Events.Select(x => new EventMessage(_serializer.Deserialize<object>(Convert.FromBase64String((string)x.Body))!,
+            commit.Events.Select(x => new EventMessage(
+                _serializer.Deserialize<object>(Convert.FromBase64String((string)x.Body))!,
                 x.Headers.ToDictionary(y => y.Key,
                     y => JsonConvert.DeserializeObject((string)y.Value))!)));
     }
@@ -84,9 +85,11 @@ internal class HttpEventStorePersistence : IPersistStreams
         {
             using var stream = new MemoryStream();
             _serializer.Serialize(stream, body);
+            stream.Flush();
             var bytes = Convert.ToBase64String(stream.ToArray());
             return bytes;
         }
+
         attempt = new CommitAttempt(attempt.BucketId, attempt.StreamId,
             attempt.StreamRevision,
             attempt.CommitId,

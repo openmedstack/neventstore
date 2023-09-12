@@ -2,10 +2,8 @@
 
     <Import Project="..\..\shared.proj" />
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <IsPackable>false</IsPackable>
-        <AssemblyName>openmedstack.neventstore.tests</AssemblyName>
         <RootNamespace>OpenMedStack.NEventStore.Tests</RootNamespace>
     </PropertyGroup>
 

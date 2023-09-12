@@ -30,13 +30,4 @@ public class MultipleConvertersFoundException : Exception
     public MultipleConvertersFoundException(string message, Exception innerException)
         : base(message, innerException)
     { }
-
-    /// <summary>
-    ///     Initializes a new instance of the MultipleConvertersFoundException class.
-    /// </summary>
-    /// <param name="info">The serialization info.</param>
-    /// <param name="context">The streaming context.</param>
-    protected MultipleConvertersFoundException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
-    { }
 }

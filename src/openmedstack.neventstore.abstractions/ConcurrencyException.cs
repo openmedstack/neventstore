@@ -30,13 +30,4 @@ public class ConcurrencyException : Exception
     public ConcurrencyException(string message, Exception innerException)
         : base(message, innerException)
     { }
-
-    /// <summary>
-    ///     Initializes a new instance of the ConcurrencyException class.
-    /// </summary>
-    /// <param name="info">The SerializationInfo that holds the serialized object data of the exception being thrown.</param>
-    /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-    protected ConcurrencyException(SerializationInfo info, StreamingContext context)
-        : base(info, context)
-    {}
 }

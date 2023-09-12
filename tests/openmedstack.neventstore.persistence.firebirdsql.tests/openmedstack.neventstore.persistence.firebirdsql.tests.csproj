@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\shared.proj" />
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <OutputTypeEx>exe</OutputTypeEx>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AssemblyName>openmedstack.neventstore.persistence.firebirdsql.tests</AssemblyName>
         <RootNamespace>OpenMedStack.NEventStore.Persistence.FirebirdSql.Tests</RootNamespace>
     </PropertyGroup>
-	<Import Project="..\..\shared.proj" />
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
         <DefineConstants>TRACE;DEBUG;</DefineConstants>

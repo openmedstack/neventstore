@@ -29,10 +29,11 @@ internal class TestJsonSerializer : ISerialize
         return serializer.Deserialize<T>(jsonReader);
     }
 
-    public T? Deserialize<T>(Span<byte> input)
+    public T? Deserialize<T>(byte[] input)
     {
-        var stringReader = new StringReader(Encoding.UTF8.GetString(input));
-        var jsonReader = new JsonTextReader(stringReader);
+        using var stream = new MemoryStream(input);
+        var streamReader = new StreamReader(stream);
+        var jsonReader = new JsonTextReader(streamReader);
         var serializer = JsonSerializer.Create(_serializerOptions);
         return serializer.Deserialize<T>(jsonReader);
     }
