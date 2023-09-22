@@ -95,7 +95,7 @@ public abstract class PgPublicationClient
             {
                 case 9:
                 {
-                    await HandleHeaders(cancellationToken, c);
+                    await HandleHeaders(c, cancellationToken);
                 }
                     break;
                 case 10:
@@ -131,11 +131,11 @@ public abstract class PgPublicationClient
         }
     }
 
-    private async Task HandleHeaders(CancellationToken cancellationToken, ReplicationValue c)
+    private async Task HandleHeaders(ReplicationValue c, CancellationToken cancellationToken)
     {
         await using var stream = c.GetStream();
-        var bytes = DecodeHex(stream);
-        var headers = _serializer.Deserialize<Dictionary<string, object>>(bytes);
+        //var bytes = DecodeHex(stream);
+        var headers = _serializer.Deserialize<Dictionary<string, object>>(stream);
         if (headers != null)
         {
             foreach (var (_, value) in headers
@@ -166,7 +166,7 @@ public abstract class PgPublicationClient
 
     private static byte GetHexVal(Span<byte> span)
     {
-        byte GetByteValue(int hex)
+        static byte GetByteValue(byte hex)
         {
             return (byte)(hex - (hex < 58 ? 48 : 87));
         }

@@ -13,7 +13,24 @@ namespace OpenMedStack.NEventStore.Abstractions;
 
 public static class AsyncEnumerableExtensions
 {
-    public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> source, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public static async IAsyncEnumerable<T> ToNonNullAsyncEnumerable<T>(this T? item)
+    {
+        await Task.Yield();
+        if (item != null)
+        {
+            yield return item;
+        }
+    }
+
+    public static async IAsyncEnumerable<T> Empty<T>()
+    {
+        await Task.Yield();
+        yield break;
+    }
+
+    public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+        this IEnumerable<T> source,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Yield();
         foreach (var item in source)
@@ -22,6 +39,7 @@ public static class AsyncEnumerableExtensions
             {
                 yield break;
             }
+
             yield return item;
         }
     }
@@ -37,6 +55,7 @@ public static class AsyncEnumerableExtensions
             {
                 break;
             }
+
             list.Add(item);
         }
 
@@ -75,6 +94,7 @@ public static class AsyncEnumerableExtensions
             {
                 throw new InvalidOperationException();
             }
+
             result = item;
         }
 
@@ -114,7 +134,8 @@ public static class AsyncEnumerableExtensions
         return default;
     }
 
-    public static async Task<int> Count<T>(this IAsyncEnumerable<T> enumerable,
+    public static async Task<int> Count<T>(
+        this IAsyncEnumerable<T> enumerable,
         CancellationToken cancellationToken = default)
     {
         var result = 0;

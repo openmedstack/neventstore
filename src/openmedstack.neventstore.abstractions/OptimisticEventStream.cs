@@ -246,7 +246,7 @@ public sealed class OptimisticEventStream : IEventStream
         await PopulateStream(
                 StreamRevision + 1,
                 attempt.StreamRevision,
-                (commit == null ? Array.Empty<ICommit>() : new[] { commit }).ToAsyncEnumerable(cancellationToken),
+                commit.ToNonNullAsyncEnumerable(),
                 cancellationToken)
             .ConfigureAwait(false);
         await ClearChanges().ConfigureAwait(false);

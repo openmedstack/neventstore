@@ -122,8 +122,7 @@ public class WhenACommitIsSuccessfullyPersisted : PersistenceEngineConcern
     public async Task should_cause_the_stream_to_be_found_in_the_list_of_streams_to_snapshot()
     {
         var streamHead = Persistence.GetStreamsToSnapshot(1, CancellationToken.None);
-        Assert.NotNull(await streamHead.FirstOrDefault(x => x.StreamId == _streamId, CancellationToken.None)
-            .ConfigureAwait(false));
+        Assert.NotNull(await streamHead.FirstOrDefault(x => x.StreamId == _streamId, CancellationToken.None));
     }
 }
 
@@ -489,8 +488,7 @@ public class WhenASnapshotHasBeenAddedToTheMostRecentCommitOfAStream : Persisten
     [Fact]
     public async Task should_no_longer_find_the_stream_in_the_set_of_streams_to_be_snapshot()
     {
-        Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList()
-            .ConfigureAwait(false), x => x.StreamId == _streamId);
+        Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList(), x => x.StreamId == _streamId);
     }
 }
 
@@ -517,16 +515,14 @@ public class WhenAddingACommitAfterASnapshot : PersistenceEngineConcern
     [Fact]
     public async Task should_find_the_stream_in_the_set_of_streams_to_be_snapshot_when_within_the_threshold()
     {
-        Assert.NotNull((await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList()
-            .ConfigureAwait(false)).FirstOrDefault(x => x.StreamId == _streamId));
+        Assert.NotNull((await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList()).FirstOrDefault(x => x.StreamId == _streamId));
     }
 
     [Fact]
     public async Task should_not_find_the_stream_in_the_set_of_streams_to_be_snapshot_when_over_the_threshold()
     {
         Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(OverThreshold, CancellationToken.None)
-            .ToList()
-            .ConfigureAwait(false), x => x.StreamId == _streamId);
+            .ToList(), x => x.StreamId == _streamId);
     }
 }
 
@@ -709,13 +705,13 @@ public class WhenPurgingAllCommits : PersistenceEngineConcern
     public async Task should_not_find_any_commits_stored()
     {
         var enumerable = Persistence.GetFrom(DateTimeOffset.MinValue);
-        Assert.Empty(await enumerable.ToList(CancellationToken.None).ConfigureAwait(false));
+        Assert.Empty(await enumerable.ToList(CancellationToken.None));
     }
 
     [Fact]
     public async Task should_not_find_any_streams_to_snapshot() =>
         Assert.Equal(0,
-            await Persistence.GetStreamsToSnapshot(0, CancellationToken.None).Count().ConfigureAwait(false));
+            await Persistence.GetStreamsToSnapshot(0, CancellationToken.None).Count());
 }
 
 public class WhenInvokingAfterDisposal : PersistenceEngineConcern
@@ -731,7 +727,7 @@ public class WhenInvokingAfterDisposal : PersistenceEngineConcern
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.CommitSingle()).ConfigureAwait(false))!;
+        _thrown = (await Catch.Exception(() => Persistence.CommitSingle()))!;
     }
 
     [Fact]
@@ -749,13 +745,12 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamSameBucket : Persistence
     protected override async Task Context()
     {
         _streamId = Guid.NewGuid().ToString();
-        await Persistence.Commit(_streamId.BuildAttempt()).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt());
     }
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.Commit(_streamId.BuildAttempt()))
-            .ConfigureAwait(false))!;
+        _thrown = (await Catch.Exception(() => Persistence.Commit(_streamId.BuildAttempt())))!;
     }
 
     [Fact]
@@ -807,7 +802,7 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamInAnotherBucket : Persis
     public async Task should_persist_to_the_correct_bucket()
     {
         var enumerable = Persistence.GetFrom(BucketBId, _streamId, 0, int.MaxValue, CancellationToken.None);
-        var stream = await enumerable.ToList().ConfigureAwait(false);
+        var stream = await enumerable.ToList();
         Assert.NotNull(stream);
         Assert.Single(stream);
     }
@@ -816,7 +811,7 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamInAnotherBucket : Persis
     public async Task should_not_affect_the_stream_from_the_other_bucket()
     {
         var enumerable = Persistence.GetFrom(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
-        var stream = await enumerable.ToList().ConfigureAwait(false);
+        var stream = await enumerable.ToList();
         Assert.NotNull(stream);
         Assert.Single(stream);
         Assert.Equal(_attemptACommitStamp, stream.First().CommitStamp);
@@ -848,8 +843,7 @@ public class WhenSavingASnapshotForAStreamWithTheSameIdAsAStreamInAnotherBucket 
     [Fact]
     public async Task should_affect_snapshots_from_another_bucket() =>
         Assert.Null(await Persistence
-            .GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None)
-            .ConfigureAwait(false));
+            .GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None));
 }
 
 public class
@@ -869,13 +863,13 @@ public class
         var commitToBucketA = Guid.NewGuid().ToString().BuildAttempt(_now.AddSeconds(1), BucketAId);
 
         await Persistence.Commit(commitToBucketA).ConfigureAwait(false);
-        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
-        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
-        await Persistence.Commit(commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
+        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt());
+        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt());
+        await Persistence.Commit(commitToBucketA.BuildNextAttempt());
 
         _commitToBucketB = Guid.NewGuid().ToString().BuildAttempt(_now.AddSeconds(1), BucketBId);
 
-        await Persistence.Commit(_commitToBucketB).ConfigureAwait(false);
+        await Persistence.Commit(_commitToBucketB);
     }
 
     protected override async Task Because()
@@ -953,23 +947,23 @@ public class WhenPurgingAllCommitsAndThereAreStreamsInMultipleBuckets : Persiste
     public async Task should_purge_all_commits_stored_in_bucket_a()
     {
         var asyncEnumerable = Persistence.GetFrom(BucketAId, DateTimeOffset.MinValue);
-        Assert.Equal(0, await asyncEnumerable.Count().ConfigureAwait(false));
+        Assert.Equal(0, await asyncEnumerable.Count());
     }
 
     [Fact]
     public async Task should_purge_all_commits_stored_in_bucket_b()
     {
         var enumerable = Persistence.GetFrom(BucketBId, DateTimeOffset.MinValue);
-        Assert.Equal(0, await enumerable.Count().ConfigureAwait(false));
+        Assert.Equal(0, await enumerable.Count());
     }
 
     [Fact]
     public async Task should_purge_all_streams_to_snapshot_in_bucket_a() => Assert.Equal(0, await Persistence
-        .GetStreamsToSnapshot(BucketAId, 0, CancellationToken.None).Count().ConfigureAwait(false));
+        .GetStreamsToSnapshot(BucketAId, 0, CancellationToken.None).Count());
 
     [Fact]
     public async Task should_purge_all_streams_to_snapshot_in_bucket_b() => Assert.Equal(0, await Persistence
-        .GetStreamsToSnapshot(BucketBId, 0, CancellationToken.None).Count().ConfigureAwait(false));
+        .GetStreamsToSnapshot(BucketBId, 0, CancellationToken.None).Count());
 }
 
 public class WhenGettingFromCheckpointAmountOfCommitsExceedsPageSize : PersistenceEngineConcern
@@ -985,15 +979,15 @@ public class WhenGettingFromCheckpointAmountOfCommitsExceedsPageSize : Persisten
         // TODO: Not sure how to set the actual page size to the const defined above
         for (var i = 0; i < _moreThanPageSize; i++)
         {
-            using var stream = await eventStore.OpenStream(Guid.NewGuid()).ConfigureAwait(false);
+            using var stream = await eventStore.OpenStream(Guid.NewGuid());
             stream.Add(new EventMessage(new Pippo { S = "Hi " + i }));
-            await stream.CommitChanges(Guid.NewGuid(), CancellationToken.None).ConfigureAwait(false);
+            await stream.CommitChanges(Guid.NewGuid(), CancellationToken.None);
         }
 
         var enumerable = Persistence.GetFrom(DateTimeOffset.MinValue);
-        _ = await enumerable.ToArray().ConfigureAwait(false);
+        _ = await enumerable.ToArray();
         var asyncEnumerable = Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None);
-        _commits = await asyncEnumerable.ToArray().ConfigureAwait(false);
+        _commits = await asyncEnumerable.ToArray();
     }
 
     [Fact]
@@ -1019,10 +1013,9 @@ public class WhenAPayloadIsLarge : PersistenceEngineConcern
             DateTime.UtcNow,
             new Dictionary<string, object>(),
             new List<EventMessage> { new EventMessage(new string('a', bodyLength)) });
-        await Persistence.Commit(attempt).ConfigureAwait(false);
+        await Persistence.Commit(attempt);
 
-        var commits = await Persistence.GetFrom(streamId, 0, int.MaxValue, CancellationToken.None).Single()
-            .ConfigureAwait(false);
+        var commits = await Persistence.GetFrom(streamId, 0, int.MaxValue, CancellationToken.None).Single();
         Assert.Equal(bodyLength, commits!.Events.Single().Body.ToString()!.Length);
     }
 }
