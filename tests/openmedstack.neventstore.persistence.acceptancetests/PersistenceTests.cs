@@ -295,7 +295,7 @@ public class WhenAttemptingToPersistACommitTwice : PersistenceEngineConcern
     protected override async Task Because()
     {
         _thrown = (await Catch
-            .Exception(() => Persistence.Commit(new CommittedStream(_attemptTwice), _attemptTwice.CommitId)))!;
+            .Exception(() => Persistence.Commit(new CommitAttemptStream(CommitAttempt.FromCommit(_attemptTwice)), _attemptTwice.CommitId)))!;
     }
 
     [Fact]

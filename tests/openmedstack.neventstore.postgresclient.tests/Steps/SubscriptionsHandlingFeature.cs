@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using NEventStore;
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Persistence.Sql;

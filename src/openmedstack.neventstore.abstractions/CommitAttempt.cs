@@ -56,6 +56,19 @@ public class CommitAttempt
             eventStream.UncommittedEvents.ToList());
     }
 
+    internal static CommitAttempt FromCommit(ICommit commit)
+    {
+        return new CommitAttempt(
+            commit.BucketId,
+            commit.StreamId,
+            commit.StreamRevision,
+            commit.CommitId,
+            commit.CommitSequence,
+            commit.CommitStamp,
+            commit.Headers,
+            commit.Events.ToList());
+    }
+
     /// <summary>
     ///     Gets the value which identifies bucket to which the the stream and the the commit belongs.
     /// </summary>

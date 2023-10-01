@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore;
@@ -11,7 +12,7 @@ public class OptimisticPipelineHook : PipelineHookBase
 {
     private const int MaxStreamsToTrack = 100;
     private readonly ILogger _logger;
-    private readonly Dictionary<HeadKey, ICommit> _heads = new(); //TODO use concurrent collections
+    private readonly ConcurrentDictionary<HeadKey, ICommit> _heads = new();
     private readonly LinkedList<HeadKey> _maxItemsToTrack = new();
     private readonly int _maxStreamsToTrack;
 
@@ -175,7 +176,7 @@ public class OptimisticPipelineHook : PipelineHookBase
 
     private void RemoveHead(HeadKey head)
     {
-        _heads.Remove(head);
+        _heads.Remove(head, out _);
         var node = _maxItemsToTrack.Find(head); // There should only be ever one or none
         if (node != null)
         {
@@ -197,7 +198,7 @@ public class OptimisticPipelineHook : PipelineHookBase
         var expired = _maxItemsToTrack.Last!.Value;
         _logger.LogTrace(Resources.NoLongerTrackingStream, expired);
 
-        _heads.Remove(expired);
+        _heads.Remove(expired, out _);
         _maxItemsToTrack.RemoveLast();
     }
 

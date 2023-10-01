@@ -2,7 +2,7 @@
 
 using OpenMedStack.NEventStore.Abstractions;
 
-namespace NEventStore;
+namespace OpenMedStack.NEventStore.Persistence.Sql;
 
 using System;
 using Microsoft.Extensions.Logging;
