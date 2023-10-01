@@ -22,7 +22,7 @@ public interface IPipelineHook : IDisposable
     /// </summary>
     /// <param name="attempt">The attempt to be committed.</param>
     /// <returns>If processing should continue, returns true; otherwise returns false.</returns>
-    Task<bool> PreCommit(CommitAttempt attempt);
+    Task<bool> PreCommit(IEventStream attempt);
 
     /// <summary>
     ///     Hooks into the commit pipeline just after the commit has been *successfully* committed to durable storage.

@@ -38,12 +38,14 @@ public class SubscriptionsHandlingFeature : IDisposable
     {
         try
         {
-            await using var connection = new NpgsqlConnection(ConnectionString);
+            var connection = new NpgsqlConnection(ConnectionString);
+            await using var _ = connection.ConfigureAwait(false);
             connection.Open();
-            await using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var __ = command.ConfigureAwait(false);
             command.CommandText =
                 "CREATE PUBLICATION commit_pub FOR TABLE Commits WITH (publish = 'insert')";
-            var amount = await command.ExecuteNonQueryAsync();
+            var amount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
             Assert.Equal(0, amount);
         }
@@ -67,16 +69,16 @@ public class SubscriptionsHandlingFeature : IDisposable
 
         _client = new DelegatePgPublicationClient(ConnectionString,
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance), Handler);
-        await _client.CreateSubscriptionSlot(_cancellationTokenSource.Token);
+        await _client.CreateSubscriptionSlot(_cancellationTokenSource.Token).ConfigureAwait(false);
         _subscriptionTask = _client.Subscribe(_cancellationTokenSource.Token);
     }
 
     [When(@"a row is inserted into a table")]
     public async Task WhenARowIsInsertedIntoATable()
     {
-        var stream = await _eventStore.OpenStream(Guid.NewGuid(), 0);
+        var stream = await _eventStore.OpenStream(Guid.NewGuid(), 0).ConfigureAwait(false);
         stream.Add(new EventMessage(new TestEvent { Value = DateTimeOffset.UtcNow.ToString("F") }));
-        await stream.CommitChanges(Guid.NewGuid(), CancellationToken.None);
+        await _eventStore.Advanced.Commit(stream).ConfigureAwait(false);
     }
 
     [Then(@"a notification is received")]

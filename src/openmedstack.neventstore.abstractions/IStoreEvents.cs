@@ -18,8 +18,9 @@ public interface IStoreEvents : IDisposable
     /// </summary>
     /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
     /// <param name="streamId">The value which uniquely identifies the stream within the bucket to be created.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>An empty stream.</returns>
-    Task<IEventStream> CreateStream(string bucketId, string streamId);
+    Task<IEventStream> CreateStream(string bucketId, string streamId, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Reads the stream indicated from the minimum revision specified up to the maximum revision specified or creates
@@ -33,7 +34,7 @@ public interface IStoreEvents : IDisposable
     /// <returns>A series of committed events represented as a stream.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    /// <exception cref="OpenMedStack.NEventStore.StreamNotFoundException" />
+    /// <exception cref="StreamNotFoundException" />
     Task<IEventStream> OpenStream(string bucketId, string streamId, int minRevision, int maxRevision, CancellationToken cancellationToken);
 
     /// <summary>

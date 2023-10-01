@@ -123,7 +123,7 @@ public class PollingClient : IDisposable
             LastActivityTimestamp = DateTime.UtcNow;
             try
             {
-                await foreach (var commit in _pollingFunc())
+                await foreach (var commit in _pollingFunc().ConfigureAwait(false))
                 {
                     LastActivityTimestamp = DateTime.UtcNow;
                     if (_cts.IsCancellationRequested)

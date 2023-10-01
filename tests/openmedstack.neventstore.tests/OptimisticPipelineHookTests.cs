@@ -37,7 +37,8 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_beyondEndOfStream)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_beyondEndOfStream)))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
@@ -68,7 +69,8 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_beyondEndOfStream)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_beyondEndOfStream)))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
@@ -101,7 +103,8 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_attempt)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_attempt)))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
@@ -142,7 +145,7 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_failedAttempt)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_failedAttempt))))!;
         }
 
         [Fact]
@@ -178,7 +181,8 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_failedAttempt)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_failedAttempt)))
+                .ConfigureAwait(false))!;
         }
 
         [Fact]
@@ -217,7 +221,7 @@ public class OptimisticPipelineHookTests
 
         protected override async Task Because()
         {
-            _thrown = (await Catch.Exception(() => Hook.PreCommit(_failedAttempt)).ConfigureAwait(false))!;
+            _thrown = (await Catch.Exception(() => Hook.PreCommit(new CommitAttemptStream(_failedAttempt))))!;
         }
 
         [Fact]

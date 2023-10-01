@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace OpenMedStack.NEventStore.Abstractions;
 
@@ -11,33 +12,28 @@ namespace OpenMedStack.NEventStore.Abstractions;
 public sealed class OptimisticEventStream : IEventStream
 {
     private readonly ILogger<OptimisticEventStream> _logger;
-    private readonly ICollection<EventMessage> _committed = new LinkedList<EventMessage>();
-    private readonly ICollection<EventMessage> _events = new LinkedList<EventMessage>();
+    private readonly List<EventMessage> _committed = new();
+    private readonly List<EventMessage> _events = new();
     private readonly ICollection<Guid> _identifiers = new HashSet<Guid>();
-    private readonly ICommitEvents _persistence;
 
-    private bool _disposed;
 //    private readonly ImmutableArray<EventMessage> _immutableCollection;
 //    private readonly ImmutableArray<EventMessage> _uncommittedEvents;
 
     private OptimisticEventStream(
         string bucketId,
         string streamId,
-        ICommitEvents persistence,
         ILogger<OptimisticEventStream> logger)
     {
         BucketId = bucketId;
         StreamId = streamId;
-        _persistence = persistence;
         _logger = logger;
     }
 
-    public static Task<OptimisticEventStream> Create(
+    public static OptimisticEventStream Create(
         string bucketId,
         string streamId,
-        ICommitEvents persistence,
-        ILogger<OptimisticEventStream> logger) =>
-        Task.FromResult(new OptimisticEventStream(bucketId, streamId, persistence, logger));
+        ILogger<OptimisticEventStream>? logger = null) =>
+        new(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
 
     public static async Task<OptimisticEventStream> Create(
         string bucketId,
@@ -48,7 +44,7 @@ public sealed class OptimisticEventStream : IEventStream
         ILogger<OptimisticEventStream> logger,
         CancellationToken cancellationToken = default)
     {
-        var instance = await Create(bucketId, streamId, persistence, logger).ConfigureAwait(false);
+        var instance = Create(bucketId, streamId, logger);
         var commits = persistence.GetFrom(bucketId, streamId, minRevision, maxRevision, cancellationToken);
         await instance.PopulateStream(minRevision, maxRevision, commits, cancellationToken).ConfigureAwait(false);
 
@@ -68,7 +64,7 @@ public sealed class OptimisticEventStream : IEventStream
         ILogger<OptimisticEventStream> logger,
         CancellationToken cancellationToken)
     {
-        var instance = await Create(snapshot.BucketId, snapshot.StreamId, persistence, logger).ConfigureAwait(false);
+        var instance = Create(snapshot.BucketId, snapshot.StreamId, logger);
         var commits = persistence.GetFrom(
             snapshot.BucketId,
             snapshot.StreamId,
@@ -78,6 +74,38 @@ public sealed class OptimisticEventStream : IEventStream
         await instance.PopulateStream(snapshot.StreamRevision + 1, maxRevision, commits, cancellationToken)
             .ConfigureAwait(false);
         instance.StreamRevision = snapshot.StreamRevision + instance._committed.Count;
+
+        return instance;
+    }
+
+    internal static async Task<OptimisticEventStream> Create(
+        string bucketId,
+        string streamId,
+        IAsyncEnumerable<ICommit> commits,
+        int minRevision = 0,
+        int maxRevision = int.MaxValue,
+        int streamRevision = 0,
+        int commitSequence = 0,
+        ILogger<OptimisticEventStream>? logger = null)
+    {
+        var instance = Create(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
+        await instance.PopulateStream(minRevision, maxRevision, commits, CancellationToken.None).ConfigureAwait(false);
+
+        if (minRevision > 0 && instance._committed.Count == 0)
+        {
+            throw new StreamNotFoundException(
+                string.Format(Resources.StreamNotFoundException, streamId, instance.BucketId));
+        }
+
+        if (streamRevision > 0)
+        {
+            instance.StreamRevision = streamRevision;
+        }
+
+        if (commitSequence > 0)
+        {
+            instance.CommitSequence = commitSequence;
+        }
 
         return instance;
     }
@@ -115,52 +143,35 @@ public sealed class OptimisticEventStream : IEventStream
 
         _logger.LogTrace(Resources.AppendingUncommittedToStream, uncommittedEvent.Body.GetType(), StreamId);
         _events.Add(uncommittedEvent);
+        StreamRevision++;
     }
 
-    public async Task CommitChanges(Guid commitId, CancellationToken cancellationToken)
+    public void SetPersisted(int commitSequence)
     {
-        _logger.LogTrace(Resources.AttemptingToCommitChanges, StreamId);
-
-        if (_identifiers.Contains(commitId))
+        _committed.AddRange(_events);
+        foreach (var header in UncommittedHeaders)
         {
-            throw new DuplicateCommitException(string.Format(Resources.DuplicateCommitIdException, commitId));
+            CommittedHeaders[header.Key] = header.Value;
         }
 
-        if (!HasChanges())
-        {
-            return;
-        }
+        CommitSequence = commitSequence;
 
-        try
-        {
-            await PersistChanges(commitId, cancellationToken).ConfigureAwait(false);
-        }
-        catch (ConcurrencyException cex)
-        {
-            _logger.LogDebug(
-                Resources.UnderlyingStreamHasChanged,
-                StreamId,
-                cex.Message); //not useful to log info because the exception will be thrown
-            var commits = _persistence.GetFrom(
-                BucketId,
-                StreamId,
-                StreamRevision + 1,
-                int.MaxValue,
-                cancellationToken);
-            await PopulateStream(StreamRevision + 1, int.MaxValue, commits, cancellationToken)
-                .ConfigureAwait(false);
-
-            throw;
-        }
+        ClearChanges();
     }
 
-    public Task ClearChanges()
+    public async Task Update(ICommitEvents commitEvents, CancellationToken cancellationToken = default)
+    {
+        var revision = StreamRevision - UncommittedEvents.Count;
+        var commits = commitEvents.GetFrom(BucketId, StreamId, revision + 1, int.MaxValue,
+            cancellationToken);
+        await PopulateStream(revision + 1, int.MaxValue, commits, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal void ClearChanges()
     {
         _logger.LogTrace(Resources.ClearingUncommittedChanges, StreamId);
         _events.Clear();
         UncommittedHeaders.Clear();
-
-        return Task.CompletedTask;
     }
 
     private async Task PopulateStream(
@@ -169,7 +180,8 @@ public sealed class OptimisticEventStream : IEventStream
         IAsyncEnumerable<ICommit> commits,
         CancellationToken cancellationToken)
     {
-        await foreach (var commit in commits.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var commit in commits.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -218,56 +230,5 @@ public sealed class OptimisticEventStream : IEventStream
             _committed.Add(@event);
             StreamRevision = currentRevision - 1;
         }
-    }
-
-    private bool HasChanges()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(Resources.AlreadyDisposed);
-        }
-
-        if (_events.Count > 0)
-        {
-            return true;
-        }
-
-        _logger.LogInformation(Resources.NoChangesToCommit, StreamId);
-        return false;
-    }
-
-    private async Task PersistChanges(Guid commitId, CancellationToken cancellationToken)
-    {
-        var attempt = BuildCommitAttempt(commitId);
-
-        _logger.LogDebug(Resources.PersistingCommit, commitId, StreamId, attempt.Events.Count);
-        var commit = await _persistence.Commit(attempt).ConfigureAwait(false);
-
-        await PopulateStream(
-                StreamRevision + 1,
-                attempt.StreamRevision,
-                commit.ToNonNullAsyncEnumerable(),
-                cancellationToken)
-            .ConfigureAwait(false);
-        await ClearChanges().ConfigureAwait(false);
-    }
-
-    private CommitAttempt BuildCommitAttempt(Guid commitId)
-    {
-        _logger.LogTrace(Resources.BuildingCommitAttempt, commitId, StreamId);
-        return new CommitAttempt(
-            BucketId,
-            StreamId,
-            StreamRevision + _events.Count,
-            commitId,
-            CommitSequence + 1,
-            SystemTime.UtcNow,
-            UncommittedHeaders.ToDictionary(x => x.Key, x => x.Value),
-            _events.ToList());
-    }
-
-    public void Dispose()
-    {
-        _disposed = true;
     }
 }

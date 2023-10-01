@@ -92,7 +92,7 @@ public class SqlPersistenceEngine : IPersistStreams
             query.AddParameter(_dialect.StreamRevision, minRevision);
             query.AddParameter(_dialect.MaxStreamRevision, maxRevision);
             query.AddParameter(_dialect.CommitSequence, 0);
-            await foreach (var item in query.ExecuteWithQuery(statement, token))
+            await foreach (var item in query.ExecuteWithQuery(statement, token).ConfigureAwait(false))
             {
                 if (token.IsCancellationRequested)
                 {
@@ -171,8 +171,14 @@ public class SqlPersistenceEngine : IPersistStreams
         return result;
     }
 
-    public virtual async Task<ICommit?> Commit(CommitAttempt attempt)
+    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
     {
+        if (eventStream.UncommittedEvents.Count == 0)
+        {
+            return null;
+        }
+
+        var attempt = CommitAttempt.FromStream(eventStream, commitId ?? Guid.NewGuid());
         ICommit commit;
         try
         {
@@ -181,7 +187,7 @@ public class SqlPersistenceEngine : IPersistStreams
         }
         catch (Exception e)
         {
-            if (!(e is UniqueKeyViolationException))
+            if (e is not UniqueKeyViolationException)
             {
                 throw;
             }
@@ -252,7 +258,7 @@ public class SqlPersistenceEngine : IPersistStreams
             query.AddParameter(_dialect.StreamId, streamIdHash!, DbType.AnsiString);
             query.AddParameter(_dialect.StreamRevision, maxRevision);
             var dataRecords = query.ExecuteWithQuery(statement, token).ConfigureAwait(false);
-            await foreach (var record in dataRecords)
+            await foreach (var record in dataRecords.ConfigureAwait(false))
             {
                 if (token.IsCancellationRequested)
                 {
@@ -288,7 +294,7 @@ public class SqlPersistenceEngine : IPersistStreams
     public virtual async Task<bool> Purge()
     {
         _logger.LogWarning(PersistenceMessages.PurgingStorage);
-        return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.PurgeStorage)) > 0;
+        return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.PurgeStorage)).ConfigureAwait(false) > 0;
     }
 
     public async Task<bool> Purge(string bucketId)
@@ -299,13 +305,13 @@ public class SqlPersistenceEngine : IPersistStreams
             {
                 cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
                 return cmd.ExecuteNonQuery(_dialect.PurgeBucket);
-            }) > 0;
+            }).ConfigureAwait(false) > 0;
     }
 
     public async Task<bool> Drop()
     {
         _logger.LogWarning(PersistenceMessages.DroppingTables);
-        return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.Drop)) > 0;
+        return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.Drop)).ConfigureAwait(false) > 0;
     }
 
     public async Task<bool> DeleteStream(string bucketId, string streamId)
@@ -318,7 +324,7 @@ public class SqlPersistenceEngine : IPersistStreams
                 cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
                 cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                 return cmd.ExecuteNonQuery(_dialect.DeleteStream);
-            }) > 0;
+            }).ConfigureAwait(false) > 0;
     }
 
     public IAsyncEnumerable<ICommit> GetFrom(
@@ -525,7 +531,7 @@ public class SqlPersistenceEngine : IPersistStreams
     }
 
     private static bool RecoverableException(Exception e) =>
-        e is UniqueKeyViolationException || e is StorageUnavailableException;
+        e is UniqueKeyViolationException or StorageUnavailableException;
 
     private class StreamIdHasherValidator : IStreamIdHasher
     {

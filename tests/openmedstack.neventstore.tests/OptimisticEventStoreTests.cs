@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using NEventStore;
-using NEventStore.Persistence;
 using NEventStore.Persistence.AcceptanceTests;
 using NEventStore.Persistence.AcceptanceTests.BDD;
 using Xunit;
@@ -21,7 +20,7 @@ public class WhenCreatingANewStream : UsingPersistence
 
     protected override async Task Because()
     {
-        _stream = await Store.CreateStream(StreamId).ConfigureAwait(false);
+        _stream = await Store.CreateStream(StreamId, CancellationToken.None).ConfigureAwait(false);
     }
 
     [Fact]
@@ -338,22 +337,6 @@ public class WhenReadingUpToRevisionRevisionZero : UsingPersistence
     }
 }
 
-//public class WhenReadingFromANullSnapshot : UsingPersistence
-//{
-//    private Exception _thrown;
-
-//    protected override async Task Because()
-//    {
-//        _thrown = (await Catch.Exception(() => Store.OpenStream(null, int.MaxValue)).ConfigureAwait(false))!;
-//    }
-
-//    [Fact]
-//    public void should_throw_an_ArgumentNullException()
-//    {
-//        _thrown.Should().BeOfType<ArgumentNullException>();
-//    }
-//}
-
 public class WhenReadingFromASnapshotUpToRevisionRevisionZero : UsingPersistence
 {
     private ICommit _committed = null!;
@@ -392,57 +375,42 @@ public class WhenReadingFromASnapshotUpToRevisionRevisionZero : UsingPersistence
     }
 }
 
-//public class WhenCommittingANullAttemptBackToTheStream : UsingPersistence
-//{
-//    private Exception _thrown;
-
-//    protected override async Task Because()
-//    {
-//        _thrown = await Catch.Exception(() => ((ICommitEvents)Store).Commit(null)).ConfigureAwait(false);
-//    }
-
-//    [Fact]
-//    public void should_throw_an_ArgumentNullException()
-//    {
-//        _thrown.Should().BeOfType<ArgumentNullException>();
-//    }
-//}
-
 public class WhenCommittingWithAValidAndPopulatedAttemptToAStream : UsingPersistence
 {
-    private CommitAttempt _populatedAttempt = null!;
+    private IEventStream _populatedAttempt = null!;
     private ICommit _populatedCommit = null!;
 
     protected override Task Context()
     {
         _populatedAttempt = BuildCommitAttemptStub(1, 1);
 
-        A.CallTo(() => Persistence.Commit(_populatedAttempt))
+        A.CallTo(() => Persistence.Commit(_populatedAttempt, A<Guid?>._, default))
             .ReturnsLazily(
-                (CommitAttempt attempt) =>
+                (IEventStream e, Guid? g, CancellationToken c) =>
                 {
                     _populatedCommit = new Commit(
-                        attempt.BucketId,
-                        attempt.StreamId,
-                        attempt.StreamRevision,
-                        attempt.CommitId,
-                        attempt.CommitSequence,
-                        attempt.CommitStamp,
-                        0,
-                        attempt.Headers,
-                        attempt.Events);
+                        e.BucketId,
+                        e.StreamId,
+                        e.StreamRevision,
+                        g ?? Guid.NewGuid(),
+                        e.CommitSequence + 1,
+                        DateTimeOffset.UtcNow,
+                        1,
+                        e.UncommittedHeaders,
+                        e.UncommittedEvents);
                     return _populatedCommit;
                 });
 
         var hook = A.Fake<IPipelineHook>();
-        A.CallTo(() => hook.PreCommit(_populatedAttempt)).Returns(true);
+        A.CallTo(() => hook.PreCommit(_populatedAttempt)).Returns(Task.FromResult(true));
 
         PipelineHooks.Add(hook);
 
         return Task.CompletedTask;
     }
 
-    protected override Task Because() => ((ICommitEvents)Store).Commit(_populatedAttempt);
+    protected override Task Because() =>
+        Store.Commit(_populatedAttempt, Guid.NewGuid(), CancellationToken.None);
 
     [Fact]
     public void should_provide_the_commit_to_the_precommit_hooks()
@@ -454,7 +422,8 @@ public class WhenCommittingWithAValidAndPopulatedAttemptToAStream : UsingPersist
     [Fact]
     public void should_provide_the_commit_attempt_to_the_configured_persistence_mechanism()
     {
-        A.CallTo(() => Persistence.Commit(_populatedAttempt)).MustHaveHappened(1, Times.Exactly);
+        A.CallTo(() => Persistence.Commit(_populatedAttempt, A<Guid?>._, A<CancellationToken>._))
+            .MustHaveHappened(1, Times.Exactly);
     }
 
     [Fact]
@@ -467,7 +436,7 @@ public class WhenCommittingWithAValidAndPopulatedAttemptToAStream : UsingPersist
 
 public class WhenAPrecommitHookRejectsACommit : UsingPersistence
 {
-    private CommitAttempt _attempt = null!;
+    private IEventStream _attempt = null!;
     private ICommit _commit = null!;
 
     protected override Task Context()
@@ -483,12 +452,12 @@ public class WhenAPrecommitHookRejectsACommit : UsingPersistence
         return Task.CompletedTask;
     }
 
-    protected override Task Because() => ((ICommitEvents)Store).Commit(_attempt);
+    protected override Task Because() => Persistence.Commit(_attempt);
 
     [Fact]
     public void should_not_call_the_underlying_infrastructure()
     {
-        A.CallTo(() => Persistence.Commit(_attempt)).MustNotHaveHappened();
+        A.CallTo(() => Persistence.Commit(_attempt, Guid.NewGuid(), CancellationToken.None)).MustNotHaveHappened();
     }
 
     [Fact]
@@ -525,7 +494,10 @@ public abstract class UsingPersistence : SpecificationBase
         OnStart().Wait();
     }
 
-    protected IPersistStreams Persistence => _persistence ??= A.Fake<IPersistStreams>();
+    protected IPersistStreams Persistence => _persistence ??= A.Fake<IPersistStreams>(o =>
+    {
+        o.Implements<ICommitEvents>();
+    });
 
     protected List<IPipelineHook> PipelineHooks => _pipelineHooks ??= new List<IPipelineHook>();
 
@@ -558,10 +530,10 @@ public abstract class UsingPersistence : SpecificationBase
             events);
     }
 
-    protected CommitAttempt BuildCommitAttemptStub(int streamRevision, int commitSequence)
+    protected IEventStream BuildCommitAttemptStub(int streamRevision, int commitSequence)
     {
         var events = new[] { new EventMessage(new object()) }.ToList();
-        return new CommitAttempt(
+        var attempt = new CommitAttempt(
             Bucket.Default,
             StreamId,
             streamRevision,
@@ -570,5 +542,7 @@ public abstract class UsingPersistence : SpecificationBase
             SystemTime.UtcNow,
             null,
             events);
+
+        return new CommitAttemptStream(attempt);
     }
 }

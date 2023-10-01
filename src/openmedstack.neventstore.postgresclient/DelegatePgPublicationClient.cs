@@ -24,6 +24,6 @@ public class DelegatePgPublicationClient : PgPublicationClient
     /// <inheritdoc />
     protected override async Task HandleMessage(Type type, object value, CancellationToken cancellationToken)
     {
-        await _handler(type, value, cancellationToken);
+        await _handler(type, value, cancellationToken).ConfigureAwait(false);
     }
 }

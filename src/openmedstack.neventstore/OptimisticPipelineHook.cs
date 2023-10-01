@@ -10,13 +10,15 @@ using Microsoft.Extensions.Logging;
 public class OptimisticPipelineHook : PipelineHookBase
 {
     private const int MaxStreamsToTrack = 100;
-    private readonly ILogger _logger; private readonly Dictionary<HeadKey, ICommit> _heads = new(); //TODO use concurrent collections
+    private readonly ILogger _logger;
+    private readonly Dictionary<HeadKey, ICommit> _heads = new(); //TODO use concurrent collections
     private readonly LinkedList<HeadKey> _maxItemsToTrack = new();
     private readonly int _maxStreamsToTrack;
 
     public OptimisticPipelineHook(ILogger logger)
         : this(MaxStreamsToTrack, logger)
-    { }
+    {
+    }
 
     public OptimisticPipelineHook(int maxStreamsToTrack, ILogger logger)
     {
@@ -37,7 +39,7 @@ public class OptimisticPipelineHook : PipelineHookBase
         return Task.FromResult(committed);
     }
 
-    public override Task<bool> PreCommit(CommitAttempt attempt)
+    public override Task<bool> PreCommit(IEventStream attempt)
     {
         _logger.LogTrace(Resources.OptimisticConcurrencyCheck, attempt.StreamId);
 
@@ -55,7 +57,7 @@ public class OptimisticPipelineHook : PipelineHookBase
                 attempt.CommitSequence,
                 attempt.StreamId,
                 attempt.StreamRevision,
-                attempt.Events.Count
+                attempt.UncommittedEvents.Count
             ));
         }
 
@@ -67,7 +69,7 @@ public class OptimisticPipelineHook : PipelineHookBase
                 attempt.StreamRevision,
                 attempt.StreamId,
                 attempt.StreamRevision,
-                attempt.Events.Count
+                attempt.UncommittedEvents.Count
             ));
         }
 
@@ -79,17 +81,17 @@ public class OptimisticPipelineHook : PipelineHookBase
                 attempt.CommitSequence,
                 attempt.StreamId,
                 attempt.StreamRevision,
-                attempt.Events.Count
+                attempt.UncommittedEvents.Count
             )); // beyond the end of the stream
         }
 
-        if (head.StreamRevision < attempt.StreamRevision - attempt.Events.Count)
+        if (head.StreamRevision < attempt.StreamRevision - attempt.UncommittedEvents.Count)
         {
             throw new StorageException(string.Format(
                 Messages.StorageExceptionEndOfStream,
                 head.StreamRevision,
                 attempt.StreamRevision,
-                attempt.Events.Count,
+                attempt.UncommittedEvents.Count,
                 attempt.StreamId,
                 attempt.StreamRevision
             )); // beyond the end of the stream
@@ -117,6 +119,7 @@ public class OptimisticPipelineHook : PipelineHookBase
 
                 return Task.CompletedTask;
             }
+
             var headsInBucket = _heads.Keys.Where(k => k.BucketId == bucketId).ToArray();
             foreach (var head in headsInBucket)
             {
@@ -211,7 +214,10 @@ public class OptimisticPipelineHook : PipelineHookBase
 
     private static HeadKey GetHeadKey(ICommit commit) => new(commit.BucketId, commit.StreamId);
 
-    private static HeadKey GetHeadKey(CommitAttempt commitAttempt) => new(commitAttempt.BucketId, commitAttempt.StreamId);
+    private static HeadKey GetHeadKey(CommitAttempt commitAttempt) =>
+        new(commitAttempt.BucketId, commitAttempt.StreamId);
+
+    private static HeadKey GetHeadKey(IEventStream eventStream) => new(eventStream.BucketId, eventStream.StreamId);
 
     private sealed class HeadKey : IEquatable<HeadKey>
     {
@@ -231,10 +237,12 @@ public class OptimisticPipelineHook : PipelineHookBase
             {
                 return false;
             }
+
             if (ReferenceEquals(this, other))
             {
                 return true;
             }
+
             return string.Equals(BucketId, other.BucketId) && string.Equals(StreamId, other.StreamId);
         }
 
@@ -244,10 +252,12 @@ public class OptimisticPipelineHook : PipelineHookBase
             {
                 return false;
             }
+
             if (ReferenceEquals(this, obj))
             {
                 return true;
             }
+
             return obj is HeadKey key && Equals(key);
         }
 

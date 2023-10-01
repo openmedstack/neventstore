@@ -79,7 +79,7 @@ public static class PersistStreamsExtensions
         }
 
         await Task.Yield();
-        await foreach (var item in persistStreams.GetFrom(bucketId, 0, cancellationToken))
+        await foreach (var item in persistStreams.GetFrom(bucketId, 0, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
             {

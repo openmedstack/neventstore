@@ -38,9 +38,10 @@ public class HttpEventStoreClient : IStoreEvents
     public IPersistStreams Advanced { get; }
 
     /// <inheritdoc />
-    public async Task<IEventStream> CreateStream(string bucketId, string streamId)
+    public async Task<IEventStream> CreateStream(string bucketId, string streamId, CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, _logger.CreateLogger<OptimisticEventStream>()).ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, 0, int.MaxValue,
+            _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -51,17 +52,14 @@ public class HttpEventStoreClient : IStoreEvents
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream
-            .Create(bucketId, streamId, Advanced, minRevision, maxRevision,
-                _logger.CreateLogger<OptimisticEventStream>(), cancellationToken)
-            .ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, minRevision, maxRevision,
+            _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<IEventStream> OpenStream(ISnapshot snapshot, int maxRevision, CancellationToken cancellationToken)
     {
         return await OptimisticEventStream.Create(snapshot, Advanced, maxRevision,
-                _logger.CreateLogger<OptimisticEventStream>(), cancellationToken)
-            .ConfigureAwait(false);
+            _logger.CreateLogger<OptimisticEventStream>(), cancellationToken);
     }
 }

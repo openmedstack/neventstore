@@ -1,5 +1,6 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Grpc;
@@ -24,17 +25,20 @@ public class EventStoreService : EventStore.EventStoreBase
             return new EventMessage(info.Base64Payload, info.Headers.ToDictionary(x => x.Key, x => (object)x.Value));
         }
 
-        var events = request.Events.Select(ToEventMessage).ToList();
-        var commitAttempt = new CommitAttempt(
-            request.BucketId,
-            request.StreamId,
+        var stream = await OptimisticEventStream.Create(request.BucketId, request.StreamId, _persistence, 0,
             request.StreamRevision,
-            Guid.Parse(request.CommitId),
-            request.CommitSequence,
-            DateTimeOffset.FromUnixTimeSeconds(request.CommitStamp),
-            new Dictionary<string, object>(),
-            events);
-        var info = await _persistence.Commit(commitAttempt)
+            NullLogger<OptimisticEventStream>.Instance, context.CancellationToken).ConfigureAwait(false);
+        foreach (var requestEvent in request.Events)
+        {
+            stream.Add(ToEventMessage(requestEvent));
+        }
+
+        foreach (var header in request.Headers)
+        {
+            stream.UncommittedHeaders[header.Key] = header.Value;
+        }
+
+        var info = await _persistence.Commit(stream, Guid.Parse(request.CommitId), context.CancellationToken)
             .ConfigureAwait(false);
         return info == null
             ? null

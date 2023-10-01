@@ -12,8 +12,7 @@ public abstract class PipelineHookBase : IPipelineHook
     }
 
     public virtual Task<ICommit> Select(ICommit committed) => Task.FromResult(committed);
-
-    public virtual Task<bool> PreCommit(CommitAttempt attempt) => Task.FromResult(true);
+    public virtual Task<bool> PreCommit(IEventStream attempt) => Task.FromResult(true);
 
     public virtual Task PostCommit(ICommit committed) => Task.CompletedTask;
 

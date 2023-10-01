@@ -1,4 +1,5 @@
 using Grpc.Net.Client;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.GrpcClient;
 using OpenMedStack.NEventStore.HttpClient;
@@ -25,10 +26,9 @@ public partial class FeatureSteps
     [When(@"I commit an event to the event store using the (.+) client")]
     public async Task WhenICommitAnEventToTheEventStoreUsingTheHttpClient(string type)
     {
-        var commit = new CommitAttempt("test", Guid.NewGuid().ToString("N"), 1, Guid.NewGuid(), 1,
-            DateTimeOffset.UtcNow, null,
-            new List<EventMessage> { new EventMessage(new TestEvent("test", "test_case", 1, DateTimeOffset.UtcNow)) });
-
+        var commit = OptimisticEventStream.Create("test", Guid.NewGuid().ToString("N"),
+            NullLogger<OptimisticEventStream>.Instance);
+        commit.Add(new EventMessage(new TestEvent("test", "test_case", 1, DateTimeOffset.UtcNow)));
         var client = GetClient(type);
         _commitResult = await client.Commit(commit).ConfigureAwait(false);
     }

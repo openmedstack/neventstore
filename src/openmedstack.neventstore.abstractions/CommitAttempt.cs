@@ -23,7 +23,7 @@ public class CommitAttempt
         int commitSequence,
         DateTimeOffset commitStamp,
         IDictionary<string, object>? headers,
-        ICollection<EventMessage> events)
+        IList<EventMessage> events)
     {
         Guard.NotNullOrWhiteSpace(nameof(bucketId), bucketId);
         Guard.NotNullOrWhiteSpace(nameof(streamId), streamId);
@@ -40,7 +40,20 @@ public class CommitAttempt
         CommitSequence = commitSequence;
         CommitStamp = commitStamp;
         Headers = headers ?? new Dictionary<string, object>();
-        Events = new ReadOnlyCollection<EventMessage>(events.ToArray());
+        Events = new ReadOnlyCollection<EventMessage>(events);
+    }
+
+    public static CommitAttempt FromStream(IEventStream eventStream, Guid commitId)
+    {
+        return new CommitAttempt(
+            eventStream.BucketId,
+            eventStream.StreamId,
+            eventStream.StreamRevision,
+            commitId,
+            eventStream.CommitSequence + 1,
+            DateTimeOffset.UtcNow,
+            eventStream.UncommittedHeaders,
+            eventStream.UncommittedEvents.ToList());
     }
 
     /// <summary>

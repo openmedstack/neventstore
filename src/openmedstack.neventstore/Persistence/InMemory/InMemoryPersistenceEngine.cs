@@ -98,10 +98,19 @@ public class InMemoryPersistenceEngine : IPersistStreams
         return fromTo.ToAsyncEnumerable(cancellationToken);
     }
 
-    public Task<ICommit?> Commit(CommitAttempt attempt)
+    public Task<ICommit?> Commit(
+        IEventStream eventStream,
+        Guid? commitId = null,
+        CancellationToken cancellationToken = default)
     {
+        if (eventStream.UncommittedEvents.Count == 0)
+        {
+            return Task.FromResult<ICommit?>(null);
+        }
+
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.AttemptingToCommit, attempt.CommitId, attempt.StreamId, attempt.CommitSequence);
+        _logger.LogDebug(Resources.AttemptingToCommit, commitId, eventStream.StreamId, eventStream.CommitSequence);
+        var attempt = CommitAttempt.FromStream(eventStream, commitId ?? Guid.NewGuid());
         var bucket = this[attempt.BucketId];
         var commit = bucket.Commit(attempt, Interlocked.Increment(ref _checkpoint));
         return Task.FromResult<ICommit?>(commit);
@@ -349,10 +358,10 @@ public class InMemoryPersistenceEngine : IPersistStreams
         public IEnumerable<ICommit> GetFromTo(DateTimeOffset start, DateTimeOffset end)
         {
             IEnumerable<Guid> selectedCommitIds =
-                _stamps.Where(x => x.Value >= start && x.Value < end).Select(x => x.Key).ToArray();
+                _stamps.Where(x => x.Value >= start && x.Value <= end).Select(x => x.Key).ToArray();
             var firstCommitId = selectedCommitIds.FirstOrDefault();
             var lastCommitId = selectedCommitIds.LastOrDefault();
-            if (lastCommitId == Guid.Empty && lastCommitId == Guid.Empty)
+            if (firstCommitId == Guid.Empty && lastCommitId == Guid.Empty)
             {
                 return Enumerable.Empty<ICommit>();
             }

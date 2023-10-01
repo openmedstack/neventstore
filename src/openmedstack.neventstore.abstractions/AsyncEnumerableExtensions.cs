@@ -74,7 +74,8 @@ public static class AsyncEnumerableExtensions
         this IAsyncEnumerable<T> enumerable,
         CancellationToken cancellationToken = default)
     {
-        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             return item;
         }
@@ -88,7 +89,8 @@ public static class AsyncEnumerableExtensions
     {
         byte count = 0;
         T? result = default;
-        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             if (count++ > 1)
             {
@@ -110,7 +112,8 @@ public static class AsyncEnumerableExtensions
         this IAsyncEnumerable<T> enumerable,
         CancellationToken cancellationToken)
     {
-        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             return item;
         }
@@ -123,7 +126,8 @@ public static class AsyncEnumerableExtensions
         Func<T, bool> predicate,
         CancellationToken cancellationToken)
     {
-        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             if (predicate(item))
             {
@@ -139,7 +143,8 @@ public static class AsyncEnumerableExtensions
         CancellationToken cancellationToken = default)
     {
         var result = 0;
-        await foreach (var _ in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken))
+        await foreach (var _ in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
+            .ConfigureAwait(false))
         {
             result++;
         }

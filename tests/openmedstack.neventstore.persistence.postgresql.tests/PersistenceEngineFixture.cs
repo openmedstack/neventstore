@@ -1,4 +1,4 @@
-﻿namespace OpenMedStack.NEventStore.Persistence.PostgreSql.Tests;
+﻿namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Persistence.Sql;

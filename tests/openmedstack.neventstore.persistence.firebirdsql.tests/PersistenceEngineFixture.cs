@@ -1,6 +1,6 @@
 ﻿// ReSharper disable once CheckNamespace
 
-namespace OpenMedStack.NEventStore.Persistence.FirebirdSql.Tests;
+namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 using System;
 using global::FirebirdSql.Data.FirebirdClient;

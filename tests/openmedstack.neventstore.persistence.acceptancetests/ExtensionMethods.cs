@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 
@@ -6,7 +7,6 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using NEventStore;
 
 public static class ExtensionMethods
 {
@@ -16,90 +16,93 @@ public static class ExtensionMethods
         return persistence.Commit(commitAttempt);
     }
 
-    public static Task<ICommit?> CommitNext(this IPersistStreams persistence, ICommit previous)
+    public static async Task<ICommit?> CommitNext(this IPersistStreams persistence, ICommit previous)
     {
-        var nextAttempt = previous.BuildNextAttempt();
-        return persistence.Commit(nextAttempt);
+        var nextAttempt = await previous.BuildNextAttempt();
+        return await persistence.Commit(nextAttempt);
     }
 
-    public static Task<ICommit?> CommitNext(this IPersistStreams persistence, CommitAttempt previous)
+    public static async Task<ICommit?> CommitNext(this IPersistStreams persistence, CommitAttempt previous)
     {
-        var nextAttempt = previous.BuildNextAttempt();
-        return persistence.Commit(nextAttempt);
+        var nextAttempt = await previous.BuildNextAttempt();
+        return await persistence.Commit(nextAttempt);
     }
 
-    public static async Task<List<CommitAttempt>> CommitMany(this IPersistStreams persistence, int numberOfCommits, string? streamId = null, string? bucketId = null)
+    public static async Task<List<ICommit>> CommitMany(
+        this IPersistStreams persistence,
+        int numberOfCommits,
+        string? streamId = null,
+        string? bucketId = null)
     {
-        var commits = new List<CommitAttempt>();
-        CommitAttempt? attempt = null;
+        var commits = new List<ICommit>();
+        IEventStream? attempt = null;
 
         for (var i = 0; i < numberOfCommits; i++)
         {
-            attempt = attempt == null ? (streamId ?? Guid.NewGuid().ToString()).BuildAttempt(null, bucketId) : attempt.BuildNextAttempt();
-            await persistence.Commit(attempt).ConfigureAwait(false);
-            commits.Add(attempt);
+            attempt = attempt == null
+                ? (streamId ?? Guid.NewGuid().ToString()).BuildAttempt(bucketId)
+                : attempt.BuildNextAttempt();
+            var commit = await persistence.Commit(attempt)
+                .ConfigureAwait(false);
+            commits.Add(commit!);
         }
 
         return commits;
     }
 
-    public static CommitAttempt BuildAttempt(this string streamId, DateTimeOffset? now = null, string? bucketId = null)
+    public static IEventStream BuildAttempt(
+        this string streamId,
+        string? bucketId = null)
     {
-        now ??= SystemTime.UtcNow;
         bucketId ??= Bucket.Default;
 
-        var messages = new List<EventMessage>
-        {
-            new EventMessage ( new SomeDomainEvent {SomeProperty = "Test"}),
-            new EventMessage ( new SomeDomainEvent {SomeProperty = "Test2"}),
-        };
-
-        return new CommitAttempt(
-            bucketId: bucketId,
-            streamId: streamId,
-            streamRevision: 2,
-            commitId: Guid.NewGuid(),
-            commitSequence: 1,
-            commitStamp: now.Value,
-            headers: new Dictionary<string, object> { { "A header", "A string value" }, { "Another header", 2 } },
-            events: messages
-        );
+        var stream = OptimisticEventStream.Create(bucketId, streamId, NullLogger<OptimisticEventStream>.Instance);
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Test" }));
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Test2" }));
+        stream.UncommittedHeaders.Add("A header", "A string value");
+        stream.UncommittedHeaders.Add("Another header", 2);
+        return stream;
     }
 
-    public static CommitAttempt BuildNextAttempt(this ICommit commit)
+    public static IEventStream BuildNextAttempt(this IEventStream stream)
     {
-        var messages = new List<EventMessage>
-        {
-            new EventMessage(new SomeDomainEvent {SomeProperty = "Another test"}),
-            new EventMessage(new SomeDomainEvent {SomeProperty = "Another test2"})
-        };
-
-        return new CommitAttempt(commit.BucketId,
-            commit.StreamId,
-            commit.StreamRevision + messages.Count,
-            Guid.NewGuid(),
-            commit.CommitSequence + 1,
-            commit.CommitStamp.AddSeconds(1),
-            new Dictionary<string, object>(),
-            messages);
+        stream.SetPersisted(stream.CommitSequence + 1);
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }));
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" }));
+        stream.UncommittedHeaders.Add("A header", "A string value");
+        stream.UncommittedHeaders.Add("Another header", 2);
+        return stream;
     }
 
-    public static CommitAttempt BuildNextAttempt(this CommitAttempt commit)
+    public static async Task<IEventStream> BuildNextAttempt(this CommitAttempt commit)
     {
-        var messages = new List<EventMessage>
-        {
-            new EventMessage ( new SomeDomainEvent {SomeProperty = "Another test"}),
-            new EventMessage ( new SomeDomainEvent {SomeProperty = "Another test2"})
-        };
-
-        return new CommitAttempt(commit.BucketId,
+        var stream = await OptimisticEventStream.Create(
+            commit.BucketId,
             commit.StreamId,
-            commit.StreamRevision + 2,
-            Guid.NewGuid(),
-            commit.CommitSequence + 1,
-            commit.CommitStamp.AddSeconds(1),
-            new Dictionary<string, object>(),
-            messages);
+            new[]
+            {
+                new Commit(commit.BucketId, commit.StreamId, commit.StreamRevision, commit.CommitId,
+                    commit.CommitSequence, commit.CommitStamp, 0, commit.Headers, commit.Events)
+            }.ToAsyncEnumerable(),
+            commit.StreamRevision, commit.StreamRevision + commit.Events.Count);
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }));
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" }));
+        return stream;
+    }
+
+    public static async Task<IEventStream> BuildNextAttempt(this ICommit commit)
+    {
+        var stream = await OptimisticEventStream.Create(
+            commit.BucketId,
+            commit.StreamId,
+            new[]
+            {
+                commit
+            }.ToAsyncEnumerable(),
+            commit.StreamRevision, commit.StreamRevision + commit.Events.Count);
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }));
+        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" }));
+        return stream;
     }
 
     [Serializable]

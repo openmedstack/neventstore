@@ -247,13 +247,7 @@ public class WhenCommittingAnEmptyChangeset : OnTheEventStream
     {
     }
 
-    protected override Task Because() => Stream.CommitChanges(Guid.NewGuid(), default);
-
-    [Fact]
-    public void should_not_call_the_underlying_infrastructure()
-    {
-        A.CallTo(() => Persistence.Commit(A<CommitAttempt>._)).MustNotHaveHappened();
-    }
+    protected override Task Because() => Persistence.Commit(Stream, Guid.NewGuid(), default);
 
     [Fact]
     public void should_not_increment_the_current_stream_revision()
@@ -282,19 +276,36 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
 
     protected override Task Context()
     {
-        A.CallTo(() => Persistence.Commit(A<CommitAttempt>._))
-            .Invokes((CommitAttempt _) => _constructed = _)
+        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+            .Invokes((IEventStream e, Guid? g, CancellationToken _) =>
+            {
+                if (e.UncommittedEvents.Count <= 0)
+                {
+                    return;
+                }
+
+                _constructed = new CommitAttempt(
+                    e.BucketId,
+                    e.StreamId,
+                    e.StreamRevision,
+                    g!.Value,
+                    e.CommitSequence + 1,
+                    SystemTime.UtcNow,
+                    e.UncommittedHeaders.ToDictionary(),
+                    e.UncommittedEvents.ToList());
+                e.SetPersisted(e.CommitSequence + 1);
+            })
             .ReturnsLazily(
-                (CommitAttempt attempt) => new Commit(
-                    attempt.BucketId,
-                    attempt.StreamId,
-                    attempt.StreamRevision,
-                    attempt.CommitId,
-                    attempt.CommitSequence,
-                    attempt.CommitStamp,
+                (IEventStream _, Guid? _, CancellationToken _) => new Commit(
+                    _constructed.BucketId,
+                    _constructed.StreamId,
+                    _constructed.StreamRevision,
+                    _constructed.CommitId,
+                    _constructed.CommitSequence,
+                    _constructed.CommitStamp,
                     0,
-                    attempt.Headers,
-                    attempt.Events));
+                    _constructed.Headers,
+                    _constructed.Events));
         Stream.Add(_uncommitted);
         foreach (var item in _headers)
         {
@@ -304,12 +315,13 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
         return Task.CompletedTask;
     }
 
-    protected override Task Because() => Stream.CommitChanges(_commitId, default);
+    protected override Task Because() => Persistence.Commit(Stream, _commitId, default);
 
     [Fact]
     public void should_provide_a_commit_to_the_underlying_infrastructure()
     {
-        A.CallTo(() => Persistence.Commit(A<CommitAttempt>._)).MustHaveHappened(1, Times.Exactly);
+        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+            .MustHaveHappened(1, Times.Exactly);
     }
 
     [Fact]
@@ -408,47 +420,46 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
         Assert.Equal(_headers.Count, Stream.CommittedHeaders.Count);
     }
 }
-
-/// <summary>
-///     This behavior is primarily to support a NoSQL storage solution where CommitId is not being used as the "primary key"
-///     in a NoSQL environment, we'll most likely use StreamId + CommitSequence, which also enables optimistic concurrency.
-/// </summary>
-public class WhenCommittingWithAnIdentifierThatWasPreviouslyRead : OnTheEventStream
-{
-    private ICommit[] _committed = null!;
-    private Guid _dupliateCommitId;
-    private Exception _thrown = null!;
-
-    public WhenCommittingWithAnIdentifierThatWasPreviouslyRead(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
-    protected override async Task Context()
-    {
-        _committed = new[] { BuildCommitStub(1, 1, 1) };
-        _dupliateCommitId = _committed[0].CommitId;
-
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default))
-            .Returns(_committed.ToAsyncEnumerable());
-
-        Stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger<OptimisticEventStream>.Instance)
-            .ConfigureAwait(false);
-    }
-
-    protected override async Task Because()
-    {
-        _thrown = (await Catch.Exception(() => Stream.CommitChanges(_dupliateCommitId, default))
-            .ConfigureAwait(false))!;
-    }
-
-    [Fact]
-    public void should_throw_a_DuplicateCommitException()
-    {
-        Assert.IsType<DuplicateCommitException>(_thrown);
-    }
-}
+//
+///// <summary>
+/////     This behavior is primarily to support a NoSQL storage solution where CommitId is not being used as the "primary key"
+/////     in a NoSQL environment, we'll most likely use StreamId + CommitSequence, which also enables optimistic concurrency.
+///// </summary>
+//public class WhenCommittingWithAnIdentifierThatWasPreviouslyRead : OnTheEventStream
+//{
+//    private ICommit[] _committed = null!;
+//    private Guid _dupliateCommitId;
+//    private Exception _thrown = null!;
+//
+//    public WhenCommittingWithAnIdentifierThatWasPreviouslyRead(FakeTimeFixture fixture)
+//        : base(fixture)
+//    {
+//    }
+//
+//    protected override async Task Context()
+//    {
+//        _committed = new[] { BuildCommitStub(1, 1, 1) };
+//        _dupliateCommitId = _committed[0].CommitId;
+//
+//        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default))
+//            .Returns(_committed.ToAsyncEnumerable());
+//
+//        Stream = await OptimisticEventStream
+//            .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger<OptimisticEventStream>.Instance);
+//    }
+//
+//    protected override async Task Because()
+//    {
+//        _thrown = (await Catch.Exception(() => Persistence.Commit(Stream, _dupliateCommitId, default))
+//            .ConfigureAwait(false))!;
+//    }
+//
+//    [Fact]
+//    public void should_throw_a_DuplicateCommitException()
+//    {
+//        Assert.IsType<DuplicateCommitException>(_thrown);
+//    }
+//}
 
 public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : OnTheEventStream
 {
@@ -457,6 +468,7 @@ public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : On
     private ICommit[] _committed = null!;
     private ICommit[] _discoveredOnCommit = null!;
     private Exception _thrown = null!;
+    private OptimisticEventStore? _store;
 
     public WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead(FakeTimeFixture fixture)
         : base(fixture)
@@ -467,8 +479,13 @@ public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : On
     {
         _committed = new[] { BuildCommitStub(1, 1, 1) };
         _discoveredOnCommit = new[] { BuildCommitStub(3, 2, 2) };
-
-        A.CallTo(() => Persistence.Commit(A<CommitAttempt>._)).Throws(new ConcurrencyException());
+        _store = new OptimisticEventStore(Persistence, Array.Empty<IPipelineHook>(), NullLoggerFactory.Instance);
+        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+            .WhenArgumentsMatch((IEventStream e, Guid? _, CancellationToken _) => e.StreamRevision == StreamRevision+1)
+            .ThrowsAsync(new ConcurrencyException());
+        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+            .WhenArgumentsMatch((IEventStream e, Guid? _, CancellationToken _) => e.StreamRevision > StreamRevision+1)
+            .Returns(Task.FromResult<ICommit?>(_committed[0]));
         A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, StreamRevision, int.MaxValue, default))
             .Returns(_committed.ToAsyncEnumerable());
         A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, StreamRevision + 1, int.MaxValue, default))
@@ -476,21 +493,14 @@ public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : On
 
         Stream = await OptimisticEventStream
             .Create(BucketId, StreamId, Persistence, StreamRevision, int.MaxValue,
-                NullLogger<OptimisticEventStream>.Instance)
-            .ConfigureAwait(false);
+                NullLogger<OptimisticEventStream>.Instance);
         Stream.Add(_uncommitted);
     }
 
     protected override async Task Because()
     {
         _thrown =
-            (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
-    }
-
-    [Fact]
-    public void should_throw_a_ConcurrencyException()
-    {
-        Assert.IsType<ConcurrencyException>(_thrown);
+            (await Catch.Exception(() => _store!.Commit(Stream, Guid.NewGuid(), default)).ConfigureAwait(false))!;
     }
 
     [Fact]
@@ -519,40 +529,11 @@ public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : On
     }
 }
 
-public class WhenAttemptingToInvokeBehaviorOnADisposedStream : OnTheEventStream
-{
-    private Exception _thrown = null!;
-
-    public WhenAttemptingToInvokeBehaviorOnADisposedStream(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
-    protected override Task Context()
-    {
-        Stream.Dispose();
-
-        return Task.CompletedTask;
-    }
-
-    protected override async Task Because()
-    {
-        _thrown =
-            (await Catch.Exception(() => Stream.CommitChanges(Guid.NewGuid(), default)).ConfigureAwait(false))!;
-    }
-
-    [Fact]
-    public void should_throw_a_ObjectDisposedException()
-    {
-        Assert.IsType<ObjectDisposedException>(_thrown);
-    }
-}
-
 public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTimeFixture>
 {
     protected const int DefaultStreamRevision = 1;
     protected const int DefaultCommitSequence = 1;
-    private ICommitEvents? _persistence;
+    private IPersistStreams? _persistence;
     private OptimisticEventStream? _stream;
     protected const string BucketId = "bucket";
     protected readonly string StreamId = Guid.NewGuid().ToString();
@@ -563,13 +544,15 @@ public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTi
         OnStart().Wait();
     }
 
-    protected ICommitEvents Persistence => _persistence ??= A.Fake<ICommitEvents>();
+    protected IPersistStreams Persistence => _persistence ??= A.Fake<IPersistStreams>(o =>
+    {
+        o.Implements<ICommitEvents>();
+    });
 
     protected OptimisticEventStream Stream
     {
         get => _stream ??= OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, NullLogger<OptimisticEventStream>.Instance)
-            .Result;
+            .Create(BucketId, StreamId, NullLogger<OptimisticEventStream>.Instance);
         set => _stream = value;
     }
 

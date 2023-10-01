@@ -24,20 +24,25 @@ internal class GrpcEventStorePersistence : IPersistStreams
         IsDisposed = true;
     }
 
-    /// <inheritdoc />
-    public async Task<ICommit?> Commit(CommitAttempt attempt)
+    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
     {
+        if (eventStream.UncommittedEvents.Count == 0)
+        {
+            return null;
+        }
+
+        commitId ??= Guid.NewGuid();
         var commitInfo = new CommitInfo
         {
-            BucketId = attempt.BucketId,
-            StreamId = attempt.StreamId,
-            StreamRevision = attempt.StreamRevision,
+            BucketId = eventStream.BucketId,
+            StreamId = eventStream.StreamId,
+            StreamRevision = eventStream.StreamRevision,
             CheckpointToken = 0,
-            CommitId = attempt.CommitId.ToString("N"),
-            CommitSequence = attempt.CommitSequence,
-            CommitStamp = attempt.CommitStamp.ToUnixTimeSeconds(),
-            Events = { attempt.Events.Select(Serialize) },
-            Headers = { attempt.Headers.ToDictionary(x => x.Key, x => Serialize(x.Value)) }
+            CommitId = commitId.Value.ToString("N"),
+            CommitSequence = eventStream.CommitSequence + 1,
+            CommitStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            Events = { eventStream.UncommittedEvents.Select(Serialize) },
+            Headers = { eventStream.UncommittedHeaders.ToDictionary(x => x.Key, x => Serialize(x.Value)) }
         };
         var commitResponse = await _client.CommitAsync(commitInfo).ConfigureAwait(false);
 

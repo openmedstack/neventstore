@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <remarks>
 ///     Instances of this class are single threaded and should not be shared between threads.
 /// </remarks>
-public interface IEventStream : IDisposable
+public interface IEventStream
 {
     /// <summary>
     ///     Gets the value which identifies bucket to which the the stream belongs.
@@ -57,18 +55,15 @@ public interface IEventStream : IDisposable
     void Add(EventMessage uncommittedEvent);
 
     /// <summary>
-    ///     Commits the changes to durable storage.
+    ///  Moves the uncommitted events to the committed collection and clears the uncommitted collection.
     /// </summary>
-    /// <param name="commitId">The value which uniquely identifies the commit.</param>
-    /// <param name="cancellationToken"></param>
-    /// <exception cref="OpenMedStack.NEventStore.DuplicateCommitException" />
-    /// <exception cref="ConcurrencyException" />
-    /// <exception cref="StorageException" />
-    /// <exception cref="StorageUnavailableException" />
-    Task CommitChanges(Guid commitId, CancellationToken cancellationToken);
+    void SetPersisted(int commitSequence);
 
     /// <summary>
-    ///     Clears the uncommitted changes.
+    /// Updates the event stream with the events contained in the event storage.
     /// </summary>
-    Task ClearChanges();
+    /// <param name="commitEvents">The event storage.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>The update operation as a <see cref="Task"/>.</returns>
+    Task Update(ICommitEvents commitEvents, CancellationToken cancellationToken = default);
 }

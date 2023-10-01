@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore;
 using OpenMedStack.NEventStore.Persistence;
 using OpenMedStack.NEventStore.Persistence.AcceptanceTests.BDD;
-using OpenMedStack.NEventStore.Tests.Persistence.InMemory;
 using Xunit;
 
 public class WhenACommitHeaderHasANameThatContainsAPeriod : PersistenceEngineConcern
@@ -23,16 +22,12 @@ public class WhenACommitHeaderHasANameThatContainsAPeriod : PersistenceEngineCon
     protected override Task Context()
     {
         _streamId = Guid.NewGuid().ToString();
-        var attempt = new CommitAttempt(
+        var attempt = OptimisticEventStream.Create(
             Bucket.Default,
-            _streamId,
-            2,
-            Guid.NewGuid(),
-            1,
-            DateTime.Now,
-            new Dictionary<string, object> { { "key.1", "value" } },
-            new List<EventMessage>
-                { new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }) });
+            _streamId, NullLogger<OptimisticEventStream>.Instance);
+        attempt.Add(new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }));
+        attempt.UncommittedHeaders.Add("key.1", "value");
+
         return Persistence.Commit(attempt);
     }
 
@@ -51,16 +46,16 @@ public class WhenACommitHeaderHasANameThatContainsAPeriod : PersistenceEngineCon
 
 public class WhenACommitIsSuccessfullyPersisted : PersistenceEngineConcern
 {
-    private CommitAttempt _attempt = null!;
+    private IEventStream _attempt = null!;
     private DateTimeOffset _now;
     private ICommit _persisted = null!;
     private string _streamId = null!;
 
     protected override Task Context()
     {
-        _now = SystemTime.UtcNow.AddYears(1);
+        _now = SystemTime.UtcNow; //.AddYears(1);
         _streamId = Guid.NewGuid().ToString();
-        _attempt = _streamId.BuildAttempt(_now);
+        _attempt = _streamId.BuildAttempt();
 
         return Persistence.Commit(_attempt);
     }
@@ -84,15 +79,9 @@ public class WhenACommitIsSuccessfullyPersisted : PersistenceEngineConcern
     }
 
     [Fact]
-    public void should_correctly_persist_the_commit_identifier()
-    {
-        Assert.Equal(_attempt.CommitId, _persisted.CommitId);
-    }
-
-    [Fact]
     public void should_correctly_persist_the_commit_sequence()
     {
-        Assert.Equal(_attempt.CommitSequence, _persisted.CommitSequence);
+        Assert.Equal(_attempt.CommitSequence + 1, _persisted.CommitSequence);
     }
 
     // persistence engines have varying levels of precision with respect to time.
@@ -109,13 +98,13 @@ public class WhenACommitIsSuccessfullyPersisted : PersistenceEngineConcern
     [Fact]
     public void should_correctly_persist_the_headers()
     {
-        Assert.Equal(_attempt.Headers.Count, _persisted.Headers.Count);
+        Assert.Equal(_attempt.UncommittedHeaders.Count, _persisted.Headers.Count);
     }
 
     [Fact]
     public void should_correctly_persist_the_events()
     {
-        Assert.Equal(_attempt.Events.Count, _persisted.Events.Count);
+        Assert.Equal(_attempt.UncommittedEvents.Count, _persisted.Events.Count);
     }
 
     [Fact]
@@ -204,7 +193,7 @@ public class WhenReadingFromAGivenRevisionToCommitRevision : PersistenceEngineCo
 
 public class WhenCommittingAStreamWithTheSameRevision : PersistenceEngineConcern
 {
-    private CommitAttempt _attemptWithSameRevision = null!;
+    private IEventStream _attemptWithSameRevision = null!;
     private Exception _thrown = null!;
 
     protected override async Task Context()
@@ -228,35 +217,36 @@ public class WhenCommittingAStreamWithTheSameRevision : PersistenceEngineConcern
 
 // This test ensure the uniqueness of BucketId+StreamId+CommitSequence
 // to avoid concurrency issues
-public class WhenCommittingAStreamWithTheSameSequence : PersistenceEngineConcern
+public class WhenCommittingAStreamWithTheSameSequenceId : PersistenceEngineConcern
 {
-    private CommitAttempt _attempt1 = null!, _attempt2 = null!;
+    private IEventStream _concurrentAttempt = null!;
     private Exception _thrown = null!;
 
-    protected override Task Context()
+    protected override async Task Context()
     {
         var streamId = Guid.NewGuid().ToString();
-        _attempt1 = streamId.BuildAttempt();
-        _attempt2 = new CommitAttempt(
-            _attempt1.BucketId, // <--- Same bucket
-            _attempt1.StreamId, // <--- Same stream it
-            _attempt1.StreamRevision + 10,
+        var attempt1 = streamId.BuildAttempt();
+        await Persistence.Commit(attempt1);
+        attempt1 = attempt1.BuildNextAttempt();
+        var commit = (await Persistence.Commit(attempt1))!;
+        _concurrentAttempt = new CommitAttemptStream(new CommitAttempt(
+            commit.BucketId, // <--- Same bucket
+            commit.StreamId, // <--- Same stream it
+            commit.StreamRevision + 10,
             Guid.NewGuid(),
-            _attempt1.CommitSequence, // <--- Same commit seq
+            commit.CommitSequence - 1, // <--- Same commit seq
             DateTime.UtcNow,
-            _attempt1.Headers,
+            attempt1.CommittedHeaders,
             new[]
             {
                 new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test 3" })
             }
-        );
-
-        return Persistence.Commit(_attempt1);
+        ));
     }
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.Commit(_attempt2)).ConfigureAwait(false))!;
+        _thrown = (await Catch.Exception(() => Persistence.Commit(_concurrentAttempt)).ConfigureAwait(false))!;
     }
 
     [Fact]
@@ -269,7 +259,7 @@ public class WhenCommittingAStreamWithTheSameSequence : PersistenceEngineConcern
 //TODO:This test looks exactly like the one above. What are we trying to prove?
 public class WhenAttemptingToOverwriteACommittedSequence : PersistenceEngineConcern
 {
-    private CommitAttempt _failedAttempt = null!;
+    private IEventStream _failedAttempt = null!;
     private Exception _thrown = null!;
 
     protected override async Task Context()
@@ -294,26 +284,18 @@ public class WhenAttemptingToOverwriteACommittedSequence : PersistenceEngineConc
 
 public class WhenAttemptingToPersistACommitTwice : PersistenceEngineConcern
 {
-    private CommitAttempt _attemptTwice = null!;
+    private ICommit _attemptTwice = null!;
     private Exception _thrown = null!;
 
     protected override async Task Context()
     {
-        var commit = (await Persistence.CommitSingle().ConfigureAwait(false))!;
-        _attemptTwice = new CommitAttempt(
-            commit.BucketId,
-            commit.StreamId,
-            commit.StreamRevision,
-            commit.CommitId,
-            commit.CommitSequence,
-            commit.CommitStamp,
-            commit.Headers,
-            commit.Events);
+        _attemptTwice = (await Persistence.CommitSingle())!;
     }
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.Commit(_attemptTwice)).ConfigureAwait(false))!;
+        _thrown = (await Catch
+            .Exception(() => Persistence.Commit(new CommittedStream(_attemptTwice), _attemptTwice.CommitId)))!;
     }
 
     [Fact]
@@ -330,7 +312,7 @@ public class WhenAttemptingToPersistACommitIdTwiceOnSameStream : PersistenceEngi
 
     protected override async Task Context()
     {
-        var commit = (await Persistence.CommitSingle().ConfigureAwait(false))!;
+        var commit = (await Persistence.CommitSingle())!;
         _attemptTwice = new CommitAttempt(
             commit.BucketId,
             commit.StreamId,
@@ -339,13 +321,14 @@ public class WhenAttemptingToPersistACommitIdTwiceOnSameStream : PersistenceEngi
             commit.CommitSequence + 1,
             commit.CommitStamp,
             commit.Headers,
-            commit.Events
-        );
+            commit.Events.ToList());
     }
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.Commit(_attemptTwice)).ConfigureAwait(false))!;
+        _thrown = (await Catch
+            .Exception(() => Persistence.Commit(new CommitAttemptStream(_attemptTwice), _attemptTwice.CommitId))
+            .ConfigureAwait(false))!;
     }
 
     [Fact]
@@ -357,7 +340,7 @@ public class WhenAttemptingToPersistACommitIdTwiceOnSameStream : PersistenceEngi
 
 public class WhenCommittingMoreEventsThanTheConfiguredPageSize : PersistenceEngineConcern
 {
-    private CommitAttempt[] _committed = null!;
+    private ICommit[] _committed = null!;
     private ICommit[] _loaded = null!;
     private string _streamId = null!;
 
@@ -365,7 +348,7 @@ public class WhenCommittingMoreEventsThanTheConfiguredPageSize : PersistenceEngi
     {
         _streamId = Guid.NewGuid().ToString();
         _committed =
-            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId).ConfigureAwait(false))
+            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId))
             .ToArray();
     }
 
@@ -488,7 +471,9 @@ public class WhenASnapshotHasBeenAddedToTheMostRecentCommitOfAStream : Persisten
     [Fact]
     public async Task should_no_longer_find_the_stream_in_the_set_of_streams_to_be_snapshot()
     {
-        Assert.DoesNotContain(await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList(), x => x.StreamId == _streamId);
+        Assert.DoesNotContain(
+            await Persistence.GetStreamsToSnapshot(1, CancellationToken.None).ToList(),
+            x => x.StreamId == _streamId);
     }
 }
 
@@ -509,13 +494,15 @@ public class WhenAddingACommitAfterASnapshot : PersistenceEngineConcern
             .ConfigureAwait(false);
     }
 
-    protected override Task Because() => Persistence.Commit(_oldest2.BuildNextAttempt());
+    protected override async Task Because() => await Persistence.Commit(await _oldest2.BuildNextAttempt());
 
     // Because Raven and Mongo update the stream head asynchronously, occasionally will fail this test
     [Fact]
     public async Task should_find_the_stream_in_the_set_of_streams_to_be_snapshot_when_within_the_threshold()
     {
-        Assert.NotNull((await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList()).FirstOrDefault(x => x.StreamId == _streamId));
+        Assert.NotNull(
+            (await Persistence.GetStreamsToSnapshot(WithinThreshold, CancellationToken.None).ToList()).FirstOrDefault(
+                x => x.StreamId == _streamId));
     }
 
     [Fact]
@@ -529,7 +516,7 @@ public class WhenAddingACommitAfterASnapshot : PersistenceEngineConcern
 public class WhenReadingAllCommitsFromAParticularPointInTime : PersistenceEngineConcern
 {
     private ICommit[] _committed = null!;
-    private CommitAttempt _first = null!;
+    private IEventStream _first = null!;
     private DateTimeOffset _now;
     private ICommit _second = null!;
     private string _streamId = null!;
@@ -539,11 +526,11 @@ public class WhenReadingAllCommitsFromAParticularPointInTime : PersistenceEngine
     {
         _streamId = Guid.NewGuid().ToString();
 
-        _now = SystemTime.UtcNow.AddYears(1);
-        _first = _streamId.BuildAttempt(_now.AddSeconds(1));
-        await Persistence.Commit(_first).ConfigureAwait(false);
+        _now = SystemTime.UtcNow; //.AddYears(1);
+        _first = _streamId.BuildAttempt();
+        var firstCommit = await Persistence.Commit(_first).ConfigureAwait(false);
 
-        _second = (await Persistence.CommitNext(_first).ConfigureAwait(false))!;
+        _second = (await Persistence.CommitNext(firstCommit!).ConfigureAwait(false))!;
         _third = (await Persistence.CommitNext(_second).ConfigureAwait(false))!;
         await Persistence.CommitNext(_third).ConfigureAwait(false);
     }
@@ -563,7 +550,7 @@ public class WhenReadingAllCommitsFromAParticularPointInTime : PersistenceEngine
 
 public class WhenPagingOverAllCommitsFromAParticularPointInTime : PersistenceEngineConcern
 {
-    private CommitAttempt[] _committed = null!;
+    private ICommit[] _committed = null!;
     private List<ICommit> _loaded = null!;
     private DateTimeOffset _start;
 
@@ -574,7 +561,7 @@ public class WhenPagingOverAllCommitsFromAParticularPointInTime : PersistenceEng
         // nearest second to ensure include all commits from the 'start'.
         _start = _start.AddSeconds(-1);
         _committed =
-            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2).ConfigureAwait(false)).ToArray();
+            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2)).ToArray();
     }
 
     protected override async Task Because()
@@ -612,7 +599,7 @@ public class WhenPagingOverAllCommitsFromAParticularCheckpoint : PersistenceEngi
     protected override async Task Because()
     {
         var enumerable = Persistence.GetFrom(Bucket.Default, CheckPoint, CancellationToken.None);
-        _loaded = (await enumerable.ToList()).Select(c => c.CommitId).ToList();
+        _loaded = (await enumerable.ToList().ConfigureAwait(false)).Select(c => c.CommitId).ToList();
     }
 
     [Fact]
@@ -727,7 +714,7 @@ public class WhenInvokingAfterDisposal : PersistenceEngineConcern
 
     protected override async Task Because()
     {
-        _thrown = (await Catch.Exception(() => Persistence.CommitSingle()))!;
+        _thrown = (await Catch.Exception(() => Persistence.CommitSingle()).ConfigureAwait(false))!;
     }
 
     [Fact]
@@ -745,7 +732,7 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamSameBucket : Persistence
     protected override async Task Context()
     {
         _streamId = Guid.NewGuid().ToString();
-        await Persistence.Commit(_streamId.BuildAttempt());
+        await Persistence.Commit(_streamId.BuildAttempt()).ConfigureAwait(false);
     }
 
     protected override async Task Because()
@@ -771,7 +758,7 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamInAnotherBucket : Persis
     private const string BucketAId = "a";
     private const string BucketBId = "b";
     private string _streamId = null!;
-    private static CommitAttempt _attemptForBucketB = null!;
+    private static IEventStream _attemptForBucketB = null!;
     private static Exception _thrown = null!;
     private DateTimeOffset _attemptACommitStamp;
 
@@ -779,12 +766,12 @@ public class WhenCommittingAStreamWithTheSameIdAsAStreamInAnotherBucket : Persis
     {
         _streamId = Guid.NewGuid().ToString();
         var now = SystemTime.UtcNow;
-        await Persistence.Commit(_streamId.BuildAttempt(now, BucketAId)).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt(BucketAId)).ConfigureAwait(false);
         var enumerable = Persistence.GetFrom(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
         _attemptACommitStamp =
-            (await enumerable.First().ConfigureAwait(false))
+            (await enumerable.First())
             .CommitStamp;
-        _attemptForBucketB = _streamId.BuildAttempt(now.Subtract(TimeSpan.FromDays(1)), BucketBId);
+        _attemptForBucketB = _streamId.BuildAttempt(BucketBId);
     }
 
     protected override async Task Because()
@@ -854,22 +841,22 @@ public class
 
     private static DateTimeOffset _now;
     private static ICommit[] _returnedCommits = null!;
-    private CommitAttempt _commitToBucketB = null!;
+    private ICommit _commitToBucketB = null!;
 
     protected override async Task Context()
     {
         _now = SystemTime.UtcNow.AddYears(1);
 
-        var commitToBucketA = Guid.NewGuid().ToString().BuildAttempt(_now.AddSeconds(1), BucketAId);
+        var commitToBucketA = Guid.NewGuid().ToString().BuildAttempt();
 
         await Persistence.Commit(commitToBucketA).ConfigureAwait(false);
-        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt());
-        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt());
-        await Persistence.Commit(commitToBucketA.BuildNextAttempt());
+        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
+        await Persistence.Commit(commitToBucketA = commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
+        await Persistence.Commit(commitToBucketA.BuildNextAttempt()).ConfigureAwait(false);
 
-        _commitToBucketB = Guid.NewGuid().ToString().BuildAttempt(_now.AddSeconds(1), BucketBId);
+        var stream = Guid.NewGuid().ToString().BuildAttempt();
 
-        await Persistence.Commit(_commitToBucketB);
+        _commitToBucketB = (await Persistence.Commit(stream))!;
     }
 
     protected override async Task Because()
@@ -979,15 +966,15 @@ public class WhenGettingFromCheckpointAmountOfCommitsExceedsPageSize : Persisten
         // TODO: Not sure how to set the actual page size to the const defined above
         for (var i = 0; i < _moreThanPageSize; i++)
         {
-            using var stream = await eventStore.OpenStream(Guid.NewGuid());
+            var stream = await eventStore.OpenStream(Guid.NewGuid());
             stream.Add(new EventMessage(new Pippo { S = "Hi " + i }));
-            await stream.CommitChanges(Guid.NewGuid(), CancellationToken.None);
+            await Persistence.Commit(stream);
         }
 
         var enumerable = Persistence.GetFrom(DateTimeOffset.MinValue);
-        _ = await enumerable.ToArray();
+        _ = await enumerable.ToArray().ConfigureAwait(false);
         var asyncEnumerable = Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None);
-        _commits = await asyncEnumerable.ToArray();
+        _commits = await asyncEnumerable.ToArray().ConfigureAwait(false);
     }
 
     [Fact]
@@ -1004,19 +991,12 @@ public class WhenAPayloadIsLarge : PersistenceEngineConcern
     {
         const int bodyLength = 100000;
         var streamId = Guid.NewGuid().ToString();
-        var attempt = new CommitAttempt(
-            Bucket.Default,
-            streamId,
-            1,
-            Guid.NewGuid(),
-            1,
-            DateTime.UtcNow,
-            new Dictionary<string, object>(),
-            new List<EventMessage> { new EventMessage(new string('a', bodyLength)) });
-        await Persistence.Commit(attempt);
+        var stream = OptimisticEventStream.Create(Bucket.Default, streamId);
+        stream.Add(new EventMessage(new string('a', bodyLength)));
+        await Persistence.Commit(stream);
 
         var commits = await Persistence.GetFrom(streamId, 0, int.MaxValue, CancellationToken.None).Single();
-        Assert.Equal(bodyLength, commits!.Events.Single().Body.ToString()!.Length);
+        Assert.Equal(bodyLength, commits.Events.Single().Body.ToString()!.Length);
     }
 }
 
@@ -1026,7 +1006,7 @@ public class WhenAPayloadIsLarge : PersistenceEngineConcern
 /// - NUnit (.net core project)
 /// - MSTest (.net core project)
 /// </summary>
-public abstract class PersistenceEngineConcern : SpecificationBase //, IClassFixture<PersistenceEngineFixture>
+public abstract class PersistenceEngineConcern : SpecificationBase, IClassFixture<PersistenceEngineFixture>
 {
     private PersistenceEngineFixture _fixture = null!;
 

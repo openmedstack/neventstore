@@ -1,5 +1,6 @@
 ﻿using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
+using OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 namespace OpenMedStack.NEventStore.Tests;
 
@@ -238,13 +239,15 @@ public class PipelineHooksAwarePersistenceDecoratorTests
 
         protected override async Task Because()
         {
-            await Decorator.Commit(_attempt).ConfigureAwait(false);
+            await Decorator.Commit(new CommitAttemptStream(_attempt)).ConfigureAwait(false);
         }
 
         [Fact]
         public void should_dispose_the_underlying_persistence()
         {
-            A.CallTo(() => Persistence.Commit(_attempt)).MustHaveHappened(1, Times.Exactly);
+            ICommitEvents c = Persistence;
+            A.CallTo(() => c.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+                .MustHaveHappened(1, Times.Exactly);
         }
     }
 
@@ -291,7 +294,8 @@ public class PipelineHooksAwarePersistenceDecoratorTests
         [Fact]
         public void should_call_the_underlying_persistence_to_get_events()
         {
-            A.CallTo(() => Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None)).MustHaveHappened(1, Times.Exactly);
+            A.CallTo(() => Persistence.GetFrom(Bucket.Default, 0, CancellationToken.None))
+                .MustHaveHappened(1, Times.Exactly);
         }
 
         [Fact]

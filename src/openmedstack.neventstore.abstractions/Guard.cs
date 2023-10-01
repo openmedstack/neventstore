@@ -10,19 +10,9 @@ internal static class Guard
         }
     }
 
-
-    internal static void NotNull<T>(string paramName, T value)
-    {
-        if (ReferenceEquals(value, null))
-        {
-            throw new ArgumentNullException(paramName);
-        }
-    }
-
     internal static void NotLessThanOrEqualTo<T>(string paramName, T value, T compareTo)
         where T : IComparable
     {
-        NotNull(paramName, value);
         if (value.CompareTo(compareTo) <= 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -34,7 +24,6 @@ internal static class Guard
     internal static void NotLessThan<T>(string paramName, T value, T compareTo)
         where T : IComparable
     {
-        NotNull(paramName, value);
         if (value.CompareTo(compareTo) < 0)
         {
             throw new ArgumentOutOfRangeException(
@@ -46,7 +35,6 @@ internal static class Guard
     internal static void NotDefault<T>(string paramName, T value)
         where T : IComparable
     {
-        NotNull(paramName, value);
         if (value.CompareTo(default(T)) == 0)
         {
             throw new ArgumentException(
@@ -57,7 +45,6 @@ internal static class Guard
 
     internal static void NotEmpty<T>(string paramName, ICollection<T> value)
     {
-        NotNull(paramName, value);
         if (value.Count == 0)
         {
             throw new ArgumentException($"{paramName} cannot be empty", paramName);

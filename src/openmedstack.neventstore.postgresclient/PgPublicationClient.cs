@@ -38,11 +38,12 @@ public abstract class PgPublicationClient
     {
         try
         {
-            await using var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
-            await logicalReplicationConnection.Open(cancellationToken);
+            var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
+            await using var _ = logicalReplicationConnection.ConfigureAwait(false);
+            await logicalReplicationConnection.Open(cancellationToken).ConfigureAwait(false);
 
             await logicalReplicationConnection.CreatePgOutputReplicationSlot(_replicationSlotName,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Replication slot created");
         }
@@ -62,21 +63,22 @@ public abstract class PgPublicationClient
         {
             try
             {
-                await using var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
-                await logicalReplicationConnection.Open(stoppingToken);
+                var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
+                await using var _ = logicalReplicationConnection.ConfigureAwait(false);
+                await logicalReplicationConnection.Open(stoppingToken).ConfigureAwait(false);
                 var replication = logicalReplicationConnection.StartReplication(
                     new PgOutputReplicationSlot(_replicationSlotName),
                     new PgOutputReplicationOptions(_publicationName, 1),
                     stoppingToken);
-                await foreach (var item in replication.WithCancellation(stoppingToken))
+                await foreach (var item in replication.WithCancellation(stoppingToken).ConfigureAwait(false))
                 {
                     if (item is InsertMessage insert)
                     {
-                        await Handle(insert, stoppingToken);
+                        await Handle(insert, stoppingToken).ConfigureAwait(false);
                     }
 
                     logicalReplicationConnection.SetReplicationStatus(item.WalEnd);
-                    await logicalReplicationConnection.SendStatusUpdate(stoppingToken);
+                    await logicalReplicationConnection.SendStatusUpdate(stoppingToken).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -89,17 +91,17 @@ public abstract class PgPublicationClient
     private async Task Handle(InsertMessage insertMessage, CancellationToken cancellationToken)
     {
         var columnNumber = 0;
-        await foreach (var c in insertMessage.NewRow.WithCancellation(cancellationToken))
+        await foreach (var c in insertMessage.NewRow.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             switch (columnNumber)
             {
                 case 9:
                 {
-                    await HandleHeaders(c, cancellationToken);
+                    await HandleHeaders(c, cancellationToken).ConfigureAwait(false);
                 }
                     break;
                 case 10:
-                    await HandlePayload(c, cancellationToken);
+                    await HandlePayload(c, cancellationToken).ConfigureAwait(false);
 
                     break;
             }
@@ -112,16 +114,18 @@ public abstract class PgPublicationClient
     {
         try
         {
-            await using var t = c.GetStream();
+            var t = c.GetStream();
+            await using var _ = t.ConfigureAwait(false);
             var bytes = DecodeHex(t);
 //                var json = Encoding.UTF8.GetString(bytes);
-            await using var ms = new MemoryStream(bytes);
+var ms = new MemoryStream(bytes);
+            await using var __ = ms.ConfigureAwait(false);
             var payload = _serializer.Deserialize<List<EventMessage>>(ms);
             if (payload != null)
             {
                 foreach (var message in payload)
                 {
-                    await HandleMessage(message.Body.GetType(), message.Body, cancellationToken);
+                    await HandleMessage(message.Body.GetType(), message.Body, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -133,7 +137,8 @@ public abstract class PgPublicationClient
 
     private async Task HandleHeaders(ReplicationValue c, CancellationToken cancellationToken)
     {
-        await using var stream = c.GetStream();
+        var stream = c.GetStream();
+        await using var _ = stream.ConfigureAwait(false);
         //var bytes = DecodeHex(stream);
         var headers = _serializer.Deserialize<Dictionary<string, object>>(stream);
         if (headers != null)
@@ -142,7 +147,7 @@ public abstract class PgPublicationClient
                 .Where(x => x.Key.StartsWith("UndispatchedMessage."))
                 .OrderBy(x => x.Key))
             {
-                await HandleMessage(value.GetType(), value, cancellationToken);
+                await HandleMessage(value.GetType(), value, cancellationToken).ConfigureAwait(false);
             }
         }
     }

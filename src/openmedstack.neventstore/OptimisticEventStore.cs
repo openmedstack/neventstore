@@ -37,34 +37,61 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
         CancellationToken cancellationToken) =>
         _persistence.GetFrom(bucketId, streamId, minRevision, maxRevision, cancellationToken);
 
-    public virtual async Task<ICommit?> Commit(CommitAttempt attempt)
+    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
     {
-        Guard.NotNull(nameof(attempt), attempt);
+        if (eventStream.UncommittedEvents.Count == 0)
+        {
+            return null;
+        }
+
+        commitId ??= Guid.NewGuid();
+
         foreach (var hook in _pipelineHooks)
         {
-            _logger.LogTrace(Resources.InvokingPreCommitHooks, attempt.CommitId, hook.GetType());
-            if (await hook.PreCommit(attempt).ConfigureAwait(false))
+            _logger.LogTrace(Resources.InvokingPreCommitHooks, commitId, hook.GetType());
+            if (await hook.PreCommit(eventStream).ConfigureAwait(false))
             {
                 continue;
             }
 
-            _logger.LogInformation(Resources.CommitRejectedByPipelineHook, hook.GetType(), attempt.CommitId);
+            _logger.LogInformation(Resources.CommitRejectedByPipelineHook, hook.GetType(), commitId);
             return null;
         }
 
-        _logger.LogTrace(Resources.CommittingAttempt, attempt.CommitId, attempt.Events.Count);
-        var commit = await _persistence.Commit(attempt).ConfigureAwait(false);
-
-        if (commit != null)
+        _logger.LogTrace(Resources.CommittingAttempt, commitId, eventStream.UncommittedEvents.Count);
+        try
         {
+            var commit = await _persistence.Commit(eventStream, commitId, cancellationToken).ConfigureAwait(false);
+
+            if (commit == null)
+            {
+                return commit;
+            }
+
             foreach (var hook in _pipelineHooks)
             {
-                _logger.LogTrace(Resources.InvokingPostCommitPipelineHooks, attempt.CommitId, hook.GetType());
+                _logger.LogTrace(Resources.InvokingPostCommitPipelineHooks, commitId, hook.GetType());
                 await hook.PostCommit(commit).ConfigureAwait(false);
             }
-        }
 
-        return commit;
+            return commit;
+        }
+        catch (ConcurrencyException)
+        {
+            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
+            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
+            if (eventStream.StreamRevision == currentRevision)
+            {
+                throw;
+            }
+
+            return await Commit(eventStream, commitId, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error committing event stream");
+            throw;
+        }
     }
 
     public void Dispose()
@@ -73,12 +100,14 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
         GC.SuppressFinalize(this);
     }
 
-    public virtual async Task<IEventStream> CreateStream(string bucketId, string streamId)
+    public virtual async Task<IEventStream> CreateStream(
+        string bucketId,
+        string streamId,
+        CancellationToken cancellationToken)
     {
         _logger.LogDebug(Resources.CreatingStream, streamId, bucketId);
-        return await OptimisticEventStream
-            .Create(bucketId, streamId, this, _loggerFactory.CreateLogger<OptimisticEventStream>())
-            .ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, 0, int.MaxValue,
+            _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     public virtual async Task<IEventStream> OpenStream(
@@ -88,18 +117,13 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        if (streamId == null)
-        {
-            throw new ArgumentNullException();
-        }
+        ArgumentNullException.ThrowIfNull(streamId);
 
         maxRevision = maxRevision <= 0 ? int.MaxValue : maxRevision;
 
         _logger.LogTrace(Resources.OpeningStreamAtRevision, streamId, bucketId, minRevision, maxRevision);
-        return await OptimisticEventStream
-            .Create(bucketId, streamId, this, minRevision, maxRevision,
-                _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken)
-            .ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, minRevision, maxRevision,
+            _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     public virtual async Task<IEventStream> OpenStream(
@@ -118,9 +142,9 @@ public class OptimisticEventStore : IStoreEvents, ICommitEvents
             snapshot.StreamRevision,
             maxRevision);
         maxRevision = maxRevision <= 0 ? int.MaxValue : maxRevision;
-        return await OptimisticEventStream.Create(snapshot, this, maxRevision,
-                _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken)
-            .ConfigureAwait(false);
+
+        return await OptimisticEventStream.Create(snapshot, Advanced, maxRevision,
+            _loggerFactory.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     public virtual IPersistStreams Advanced => _persistence;

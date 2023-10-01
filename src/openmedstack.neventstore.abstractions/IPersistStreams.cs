@@ -8,7 +8,7 @@ using System.Threading;
 /// <remarks>
 ///     Instances of this class must be designed to be multi-thread safe such that they can be shared between threads.
 /// </remarks>
-public interface IPersistStreams : IDisposable, ICommitEvents, IAccessSnapshots
+public interface IPersistStreams : ICommitEvents, IAccessSnapshots
 {
     /// <summary>
     ///     Gets a value indicating whether this instance has been disposed of.

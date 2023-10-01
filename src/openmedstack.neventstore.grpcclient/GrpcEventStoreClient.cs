@@ -3,7 +3,6 @@ using Grpc.Net.Client;
 namespace OpenMedStack.NEventStore.GrpcClient;
 
 using Microsoft.Extensions.Logging;
-using OpenMedStack.NEventStore;
 using OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
@@ -41,10 +40,10 @@ public class GrpcEventStoreClient : IStoreEvents
     public IPersistStreams Advanced { get; }
 
     /// <inheritdoc />
-    public async Task<IEventStream> CreateStream(string bucketId, string streamId)
+    public async Task<IEventStream> CreateStream(string bucketId, string streamId, CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream
-            .Create(bucketId, streamId, Advanced, _logger.CreateLogger<OptimisticEventStream>()).ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, 0, int.MaxValue,
+            _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -55,10 +54,8 @@ public class GrpcEventStoreClient : IStoreEvents
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream
-            .Create(bucketId, streamId, Advanced, minRevision, maxRevision,
-                _logger.CreateLogger<OptimisticEventStream>(), cancellationToken)
-            .ConfigureAwait(false);
+        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, minRevision, maxRevision,
+            _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

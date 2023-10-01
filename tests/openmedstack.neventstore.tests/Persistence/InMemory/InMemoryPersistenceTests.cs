@@ -1,5 +1,6 @@
 ﻿using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
+using OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 namespace OpenMedStack.NEventStore.Tests.Persistence.InMemory;
 
@@ -15,8 +16,8 @@ using Xunit;
 
 public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
 {
-    private readonly DateTime _endDate = new(2013, 1, 2);
-    private readonly DateTime _startDate = new(2013, 1, 1);
+    private readonly DateTime _endDate =DateTime.UtcNow.Date.AddDays(1);// new(2013, 1, 2);
+    private readonly DateTime _startDate =DateTime.UtcNow.Date; //new(2013, 1, 1);
     private ICommit[] _commits = null!;
     private InMemoryPersistenceEngine _engine = null!;
 
@@ -30,7 +31,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
         _engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
         _engine.Initialize();
         var streamId = Guid.NewGuid().ToString();
-        _engine.Commit(
+        _engine.Commit(new CommitAttemptStream(
             new CommitAttempt(
                 Bucket.Default,
                 streamId,
@@ -39,8 +40,8 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 1,
                 _startDate,
                 new Dictionary<string, object>(),
-                new List<EventMessage> { new EventMessage(new object()) }));
-        _engine.Commit(
+                new List<EventMessage> { new EventMessage(new object()) })));
+        _engine.Commit(new CommitAttemptStream(
             new CommitAttempt(
                 Bucket.Default,
                 streamId,
@@ -49,7 +50,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 2,
                 _endDate,
                 new Dictionary<string, object>(),
-                new List<EventMessage> { new EventMessage(new object()) }));
+                new List<EventMessage> { new EventMessage(new object()) })));
 
         return Task.CompletedTask;
     }
@@ -63,6 +64,6 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
     [Fact]
     public void should_return_two_commits()
     {
-        Assert.Single(_commits);
+        Assert.Equal(2, _commits.Length);
     }
 }

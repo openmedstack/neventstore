@@ -79,8 +79,15 @@ internal class HttpEventStorePersistence : IPersistStreams
     }
 
     /// <inheritdoc />
-    public async Task<ICommit?> Commit(CommitAttempt attempt)
+    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
     {
+        if (eventStream.UncommittedEvents.Count == 0)
+        {
+            return null;
+        }
+
+        commitId ??= Guid.NewGuid();
+
         string SerializeBody(object body)
         {
             using var stream = new MemoryStream();
@@ -90,21 +97,25 @@ internal class HttpEventStorePersistence : IPersistStreams
             return bytes;
         }
 
-        attempt = new CommitAttempt(attempt.BucketId, attempt.StreamId,
-            attempt.StreamRevision,
-            attempt.CommitId,
-            attempt.CommitSequence,
-            attempt.CommitStamp,
-            attempt.Headers,
-            attempt.Events.Select(x => new EventMessage(SerializeBody(x.Body),
+        var commitAttempt = new CommitAttempt(
+            eventStream.BucketId,
+            eventStream.StreamId,
+            eventStream.StreamRevision,
+            commitId.Value,
+            eventStream.CommitSequence + 1,
+            DateTimeOffset.UtcNow,
+            eventStream.UncommittedHeaders,
+            eventStream.UncommittedEvents.Select(x => new EventMessage(SerializeBody(x.Body),
                 x.Headers.ToDictionary(y => y.Key, y => (object)JsonConvert.SerializeObject(y.Value)))).ToList());
         var response = await _client.PostAsync(
                 "/commits",
-                new StringContent(JsonConvert.SerializeObject(attempt), Encoding.UTF8, ApplicationJson))
+                new StringContent(JsonConvert.SerializeObject(commitAttempt), Encoding.UTF8, ApplicationJson),
+                cancellationToken)
             .ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {
-            var commit = await (await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            var commit = await stream
                 .DeserializeAsync<Commit>(cancellationToken: CancellationToken.None).ConfigureAwait(false);
             return commit == null ? commit : ToDeserializedCommit(commit);
         }

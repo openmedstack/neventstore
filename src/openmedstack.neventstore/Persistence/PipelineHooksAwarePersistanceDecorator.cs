@@ -39,7 +39,8 @@ public class PipelineHooksAwarePersistenceDecorator : IPersistStreams
         return ExecuteHooks(configureAwait, cancellationToken);
     }
 
-    public Task<ICommit?> Commit(CommitAttempt attempt) => _original.Commit(attempt);
+    public Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId = null, CancellationToken cancellationToken = default) =>
+        _original.Commit(eventStream, commitId, cancellationToken);
 
     public Task<ISnapshot?> GetSnapshot(
         string bucketId,
@@ -121,7 +122,7 @@ public class PipelineHooksAwarePersistenceDecorator : IPersistStreams
         IAsyncEnumerable<ICommit> commits,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var commit in commits.WithCancellation(cancellationToken))
+        await foreach (var commit in commits.WithCancellation(cancellationToken).ConfigureAwait(false))
         {
             var filtered = commit;
             foreach (var hook in _pipelineHooks.Where(x => (filtered = x.Select(filtered).Result) == null))

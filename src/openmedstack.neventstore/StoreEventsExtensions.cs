@@ -12,19 +12,27 @@ public static class StoreEventsExtensions
     /// </summary>
     /// <param name="storeEvents">The store events instance.</param>
     /// <param name="streamId">The value which uniquely identifies the stream to be created.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>An empty stream.</returns>
-    public static Task<IEventStream> CreateStream(this IStoreEvents storeEvents, Guid streamId) => CreateStream(storeEvents, Bucket.Default, streamId);
+    public static Task<IEventStream> CreateStream(
+        this IStoreEvents storeEvents,
+        Guid streamId,
+        CancellationToken cancellationToken) => CreateStream(storeEvents, Bucket.Default, streamId, cancellationToken);
 
     /// <summary>
     ///     Creates a new stream.
     /// </summary>
     /// <param name="storeEvents">The store events instance.</param>
     /// <param name="streamId">The value which uniquely identifies the stream to be created.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>An empty stream.</returns>
-    public static Task<IEventStream> CreateStream(this IStoreEvents storeEvents, string streamId)
+    public static Task<IEventStream> CreateStream(
+        this IStoreEvents storeEvents,
+        string streamId,
+        CancellationToken cancellationToken)
     {
         EnsureStoreEventsNotNull(storeEvents);
-        return storeEvents.CreateStream(Bucket.Default, streamId);
+        return storeEvents.CreateStream(Bucket.Default, streamId, cancellationToken);
     }
 
     /// <summary>
@@ -33,11 +41,16 @@ public static class StoreEventsExtensions
     /// <param name="storeEvents">The store events instance.</param>
     /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
     /// <param name="streamId">The value which uniquely identifies the stream within the bucket to be created.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>An empty stream.</returns>
-    public static Task<IEventStream> CreateStream(this IStoreEvents storeEvents, string bucketId, Guid streamId)
+    public static Task<IEventStream> CreateStream(
+        this IStoreEvents storeEvents,
+        string bucketId,
+        Guid streamId,
+        CancellationToken cancellationToken)
     {
         EnsureStoreEventsNotNull(storeEvents);
-        return storeEvents.CreateStream(bucketId, streamId.ToString());
+        return storeEvents.CreateStream(bucketId, streamId.ToString(), cancellationToken);
     }
 
     /// <summary>
@@ -52,7 +65,11 @@ public static class StoreEventsExtensions
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
     /// <exception cref="StreamNotFoundException" />
-    public static Task<IEventStream> OpenStream(this IStoreEvents storeEvents, Guid streamId, int minRevision = int.MinValue, int maxRevision = int.MaxValue) => OpenStream(storeEvents, Bucket.Default, streamId, minRevision, maxRevision);
+    public static Task<IEventStream> OpenStream(
+        this IStoreEvents storeEvents,
+        Guid streamId,
+        int minRevision = int.MinValue,
+        int maxRevision = int.MaxValue) => OpenStream(storeEvents, Bucket.Default, streamId, minRevision, maxRevision);
 
     /// <summary>
     ///     Reads the stream indicated from the minimum revision specified up to the maximum revision specified or creates
@@ -98,7 +115,7 @@ public static class StoreEventsExtensions
         Guid streamId,
         int minRevision = int.MinValue,
         int maxRevision = int.MaxValue,
-        CancellationToken cancellationToken =default)
+        CancellationToken cancellationToken = default)
     {
         EnsureStoreEventsNotNull(storeEvents);
         return storeEvents.OpenStream(bucketId, streamId.ToString(), minRevision, maxRevision, cancellationToken);
