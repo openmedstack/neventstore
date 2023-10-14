@@ -52,7 +52,7 @@ public class CommitAttempt
             commitId,
             eventStream.CommitSequence + 1,
             DateTimeOffset.UtcNow,
-            eventStream.UncommittedHeaders,
+            eventStream.UncommittedHeaders.ToDictionary(),
             eventStream.UncommittedEvents.ToList());
     }
 

@@ -14,5 +14,5 @@ public interface IPersistenceFactory
     ///     Builds a persistence engine.
     /// </summary>
     /// <returns>A ready-to-use persistence engine.</returns>
-    IPersistStreams Build();
+    IManagePersistence Build();
 }

@@ -6,7 +6,7 @@ using OpenMedStack.NEventStore.Grpc;
 
 namespace OpenMedStack.NEventStore.GrpcClient;
 
-internal class GrpcEventStorePersistence : IPersistStreams
+internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
 {
     private readonly ISerialize _serializer;
     private readonly EventStore.EventStoreClient _client;
@@ -21,7 +21,6 @@ internal class GrpcEventStorePersistence : IPersistStreams
     /// <inheritdoc />
     public void Dispose()
     {
-        IsDisposed = true;
     }
 
     public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
@@ -83,28 +82,6 @@ internal class GrpcEventStorePersistence : IPersistStreams
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
-        int maxThreshold,
-        CancellationToken cancellationToken)
-    {
-        var response = _client.GetStreamsToSnapshot(new StreamToSnapshotRequest
-            { BucketId = bucketId, MaxRevision = maxThreshold });
-        return response.ResponseStream.ReadAllAsync(cancellationToken).Select(head => new StreamHead(head.BucketId,
-            head.StreamId,
-            head.HeadRevision, head.SnapshotRevision));
-    }
-
-    /// <inheritdoc />
-    public bool IsDisposed { get; private set; }
-
-    /// <inheritdoc />
-    public Task Initialize()
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
     public IAsyncEnumerable<ICommit> GetFrom(
         string bucketId,
         string streamId,
@@ -116,67 +93,6 @@ internal class GrpcEventStorePersistence : IPersistStreams
             new GetFromMinMaxRequest
                 { BucketId = bucketId, StreamId = streamId, MinRevision = minRevision, MaxRevision = maxRevision });
         return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
-    }
-
-    /// <inheritdoc />
-    public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        DateTimeOffset start,
-        CancellationToken cancellationToken = default)
-    {
-        var response = _client.GetFromTimestamp(new GetFromTimestampRequest
-            { BucketId = bucketId, Timestamp = start.ToUnixTimeSeconds() });
-        return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
-    }
-
-    /// <inheritdoc />
-    public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        long checkpointToken,
-        CancellationToken cancellationToken)
-    {
-        var response = _client.GetFromCheckpointToken(new GetFromCheckpointTokenRequest
-            { BucketId = bucketId, CheckpointToken = checkpointToken }, cancellationToken: cancellationToken);
-        return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
-    }
-
-    /// <inheritdoc />
-    public IAsyncEnumerable<ICommit> GetFromTo(
-        string bucketId,
-        DateTimeOffset start,
-        DateTimeOffset end,
-        CancellationToken cancellationToken)
-    {
-        var response = _client.GetFromTo(new GetFromToTimestampsRequest
-            { BucketId = bucketId, From = start.ToUnixTimeSeconds(), To = end.ToUnixTimeSeconds() });
-        return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
-    }
-
-    /// <inheritdoc />
-    public Task<bool> Purge()
-    {
-        return Task.FromResult(false);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> Purge(string bucketId)
-    {
-        var response = await _client.PurgeAsync(new PurgeRequest { BucketId = bucketId }).ConfigureAwait(false);
-        return response.Value;
-    }
-
-    /// <inheritdoc />
-    public Task<bool> Drop()
-    {
-        return Task.FromResult(false);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> DeleteStream(string bucketId, string streamId)
-    {
-        var response = await _client.DeleteStreamAsync(new DeleteStreamRequest
-            { BucketId = bucketId, StreamId = streamId }).ConfigureAwait(false);
-        return response.Value;
     }
 
     private ICommit ToCommit(CommitInfo commit)

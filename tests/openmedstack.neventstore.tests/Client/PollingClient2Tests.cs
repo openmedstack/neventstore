@@ -1,4 +1,5 @@
-﻿using OpenMedStack.NEventStore.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 
 namespace OpenMedStack.NEventStore.Tests.Client;
@@ -27,7 +28,7 @@ public class BaseHandlingCommittedEvents : UsingPollingClient2
             _commits.Add(c);
             return Task.FromResult(HandlingResult.MoveToNext);
         };
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -59,7 +60,7 @@ public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
             _commits.Add(c);
             return Task.FromResult(HandlingResult.MoveToNext);
         };
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -69,7 +70,7 @@ public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
         Sut.StartFromBucket(Bucket.Default);
         for (var i = 0; i < 15; i++)
         {
-            StoreEvents.Advanced.CommitSingle();
+            StoreEvents.CommitSingle();
         }
 
         return Task.CompletedTask;
@@ -95,9 +96,9 @@ public class VerifyStoppingCommitPollingClient : UsingPollingClient2
             _commits.Add(c);
             return Task.FromResult(HandlingResult.Stop);
         };
-        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
-        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
-        await StoreEvents.Advanced.CommitSingle().ConfigureAwait(false);
+        await StoreEvents.CommitSingle().ConfigureAwait(false);
+        await StoreEvents.CommitSingle().ConfigureAwait(false);
+        await StoreEvents.CommitSingle().ConfigureAwait(false);
     }
 
     protected override Task Because()
@@ -132,7 +133,7 @@ public class VerifyRetryCommitPollingClient : UsingPollingClient2
 
             return Task.FromResult(HandlingResult.MoveToNext);
         };
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -167,8 +168,8 @@ public class VerifyRetryThenMoveNext : UsingPollingClient2
                 ? HandlingResult.Retry
                 : HandlingResult.MoveToNext);
         };
-        StoreEvents.Advanced.CommitSingle();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -202,8 +203,8 @@ public class VerifyManualPlling : UsingPollingClient2
             _commits.Add(c);
             return Task.FromResult(HandlingResult.MoveToNext);
         };
-        StoreEvents.Advanced.CommitSingle();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -237,15 +238,21 @@ public abstract class UsingPollingClient2 : SpecificationBase
 
     protected PollingClient Sut { get; private set; } = null!;
 
-    protected IStoreEvents StoreEvents { get; private set; } = null!;
+    protected ICommitEvents StoreEvents { get; private set; } = null!;
 
     protected Func<ICommit, Task<HandlingResult>> HandleFunction = null!;
 
     protected override Task Context()
     {
+        var collection = new ServiceCollection().RegisterInMemoryEventStore().RegisterJsonSerialization().AddLogging();
+        var serviceProvider = collection.BuildServiceProvider();
         HandleFunction = _ => Task.FromResult(HandlingResult.MoveToNext);
-        StoreEvents = Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence().Build();
-        Sut = new PollingClient(StoreEvents.Advanced, c => HandleFunction(c), NullLogger.Instance,
+        StoreEvents =
+            serviceProvider
+                .GetRequiredService<
+                    ICommitEvents>(); //Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence().Build();
+        Sut = new PollingClient(serviceProvider.GetRequiredService<IManagePersistence>(), c => HandleFunction(c),
+            NullLogger.Instance,
             _pollingInterval);
         return Task.CompletedTask;
     }

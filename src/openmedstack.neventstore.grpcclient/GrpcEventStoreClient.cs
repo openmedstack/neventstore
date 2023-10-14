@@ -6,10 +6,11 @@ using Microsoft.Extensions.Logging;
 using OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
-/// Defines the GRPC based implementation of <see cref="IStoreEvents"/>.
+/// Defines the GRPC event store client.
 /// </summary>
-public class GrpcEventStoreClient : IStoreEvents
+public class GrpcEventStoreClient
 {
+    private readonly ICommitEvents _persistence;
     private readonly ILoggerFactory _logger;
 
     /// <summary>
@@ -25,24 +26,21 @@ public class GrpcEventStoreClient : IStoreEvents
         ILoggerFactory logger,
         GrpcChannelOptions? channelOptions = null)
     {
-        Advanced = new GrpcEventStorePersistence(endpoint, serializer, channelOptions);
+        _persistence = new GrpcEventStorePersistence(endpoint, serializer, channelOptions);
         _logger = logger;
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        Advanced.Dispose();
+        _persistence.Dispose();
         GC.SuppressFinalize(this);
     }
 
     /// <inheritdoc />
-    public IPersistStreams Advanced { get; }
-
-    /// <inheritdoc />
     public async Task<IEventStream> CreateStream(string bucketId, string streamId, CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, 0, int.MaxValue,
+        return await OptimisticEventStream.Create(bucketId, streamId, _persistence, 0, int.MaxValue,
             _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
@@ -54,7 +52,7 @@ public class GrpcEventStoreClient : IStoreEvents
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, minRevision, maxRevision,
+        return await OptimisticEventStream.Create(bucketId, streamId, _persistence, minRevision, maxRevision,
             _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
@@ -62,7 +60,7 @@ public class GrpcEventStoreClient : IStoreEvents
     public async Task<IEventStream> OpenStream(ISnapshot snapshot, int maxRevision, CancellationToken cancellationToken)
     {
         return await OptimisticEventStream
-            .Create(snapshot, Advanced, maxRevision, _logger.CreateLogger<OptimisticEventStream>(), cancellationToken)
+            .Create(snapshot, _persistence, maxRevision, _logger.CreateLogger<OptimisticEventStream>(), cancellationToken)
             .ConfigureAwait(false);
     }
 }

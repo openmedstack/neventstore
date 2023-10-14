@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 
@@ -11,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-public class InMemoryPersistenceEngine : IPersistStreams
+public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSnapshots
 {
     private readonly ILogger<InMemoryPersistenceEngine> _logger;
     private readonly ConcurrentDictionary<string, Bucket> _buckets = new();
@@ -98,22 +99,35 @@ public class InMemoryPersistenceEngine : IPersistStreams
         return fromTo.ToAsyncEnumerable(cancellationToken);
     }
 
-    public Task<ICommit?> Commit(
+    public async Task<ICommit?> Commit(
         IEventStream eventStream,
         Guid? commitId = null,
         CancellationToken cancellationToken = default)
     {
         if (eventStream.UncommittedEvents.Count == 0)
         {
-            return Task.FromResult<ICommit?>(null);
+            return null;
         }
 
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.AttemptingToCommit, commitId, eventStream.StreamId, eventStream.CommitSequence);
         var attempt = CommitAttempt.FromStream(eventStream, commitId ?? Guid.NewGuid());
         var bucket = this[attempt.BucketId];
-        var commit = bucket.Commit(attempt, Interlocked.Increment(ref _checkpoint));
-        return Task.FromResult<ICommit?>(commit);
+        try
+        {
+            return bucket.Commit(attempt, Interlocked.Increment(ref _checkpoint));
+        }
+        catch (ConcurrencyException)
+        {
+            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
+            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
+            if (eventStream.StreamRevision <= currentRevision)
+            {
+                throw;
+            }
+
+            return await Commit(eventStream, commitId, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
@@ -404,16 +418,20 @@ public class InMemoryPersistenceEngine : IPersistStreams
 
             _potentialDuplicates.Add(new IdentityForDuplicationDetection(commit));
             _potentialConflicts.Add(new IdentityForConcurrencyConflictDetection(commit));
-            var head = _heads.FirstOrDefault(x => x.StreamId == commit.StreamId);
-            if (head != null)
+            lock (_heads)
             {
-                _heads.Remove(head);
+                var head = _heads.FirstOrDefault(x => x.StreamId == commit.StreamId);
+                if (head != null)
+                {
+                    _heads.Remove(head);
+                }
+
+                _logger.LogDebug(Resources.UpdatingStreamHead, commit.StreamId);
+                var snapshotRevision = head?.SnapshotRevision ?? 0;
+                _heads.Add(
+                    new StreamHead(commit.BucketId, commit.StreamId, commit.StreamRevision, snapshotRevision));
             }
 
-            _logger.LogDebug(Resources.UpdatingStreamHead, commit.StreamId);
-            var snapshotRevision = head?.SnapshotRevision ?? 0;
-            _heads.Add(
-                new StreamHead(commit.BucketId, commit.StreamId, commit.StreamRevision, snapshotRevision));
             return commit;
         }
 

@@ -15,7 +15,7 @@ public class PollingClient : IDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly ILogger _logger;
     private readonly Func<ICommit, Task<HandlingResult>> _commitCallback;
-    private readonly IPersistStreams _persistStreams;
+    private readonly IManagePersistence _managePersistence;
     private readonly TimeSpan _waitInterval;
     private Task? _pollingThread;
     private Func<IAsyncEnumerable<ICommit>>? _pollingFunc;
@@ -24,13 +24,13 @@ public class PollingClient : IDisposable
     /// <summary>
     ///
     /// </summary>
-    /// <param name="persistStreams"></param>
+    /// <param name="managePersistence"></param>
     /// <param name="callback"></param>
     /// <param name="logger">The <see cref="ILogger"/>.</param>
     /// <param name="waitInterval">Interval in Milliseconds to wait when the provider
     /// return no more commit and the next request</param>
     public PollingClient(
-        IPersistStreams persistStreams,
+        IManagePersistence managePersistence,
         Func<ICommit, Task<HandlingResult>> callback,
         ILogger logger,
         TimeSpan waitInterval = default)
@@ -42,9 +42,9 @@ public class PollingClient : IDisposable
          ?? throw new ArgumentNullException(
                 nameof(callback),
                 "Cannot use polling client without callback");
-        _persistStreams = persistStreams
+        _managePersistence = managePersistence
          ?? throw new ArgumentNullException(
-                nameof(persistStreams),
+                nameof(managePersistence),
                 "PersistStreams cannot be null");
         LastActivityTimestamp = DateTime.UtcNow;
     }
@@ -63,7 +63,7 @@ public class PollingClient : IDisposable
             throw new PollingClientException("Cannot configure when polling client already started polling");
         }
 
-        _pollingFunc = () => _persistStreams.GetFrom(bucketId, _checkpointToken, _cts.Token);
+        _pollingFunc = () => _managePersistence.GetFrom(bucketId, _checkpointToken, _cts.Token);
     }
 
     public void StartFromBucket(string bucketId, long checkpointToken = 0)

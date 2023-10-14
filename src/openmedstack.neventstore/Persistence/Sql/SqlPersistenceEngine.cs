@@ -15,9 +15,9 @@ using NEventStore;
 using Persistence;
 using Serialization;
 
-public class SqlPersistenceEngine : IPersistStreams
+public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSnapshots
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<SqlPersistenceEngine> _logger;
     private readonly IConnectionFactory _connectionFactory;
     private readonly ISqlDialect _dialect;
     private readonly int _pageSize;
@@ -31,7 +31,7 @@ public class SqlPersistenceEngine : IPersistStreams
         ISerialize serializer,
         int pageSize,
         IStreamIdHasher streamIdHasher,
-        ILogger logger)
+        ILogger<SqlPersistenceEngine> logger)
     {
         if (pageSize < 0)
         {

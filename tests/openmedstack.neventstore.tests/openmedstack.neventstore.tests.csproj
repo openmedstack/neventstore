@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\shared.proj" />
+    <Import Project="..\..\shared.proj"/>
     <PropertyGroup>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <IsPackable>false</IsPackable>
@@ -12,29 +12,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\openmedstack.neventstore.persistence.acceptancetests\PersistenceTests.cs" Link="Persistence\InMemoryPersistence\PersistenceTests.cs" />
+        <None Include="..\openmedstack.neventstore.persistence.acceptancetests\PersistenceTests.cs" Link="Persistence\InMemoryPersistence\PersistenceTests.cs"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
-        <PackageReference Include="xunit" Version="2.5.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-rc.1.23419.4"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0-rc.1.23419.4" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2"/>
+        <PackageReference Include="xunit" Version="2.5.0"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="FakeItEasy" Version="7.4.0" />
-        <PackageReference Include="System.Reactive.Core" Version="6.0.0" />
-        <PackageReference Include="System.Reactive.Linq" Version="6.0.0" />
+        <PackageReference Include="FakeItEasy" Version="7.4.0"/>
+        <PackageReference Include="System.Reactive.Core" Version="6.0.0"/>
+        <PackageReference Include="System.Reactive.Linq" Version="6.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\openmedstack.neventstore.pollingclient\openmedstack.neventstore.pollingclient.csproj" />
-        <ProjectReference Include="..\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj" />
-        <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
+        <ProjectReference Include="..\..\src\openmedstack.neventstore.pollingclient\openmedstack.neventstore.pollingclient.csproj"/>
+        <ProjectReference Include="..\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj"/>
+        <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}"/>
     </ItemGroup>
 
 </Project>

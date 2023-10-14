@@ -4,11 +4,14 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 public class CommittedStream : IEventStream
 {
+    private readonly List<EventMessage> _uncommittedEvents = new();
     private readonly ICommit _commit;
+    private int _streamRevision;
 
     public CommittedStream(ICommit commit)
     {
         _commit = commit;
+        _streamRevision = commit.StreamRevision;
     }
 
     public string BucketId
@@ -23,7 +26,7 @@ public class CommittedStream : IEventStream
 
     public int StreamRevision
     {
-        get { return _commit.StreamRevision; }
+        get { return _streamRevision; }
     }
 
     public int CommitSequence
@@ -36,23 +39,27 @@ public class CommittedStream : IEventStream
         get { return _commit.Events.ToList(); }
     }
 
-    public IDictionary<string, object> CommittedHeaders
+    public IReadOnlyDictionary<string, object> CommittedHeaders
     {
-        get { return _commit.Headers; }
+        get { return _commit.Headers.ToDictionary(); }
     }
-
-    private List<EventMessage> _uncommittedEvents = new List<EventMessage>();
 
     public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
         get { return _uncommittedEvents; }
     }
 
-    public IDictionary<string, object> UncommittedHeaders { get; } = new Dictionary<string, object>();
+    public IReadOnlyDictionary<string, object> UncommittedHeaders { get; } = new Dictionary<string, object>();
 
     public void Add(EventMessage uncommittedEvent)
     {
         _uncommittedEvents.Add(uncommittedEvent);
+        _streamRevision++;
+    }
+
+    public void Add(string key, object value)
+    {
+        throw new NotImplementedException();
     }
 
     public void SetPersisted(int commitSequence)

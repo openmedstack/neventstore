@@ -19,12 +19,17 @@ public class PersistenceEngineFixture : PersistenceEngineFixtureBase
     {
         var connectionString = string.Format(ConnectionString, Guid.NewGuid().ToString("N"));
         FbConnection.CreateDatabase(connectionString, overwrite: true);
-        CreatePersistence = pageSize => new SqlPersistenceFactory(
-            new NetStandardConnectionFactory(FirebirdClientFactory.Instance, connectionString,
-                NullLogger<NetStandardConnectionFactory>.Instance),
-            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
-            new FirebirdSqlDialect(NullLogger.Instance),
-            logger: NullLogger.Instance,
-            pageSize: pageSize).Build();
+        CreatePersistence = pageSize =>
+        {
+            var engine = new SqlPersistenceEngine(
+                new NetStandardConnectionFactory(FirebirdClientFactory.Instance, connectionString,
+                    NullLogger<NetStandardConnectionFactory>.Instance),
+                new FirebirdSqlDialect(NullLogger.Instance),
+                new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+                pageSize,
+                new Sha1StreamIdHasher(),
+                NullLogger<SqlPersistenceEngine>.Instance);
+            return (engine, engine, engine);
+        };
     }
 }

@@ -14,6 +14,8 @@ public sealed class OptimisticEventStream : IEventStream
     private readonly ILogger<OptimisticEventStream> _logger;
     private readonly List<EventMessage> _committed = new();
     private readonly List<EventMessage> _events = new();
+    private readonly Dictionary<string, object> _uncommittedHeaders = new();
+    private readonly Dictionary<string, object> _committedHeaders = new();
     private readonly ICollection<Guid> _identifiers = new HashSet<Guid>();
 
 //    private readonly ImmutableArray<EventMessage> _immutableCollection;
@@ -39,12 +41,12 @@ public sealed class OptimisticEventStream : IEventStream
         string bucketId,
         string streamId,
         ICommitEvents persistence,
-        int minRevision,
-        int maxRevision,
-        ILogger<OptimisticEventStream> logger,
+        int minRevision = 0,
+        int maxRevision = int.MaxValue,
+        ILogger<OptimisticEventStream>? logger = null,
         CancellationToken cancellationToken = default)
     {
-        var instance = Create(bucketId, streamId, logger);
+        var instance = Create(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
         var commits = persistence.GetFrom(bucketId, streamId, minRevision, maxRevision, cancellationToken);
         await instance.PopulateStream(minRevision, maxRevision, commits, cancellationToken).ConfigureAwait(false);
 
@@ -78,38 +80,6 @@ public sealed class OptimisticEventStream : IEventStream
         return instance;
     }
 
-    internal static async Task<OptimisticEventStream> Create(
-        string bucketId,
-        string streamId,
-        IAsyncEnumerable<ICommit> commits,
-        int minRevision = 0,
-        int maxRevision = int.MaxValue,
-        int streamRevision = 0,
-        int commitSequence = 0,
-        ILogger<OptimisticEventStream>? logger = null)
-    {
-        var instance = Create(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
-        await instance.PopulateStream(minRevision, maxRevision, commits, CancellationToken.None).ConfigureAwait(false);
-
-        if (minRevision > 0 && instance._committed.Count == 0)
-        {
-            throw new StreamNotFoundException(
-                string.Format(Resources.StreamNotFoundException, streamId, instance.BucketId));
-        }
-
-        if (streamRevision > 0)
-        {
-            instance.StreamRevision = streamRevision;
-        }
-
-        if (commitSequence > 0)
-        {
-            instance.CommitSequence = commitSequence;
-        }
-
-        return instance;
-    }
-
     public string BucketId { get; }
     public string StreamId { get; }
     public int StreamRevision { get; private set; }
@@ -120,30 +90,31 @@ public sealed class OptimisticEventStream : IEventStream
         get { return ImmutableArray.CreateRange(_committed); }
     }
 
-    public IDictionary<string, object> CommittedHeaders { get; } = new Dictionary<string, object>();
+    public IReadOnlyDictionary<string, object> CommittedHeaders
+    {
+        get { return _committedHeaders; }
+    }
 
     public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
         get { return ImmutableArray.CreateRange(_events); }
     }
 
-    public IDictionary<string, object> UncommittedHeaders { get; } = new Dictionary<string, object>();
+    public IReadOnlyDictionary<string, object> UncommittedHeaders
+    {
+        get { return _uncommittedHeaders; }
+    }
 
     public void Add(EventMessage uncommittedEvent)
     {
-        if (uncommittedEvent == null)
-        {
-            throw new ArgumentNullException(nameof(uncommittedEvent));
-        }
-
-        if (uncommittedEvent.Body == null)
-        {
-            throw new Exception(nameof(uncommittedEvent.Body));
-        }
-
         _logger.LogTrace(Resources.AppendingUncommittedToStream, uncommittedEvent.Body.GetType(), StreamId);
         _events.Add(uncommittedEvent);
         StreamRevision++;
+    }
+
+    public void Add(string key, object value)
+    {
+        _uncommittedHeaders[key] = value;
     }
 
     public void SetPersisted(int commitSequence)
@@ -151,7 +122,7 @@ public sealed class OptimisticEventStream : IEventStream
         _committed.AddRange(_events);
         foreach (var header in UncommittedHeaders)
         {
-            CommittedHeaders[header.Key] = header.Value;
+            _committedHeaders[header.Key] = header.Value;
         }
 
         CommitSequence = commitSequence;
@@ -165,13 +136,19 @@ public sealed class OptimisticEventStream : IEventStream
         var commits = commitEvents.GetFrom(BucketId, StreamId, revision + 1, int.MaxValue,
             cancellationToken);
         await PopulateStream(revision + 1, int.MaxValue, commits, cancellationToken).ConfigureAwait(false);
+        var toBeCommitted = UncommittedEvents.ToArray();
+        _events.Clear();
+        foreach (var @event in toBeCommitted)
+        {
+            Add(@event);
+        }
     }
 
     internal void ClearChanges()
     {
         _logger.LogTrace(Resources.ClearingUncommittedChanges, StreamId);
         _events.Clear();
-        UncommittedHeaders.Clear();
+        _uncommittedHeaders.Clear();
     }
 
     private async Task PopulateStream(
@@ -207,7 +184,7 @@ public sealed class OptimisticEventStream : IEventStream
     {
         foreach (var key in commit.Headers.Keys)
         {
-            CommittedHeaders[key] = commit.Headers[key];
+            _committedHeaders[key] = commit.Headers[key];
         }
     }
 

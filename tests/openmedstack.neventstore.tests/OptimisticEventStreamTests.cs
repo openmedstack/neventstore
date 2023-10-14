@@ -1,17 +1,13 @@
-using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
-
 namespace OpenMedStack.NEventStore.Tests;
 
+using OpenMedStack.NEventStore.Abstractions;
+using OpenMedStack.NEventStore.Abstractions.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
-using NEventStore;
-using NEventStore.Persistence;
-using NEventStore.Persistence.AcceptanceTests;
 using NEventStore.Persistence.AcceptanceTests.BDD;
 using Xunit;
 
@@ -21,11 +17,6 @@ public class WhenBuildingAStream : OnTheEventStream
     private const int MaxRevision = 7;
     private readonly int _eachCommitHas = 2.Events();
     private ICommit[] _committed = null!;
-
-    public WhenBuildingAStream(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
 
     protected override Task Context()
     {
@@ -105,11 +96,6 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
     private readonly int _eventsPerCommit = 2.Events();
     private ICommit[] _committed = null!;
 
-    public WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
     protected override Task Context()
     {
         _committed = new[]
@@ -142,11 +128,6 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
 
 public class WhenAddingAFullyPopulatedEventMessage : OnTheEventStream
 {
-    public WhenAddingAFullyPopulatedEventMessage(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
     protected override Task Because()
     {
         Stream.Add(new EventMessage("populated"));
@@ -163,11 +144,6 @@ public class WhenAddingAFullyPopulatedEventMessage : OnTheEventStream
 
 public class WhenAddingMultiplePopulatedEventMessages : OnTheEventStream
 {
-    public WhenAddingMultiplePopulatedEventMessages(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
     protected override Task Because()
     {
         Stream.Add(new EventMessage("populated"));
@@ -186,11 +162,6 @@ public class WhenAddingMultiplePopulatedEventMessages : OnTheEventStream
 public class WhenAddingASimpleObjectAsAnEventMessage : OnTheEventStream
 {
     private const string MyEvent = "some event data";
-
-    public WhenAddingASimpleObjectAsAnEventMessage(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
 
     protected override Task Because()
     {
@@ -214,11 +185,6 @@ public class WhenAddingASimpleObjectAsAnEventMessage : OnTheEventStream
 
 public class WhenClearingAnyUncommittedChanges : OnTheEventStream
 {
-    public WhenClearingAnyUncommittedChanges(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
     protected override Task Context()
     {
         Stream.Add(new EventMessage(string.Empty));
@@ -242,12 +208,7 @@ public class WhenClearingAnyUncommittedChanges : OnTheEventStream
 
 public class WhenCommittingAnEmptyChangeset : OnTheEventStream
 {
-    public WhenCommittingAnEmptyChangeset(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
-    protected override Task Because() => Persistence.Commit(Stream, Guid.NewGuid(), default);
+    protected override Task Because() => Persistence.Commit(Stream, Guid.NewGuid());
 
     [Fact]
     public void should_not_increment_the_current_stream_revision()
@@ -268,11 +229,6 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
     private readonly Dictionary<string, object> _headers = new() { { "key", "value" } };
     private readonly EventMessage _uncommitted = new(string.Empty);
     private CommitAttempt _constructed = null!;
-
-    public WhenCommittingAnyUncommittedChanges(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
 
     protected override Task Context()
     {
@@ -309,13 +265,13 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
         Stream.Add(_uncommitted);
         foreach (var item in _headers)
         {
-            Stream.UncommittedHeaders[item.Key] = item.Value;
+            Stream.Add(item.Key, item.Value);
         }
 
         return Task.CompletedTask;
     }
 
-    protected override Task Because() => Persistence.Commit(Stream, _commitId, default);
+    protected override Task Because() => Persistence.Commit(Stream, _commitId);
 
     [Fact]
     public void should_provide_a_commit_to_the_underlying_infrastructure()
@@ -420,144 +376,28 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
         Assert.Equal(_headers.Count, Stream.CommittedHeaders.Count);
     }
 }
-//
-///// <summary>
-/////     This behavior is primarily to support a NoSQL storage solution where CommitId is not being used as the "primary key"
-/////     in a NoSQL environment, we'll most likely use StreamId + CommitSequence, which also enables optimistic concurrency.
-///// </summary>
-//public class WhenCommittingWithAnIdentifierThatWasPreviouslyRead : OnTheEventStream
-//{
-//    private ICommit[] _committed = null!;
-//    private Guid _dupliateCommitId;
-//    private Exception _thrown = null!;
-//
-//    public WhenCommittingWithAnIdentifierThatWasPreviouslyRead(FakeTimeFixture fixture)
-//        : base(fixture)
-//    {
-//    }
-//
-//    protected override async Task Context()
-//    {
-//        _committed = new[] { BuildCommitStub(1, 1, 1) };
-//        _dupliateCommitId = _committed[0].CommitId;
-//
-//        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default))
-//            .Returns(_committed.ToAsyncEnumerable());
-//
-//        Stream = await OptimisticEventStream
-//            .Create(BucketId, StreamId, Persistence, 0, int.MaxValue, NullLogger<OptimisticEventStream>.Instance);
-//    }
-//
-//    protected override async Task Because()
-//    {
-//        _thrown = (await Catch.Exception(() => Persistence.Commit(Stream, _dupliateCommitId, default))
-//            .ConfigureAwait(false))!;
-//    }
-//
-//    [Fact]
-//    public void should_throw_a_DuplicateCommitException()
-//    {
-//        Assert.IsType<DuplicateCommitException>(_thrown);
-//    }
-//}
-
-public class WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead : OnTheEventStream
-{
-    private const int StreamRevision = 1;
-    private readonly EventMessage _uncommitted = new(string.Empty);
-    private ICommit[] _committed = null!;
-    private ICommit[] _discoveredOnCommit = null!;
-    private Exception _thrown = null!;
-    private OptimisticEventStore? _store;
-
-    public WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead(FakeTimeFixture fixture)
-        : base(fixture)
-    {
-    }
-
-    protected override async Task Context()
-    {
-        _committed = new[] { BuildCommitStub(1, 1, 1) };
-        _discoveredOnCommit = new[] { BuildCommitStub(3, 2, 2) };
-        _store = new OptimisticEventStore(Persistence, Array.Empty<IPipelineHook>(), NullLoggerFactory.Instance);
-        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
-            .WhenArgumentsMatch((IEventStream e, Guid? _, CancellationToken _) => e.StreamRevision == StreamRevision+1)
-            .ThrowsAsync(new ConcurrencyException());
-        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
-            .WhenArgumentsMatch((IEventStream e, Guid? _, CancellationToken _) => e.StreamRevision > StreamRevision+1)
-            .Returns(Task.FromResult<ICommit?>(_committed[0]));
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, StreamRevision, int.MaxValue, default))
-            .Returns(_committed.ToAsyncEnumerable());
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, StreamRevision + 1, int.MaxValue, default))
-            .Returns(_discoveredOnCommit.ToAsyncEnumerable());
-
-        Stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, StreamRevision, int.MaxValue,
-                NullLogger<OptimisticEventStream>.Instance);
-        Stream.Add(_uncommitted);
-    }
-
-    protected override async Task Because()
-    {
-        _thrown =
-            (await Catch.Exception(() => _store!.Commit(Stream, Guid.NewGuid(), default)).ConfigureAwait(false))!;
-    }
-
-    [Fact]
-    public void should_query_the_underlying_storage_to_discover_the_new_commits()
-    {
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, StreamRevision + 1, int.MaxValue, default))
-            .MustHaveHappened(1, Times.Exactly);
-    }
-
-    [Fact]
-    public void should_update_the_stream_revision_accordingly()
-    {
-        Assert.Equal(_discoveredOnCommit[0].StreamRevision, Stream.StreamRevision);
-    }
-
-    [Fact]
-    public void should_update_the_commit_sequence_accordingly()
-    {
-        Assert.Equal(_discoveredOnCommit[0].CommitSequence, Stream.CommitSequence);
-    }
-
-    [Fact]
-    public void should_add_the_newly_discovered_committed_events_to_the_set_of_committed_events_accordingly()
-    {
-        Assert.Equal(_discoveredOnCommit[0].Events.Count + 1, Stream.CommittedEvents.Count);
-    }
-}
 
 public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTimeFixture>
 {
     protected const int DefaultStreamRevision = 1;
     protected const int DefaultCommitSequence = 1;
-    private IPersistStreams? _persistence;
+    private ICommitEvents? _persistence;
     private OptimisticEventStream? _stream;
     protected const string BucketId = "bucket";
     protected readonly string StreamId = Guid.NewGuid().ToString();
 
-    public OnTheEventStream(FakeTimeFixture fixture)
+    public OnTheEventStream()
     {
-        SetFixture(fixture);
         OnStart().Wait();
     }
 
-    protected IPersistStreams Persistence => _persistence ??= A.Fake<IPersistStreams>(o =>
-    {
-        o.Implements<ICommitEvents>();
-    });
+    protected ICommitEvents Persistence => _persistence ??= A.Fake<ICommitEvents>();
 
     protected OptimisticEventStream Stream
     {
         get => _stream ??= OptimisticEventStream
             .Create(BucketId, StreamId, NullLogger<OptimisticEventStream>.Instance);
         set => _stream = value;
-    }
-
-    public void SetFixture(FakeTimeFixture data)
-    {
     }
 
     protected ICommit BuildCommitStub(int revision, int sequence, int eventCount)

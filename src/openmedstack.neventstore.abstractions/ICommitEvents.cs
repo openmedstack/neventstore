@@ -22,12 +22,14 @@ public interface ICommitEvents : IDisposable
     /// <exception cref="StorageUnavailableException" />
     IAsyncEnumerable<ICommit> GetFrom(string bucketId, string streamId, int minRevision, int maxRevision, CancellationToken cancellationToken);
 
-//    /// <summary>
-//    ///     Writes the to-be-committed events provided to the underlying persistence mechanism.
-//    /// </summary>
-//    /// <param name="attempt">The series of events and associated metadata to be commited.</param>
-//    /// <exception cref="ConcurrencyException" />
-//    /// <exception cref="StorageException" />
-//    /// <exception cref="StorageUnavailableException" />
+    /// <summary>
+    ///     Writes the to-be-committed events stream provided to the underlying persistence mechanism.
+    /// </summary>
+    /// <param name="eventStream">The series of events and associated metadata to be committed.</param>
+    /// <param name="commitId">The id to use for the commit.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
+    /// <exception cref="ConcurrencyException" />
+    /// <exception cref="StorageException" />
+    /// <exception cref="StorageUnavailableException" />
     Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId = null, CancellationToken cancellationToken = default);
 }

@@ -10,9 +10,9 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 
 /// <summary>
-/// Defines the HTTP based implementation of <see cref="IPersistStreams"/>.
+/// Defines the HTTP based implementation of <see cref="IManagePersistence"/>.
 /// </summary>
-internal class HttpEventStorePersistence : IPersistStreams
+internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 {
     private const string ApplicationJson = "application/json";
 
@@ -104,7 +104,7 @@ internal class HttpEventStorePersistence : IPersistStreams
             commitId.Value,
             eventStream.CommitSequence + 1,
             DateTimeOffset.UtcNow,
-            eventStream.UncommittedHeaders,
+            eventStream.UncommittedHeaders.ToDictionary(),
             eventStream.UncommittedEvents.Select(x => new EventMessage(SerializeBody(x.Body),
                 x.Headers.ToDictionary(y => y.Key, y => (object)JsonConvert.SerializeObject(y.Value)))).ToList());
         var response = await _client.PostAsync(
@@ -172,113 +172,5 @@ internal class HttpEventStorePersistence : IPersistStreams
                 }
             }
         }
-    }
-
-    /// <inheritdoc />
-    public bool IsDisposed { get; } = false;
-
-    /// <inheritdoc />
-    public Task Initialize()
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        DateTimeOffset start,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        var response = await _client.GetAsync($"streams/{bucketId}/{start:O}", cancellationToken)
-            .ConfigureAwait(false);
-        if (response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            var commits = content.DeserializeAsyncEnumerable<Commit>(cancellationToken: cancellationToken);
-            await foreach (var commit in commits.ConfigureAwait(false))
-            {
-                if (commit != null)
-                {
-                    yield return ToDeserializedCommit(commit);
-                }
-            }
-        }
-
-        throw new Exception(response.ReasonPhrase);
-    }
-
-    /// <inheritdoc />
-    public async IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        long checkpointToken = 0,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        var response = await _client.GetAsync($"streams/{bucketId}/{checkpointToken}", cancellationToken)
-            .ConfigureAwait(false);
-        if (response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            var commits = content.DeserializeAsyncEnumerable<Commit>(cancellationToken: cancellationToken);
-            await foreach (var commit in commits.ConfigureAwait(false))
-            {
-                if (commit != null)
-                {
-                    yield return ToDeserializedCommit(commit);
-                }
-            }
-        }
-
-        throw new Exception(response.ReasonPhrase);
-    }
-
-    /// <inheritdoc />
-    public async IAsyncEnumerable<ICommit> GetFromTo(
-        string bucketId,
-        DateTimeOffset start,
-        DateTimeOffset end,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        var response = await _client.GetAsync($"streams/{bucketId}/{start:O}/{end:O}", cancellationToken)
-            .ConfigureAwait(false);
-        if (response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            var commits = content.DeserializeAsyncEnumerable<Commit>(cancellationToken: cancellationToken);
-            await foreach (var commit in commits.ConfigureAwait(false))
-            {
-                if (commit != null)
-                {
-                    yield return ToDeserializedCommit(commit);
-                }
-            }
-        }
-
-        throw new Exception(response.ReasonPhrase);
-    }
-
-    /// <inheritdoc />
-    public Task<bool> Purge()
-    {
-        return Task.FromResult(false);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> Purge(string bucketId)
-    {
-        var response = await _client.DeleteAsync($"streams/{bucketId}").ConfigureAwait(false);
-        return response.IsSuccessStatusCode;
-    }
-
-    /// <inheritdoc />
-    public Task<bool> Drop()
-    {
-        return Task.FromResult(false);
-    }
-
-    /// <inheritdoc />
-    public async Task<bool> DeleteStream(string bucketId, string streamId)
-    {
-        var response = await _client.DeleteAsync($"streams/{bucketId}/{streamId}").ConfigureAwait(false);
-        return response.IsSuccessStatusCode;
     }
 }

@@ -36,7 +36,7 @@ public interface IEventStream
     /// <summary>
     ///     Gets the collection of committed headers associated with the stream.
     /// </summary>
-    IDictionary<string, object> CommittedHeaders { get; }
+    IReadOnlyDictionary<string, object> CommittedHeaders { get; }
 
     /// <summary>
     ///     Gets the collection of yet-to-be-committed events that have not yet been persisted to durable storage.
@@ -46,13 +46,20 @@ public interface IEventStream
     /// <summary>
     ///     Gets the collection of yet-to-be-committed headers associated with the uncommitted events.
     /// </summary>
-    IDictionary<string, object> UncommittedHeaders { get; }
+    IReadOnlyDictionary<string, object> UncommittedHeaders { get; }
 
     /// <summary>
     ///     Adds the event messages provided to the session to be tracked.
     /// </summary>
     /// <param name="uncommittedEvent">The event to be tracked.</param>
     void Add(EventMessage uncommittedEvent);
+
+    /// <summary>
+    /// Adds the key value pair to the uncommitted headers.
+    /// </summary>
+    /// <param name="key">The header key.</param>
+    /// <param name="value">The header value.</param>
+    void Add(string key, object value);
 
     /// <summary>
     ///  Moves the uncommitted events to the committed collection and clears the uncommitted collection.
@@ -63,7 +70,7 @@ public interface IEventStream
     /// Updates the event stream with the events contained in the event storage.
     /// </summary>
     /// <param name="commitEvents">The event storage.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <returns>The update operation as a <see cref="Task"/>.</returns>
     Task Update(ICommitEvents commitEvents, CancellationToken cancellationToken = default);
 }

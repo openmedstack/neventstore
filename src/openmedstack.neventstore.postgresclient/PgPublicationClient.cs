@@ -139,7 +139,6 @@ var ms = new MemoryStream(bytes);
     {
         var stream = c.GetStream();
         await using var _ = stream.ConfigureAwait(false);
-        //var bytes = DecodeHex(stream);
         var headers = _serializer.Deserialize<Dictionary<string, object>>(stream);
         if (headers != null)
         {

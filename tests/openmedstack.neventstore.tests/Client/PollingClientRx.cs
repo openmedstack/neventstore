@@ -19,7 +19,7 @@ public sealed class PollingClientRx
     private readonly Subject<ICommit> _subject;
 
     public PollingClientRx(
-        IPersistStreams persistStreams,
+        IManagePersistence managePersistence,
         TimeSpan waitInterval = default)
     {
         if (waitInterval == default)
@@ -34,7 +34,7 @@ public sealed class PollingClientRx
 
         _subject = new Subject<ICommit>();
         _pollingClient2 = new PollingClient(
-            persistStreams,
+            managePersistence,
             c =>
             {
                 _subject.OnNext(c);

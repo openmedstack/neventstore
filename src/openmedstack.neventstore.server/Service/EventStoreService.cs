@@ -9,12 +9,14 @@ namespace OpenMedStack.NEventStore.Server.Service;
 
 public class EventStoreService : EventStore.EventStoreBase
 {
-    private readonly IPersistStreams _persistence;
+    private readonly ICommitEvents _persistence;
+    private readonly IAccessSnapshots _snapshots;
     private readonly ISerialize _serializer;
 
-    public EventStoreService(IPersistStreams persistence, ISerialize serializer)
+    public EventStoreService(ICommitEvents persistence, IAccessSnapshots snapshots, ISerialize serializer)
     {
         _persistence = persistence;
+        _snapshots = snapshots;
         _serializer = serializer;
     }
 
@@ -35,7 +37,7 @@ public class EventStoreService : EventStore.EventStoreBase
 
         foreach (var header in request.Headers)
         {
-            stream.UncommittedHeaders[header.Key] = header.Value;
+            stream.Add(header.Key, header.Value);
         }
 
         var info = await _persistence.Commit(stream, Guid.Parse(request.CommitId), context.CancellationToken)
@@ -65,7 +67,7 @@ public class EventStoreService : EventStore.EventStoreBase
 
     public override async Task<BoolValue> AddSnapshot(SnapshotInfo request, ServerCallContext context)
     {
-        var result = await _persistence.AddSnapshot(
+        var result = await _snapshots.AddSnapshot(
                 new Snapshot(
                     request.BucketId,
                     request.StreamId,
@@ -77,7 +79,7 @@ public class EventStoreService : EventStore.EventStoreBase
 
     public override async Task<SnapshotInfo?> GetSnapshot(GetSnapshotRequest request, ServerCallContext context)
     {
-        var result = await _persistence.GetSnapshot(request.BucketId, request.StreamId, request.MaxRevision,
+        var result = await _snapshots.GetSnapshot(request.BucketId, request.StreamId, request.MaxRevision,
             context.CancellationToken).ConfigureAwait(false);
         if (result == null)
         {
@@ -94,17 +96,6 @@ public class EventStoreService : EventStore.EventStoreBase
             StreamRevision = result.StreamRevision,
             Base64Payload = bytes
         };
-    }
-
-    public override async Task GetFromTimestamp(
-        GetFromTimestampRequest request,
-        IServerStreamWriter<CommitInfo> responseStream,
-        ServerCallContext context)
-    {
-        var commits = _persistence.GetFrom(request.BucketId,
-            DateTimeOffset.FromUnixTimeSeconds(request.Timestamp), context.CancellationToken);
-
-        await WriteToStream(responseStream, context, commits).ConfigureAwait(false);
     }
 
     private static async Task WriteToStream(
@@ -126,57 +117,5 @@ public class EventStoreService : EventStore.EventStoreBase
                 Events = { commit.Events.Select(e => e.ToEventMessageInfo()) }
             }, context.CancellationToken).ConfigureAwait(false);
         }
-    }
-
-    public override async Task GetFromTo(
-        GetFromToTimestampsRequest request,
-        IServerStreamWriter<CommitInfo> responseStream,
-        ServerCallContext context)
-    {
-        var commits = _persistence.GetFromTo(request.BucketId,
-            DateTimeOffset.FromUnixTimeSeconds(request.From), DateTimeOffset.FromUnixTimeSeconds(request.To),
-            context.CancellationToken);
-        await WriteToStream(responseStream, context, commits).ConfigureAwait(false);
-    }
-
-    public override async Task GetFromCheckpointToken(
-        GetFromCheckpointTokenRequest request,
-        IServerStreamWriter<CommitInfo> responseStream,
-        ServerCallContext context)
-    {
-        var commits = _persistence.GetFrom(request.BucketId,
-            request.CheckpointToken,
-            context.CancellationToken);
-        await WriteToStream(responseStream, context, commits).ConfigureAwait(false);
-    }
-
-    public override async Task GetStreamsToSnapshot(
-        StreamToSnapshotRequest request,
-        IServerStreamWriter<StreamHeadInfo> responseStream,
-        ServerCallContext context)
-    {
-        var heads = _persistence.GetStreamsToSnapshot(request.BucketId, request.MaxRevision, context.CancellationToken);
-        await foreach (var head in heads.ConfigureAwait(false))
-        {
-            await responseStream.WriteAsync(new StreamHeadInfo
-            {
-                BucketId = head.BucketId,
-                StreamId = head.StreamId,
-                HeadRevision = head.HeadRevision,
-                SnapshotRevision = head.SnapshotRevision
-            }, context.CancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    public override async Task<BoolValue> Purge(PurgeRequest request, ServerCallContext context)
-    {
-        var result = await _persistence.Purge(request.BucketId).ConfigureAwait(false);
-        return new BoolValue { Value = result };
-    }
-
-    public override async Task<BoolValue> DeleteStream(DeleteStreamRequest request, ServerCallContext context)
-    {
-        var result = await _persistence.DeleteStream(request.BucketId, request.StreamId).ConfigureAwait(false);
-        return new BoolValue { Value = result };
     }
 }

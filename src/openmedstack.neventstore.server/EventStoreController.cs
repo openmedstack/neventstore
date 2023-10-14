@@ -7,11 +7,13 @@ namespace OpenMedStack.NEventStore.Server;
 [Route("")]
 public class EventStoreController : Controller
 {
-    private readonly IPersistStreams _persistence;
+    private readonly ICommitEvents _persistence;
+    private readonly IAccessSnapshots _snapshots;
 
-    public EventStoreController(IPersistStreams persistence)
+    public EventStoreController(ICommitEvents persistence, IAccessSnapshots snapshots)
     {
         _persistence = persistence;
+        _snapshots = snapshots;
     }
 
     [HttpGet("/commits/{bucketId}/{streamId}/{minRevision:int?}/{maxRevision:int?}")]
@@ -27,16 +29,7 @@ public class EventStoreController : Controller
         maxRevision ?? int.MaxValue,
         cancellationToken);
 
-    [HttpGet(template: "/commits/{bucketId}/{start}")]
-    public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        DateTimeOffset start,
-        CancellationToken cancellationToken = default)
-    {
-        return _persistence.GetFrom(bucketId: bucketId, start: start, cancellationToken: cancellationToken);
-    }
-
-    [HttpPost("/commits")]
+    [HttpPost("/commit")]
     public async Task<ICommit?> Commit([FromBody] CommitAttempt attempt, CancellationToken cancellationToken)
     {
         var stream = await OptimisticEventStream.Create(attempt.BucketId, attempt.StreamId, _persistence, 0,
@@ -49,16 +42,10 @@ public class EventStoreController : Controller
 
         foreach (var header in attempt.Headers)
         {
-            stream.UncommittedHeaders[header.Key] = header.Value;
+            stream.Add(header.Key, header.Value);
         }
 
         return await _persistence.Commit(stream, attempt.CommitId, cancellationToken).ConfigureAwait(false);
-    }
-
-    [HttpGet("/commits/{bucketId}/{checkpointToken}")]
-    public IAsyncEnumerable<ICommit> GetFrom(string bucketId, long checkpointToken, CancellationToken cancellationToken)
-    {
-        return _persistence.GetFrom(bucketId, checkpointToken, cancellationToken);
     }
 
     [HttpGet("/snapshots/{bucketId}/{streamId}/{maxRevision:int}")]
@@ -68,43 +55,12 @@ public class EventStoreController : Controller
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        return _persistence.GetSnapshot(bucketId, streamId, maxRevision, cancellationToken);
+        return _snapshots.GetSnapshot(bucketId, streamId, maxRevision, cancellationToken);
     }
 
     [HttpPost("/snapshots")]
     public Task<bool> AddSnapshot([FromBody] ISnapshot snapshot)
     {
-        return _persistence.AddSnapshot(snapshot);
-    }
-
-    [HttpGet("/streams/{bucketId}/{maxThreshold:int}")]
-    public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
-        int maxThreshold,
-        CancellationToken cancellationToken)
-    {
-        return _persistence.GetStreamsToSnapshot(bucketId, maxThreshold, cancellationToken);
-    }
-
-    [HttpGet("/commits/{bucketId}/{start}/{end}")]
-    public IAsyncEnumerable<ICommit> GetFromTo(
-        string bucketId,
-        DateTimeOffset start,
-        DateTimeOffset end,
-        CancellationToken cancellationToken)
-    {
-        return _persistence.GetFromTo(bucketId, start, end, cancellationToken);
-    }
-
-    [HttpDelete("streams/{bucketId}")]
-    public Task<bool> Purge(string bucketId)
-    {
-        return _persistence.Purge(bucketId);
-    }
-
-    [HttpDelete("streams/{bucketId}/{streamId}")]
-    public Task DeleteStream(string bucketId, string streamId)
-    {
-        return _persistence.DeleteStream(bucketId, streamId);
+        return _snapshots.AddSnapshot(snapshot);
     }
 }

@@ -18,7 +18,7 @@ namespace OpenMedStack.NEventStore.Server.Tests.Steps;
 public partial class FeatureSteps : IAsyncDisposable
 {
     private TestChassis<EventStoreConfiguration> _server = null!;
-    private IPersistStreams _client = null!;
+    private ICommitEvents _client = null!;
 
     [Given(@"I have a new event store server")]
     public void GivenIHaveANewEventStoreServer()

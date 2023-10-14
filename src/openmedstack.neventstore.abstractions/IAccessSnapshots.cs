@@ -14,7 +14,7 @@ public interface IAccessSnapshots
     /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
     /// <param name="streamId">The stream to be searched for a snapshot.</param>
     /// <param name="maxRevision">The maximum revision possible for the desired snapshot.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <returns>If found, it returns the snapshot; otherwise null is returned.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
@@ -28,15 +28,4 @@ public interface IAccessSnapshots
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
     Task<bool> AddSnapshot(ISnapshot snapshot);
-
-    /// <summary>
-    ///     Gets identifiers for all streams whose head and last snapshot revisions differ by at least the threshold specified.
-    /// </summary>
-    /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
-    /// <param name="maxThreshold">The maximum difference between the head and most recent snapshot revisions.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>The streams for which the head and snapshot revisions differ by at least the threshold specified.</returns>
-    /// <exception cref="StorageException" />
-    /// <exception cref="StorageUnavailableException" />
-    IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(string bucketId, int maxThreshold, CancellationToken cancellationToken);
 }

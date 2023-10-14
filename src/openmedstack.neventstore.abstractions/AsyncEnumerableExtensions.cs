@@ -124,7 +124,7 @@ public static class AsyncEnumerableExtensions
     public static async Task<T?> FirstOrDefault<T>(
         this IAsyncEnumerable<T> enumerable,
         Func<T, bool> predicate,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         await foreach (var item in enumerable.ConfigureAwait(false).WithCancellation(cancellationToken)
             .ConfigureAwait(false))

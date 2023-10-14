@@ -1,8 +1,7 @@
-﻿namespace OpenMedStack.NEventStore.Tests.Persistence.InMemory;
+﻿namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
-using Microsoft.Extensions.Logging.Abstractions;
-using OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 using OpenMedStack.NEventStore.Persistence.InMemory;
+using Microsoft.Extensions.Logging.Abstractions;
 
 public class PersistenceEngineFixture : PersistenceEngineFixtureBase
 {

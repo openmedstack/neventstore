@@ -10,8 +10,8 @@ namespace OpenMedStack.NEventStore.Server.Tests.Steps;
 
 public partial class FeatureSteps
 {
-    private IPersistStreams _grpcClient = null!;
-    private IPersistStreams _httpClient = null!;
+    private ICommitEvents _grpcClient = null!;
+    private ICommitEvents _httpClient = null!;
 
     [Given(@"both an GRPC and HTTP client")]
     public void GivenBothAnGrpcAndHttpClient()
@@ -41,16 +41,7 @@ public partial class FeatureSteps
         _streamCount = await stream.Count().ConfigureAwait(false);
     }
 
-    [When(@"then delete it using the (.+) client")]
-    public async Task WhenThenDeleteItUsingTheHttpClient(string type)
-    {
-        var client = GetClient(type);
-        var deleted = client.DeleteStream("test", _commitResult!.StreamId).ConfigureAwait(false);
-
-        Assert.True(await deleted);
-    }
-
-    private IPersistStreams GetClient(string type) => type switch
+    private ICommitEvents GetClient(string type) => type switch
     {
         "HTTP" => _httpClient,
         "GRPC" => _grpcClient,

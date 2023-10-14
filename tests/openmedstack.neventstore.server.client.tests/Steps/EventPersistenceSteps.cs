@@ -38,13 +38,6 @@ public partial class FeatureSteps
         Assert.Equal(1, _streamCount);
     }
 
-    [When(@"then delete it")]
-    public async Task WhenThenDeleteIt()
-    {
-        var deleted = await _client.DeleteStream("test", _commitResult!.StreamId).ConfigureAwait(false);
-        Assert.True(deleted);
-    }
-
     [Then(@"an empty event stream is returned")]
     public void ThenAnEmptyEventStreamIsReturned()
     {

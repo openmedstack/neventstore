@@ -1,4 +1,5 @@
-﻿using OpenMedStack.NEventStore.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Tests.Client;
 
@@ -15,20 +16,11 @@ using Xunit;
 
 public class CreatingPollingClientTests
 {
-    //[Fact]
-    //public void When_persist_streams_is_null_then_should_throw()
-    //{
-    //    Catch.Exception(() => new PollingClientRx(null)).Should().BeOfType<ArgumentNullException>();
-    //}
-
     [Fact]
     public void When_interval_less_than_zero_then_should_throw()
     {
         Assert.Throws<ArgumentException>(
-            () =>
-            {
-                _ = new PollingClientRx(A.Fake<IPersistStreams>(), TimeSpan.MinValue);
-            });
+            () => { _ = new PollingClientRx(A.Fake<IManagePersistence>(), TimeSpan.MinValue); });
     }
 }
 
@@ -40,7 +32,7 @@ public class WhenCommitIsCommittedBeforeSubscribing : UsingPollingClient
     protected override Task Context()
     {
         base.Context();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
         _observeCommits = PollingClient.ObserveFrom();
         _commitObserved = _observeCommits.FirstAsync().ToTask();
 
@@ -74,7 +66,7 @@ public class WhenCommitIsCommittedBeforeAndAfterSubscribing : UsingPollingClient
     protected override Task Context()
     {
         base.Context();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
         _observeCommits = PollingClient.ObserveFrom();
         _twoCommitsObserved = _observeCommits.Take(2).ToTask();
 
@@ -84,7 +76,7 @@ public class WhenCommitIsCommittedBeforeAndAfterSubscribing : UsingPollingClient
     protected override Task Because()
     {
         PollingClient.Start();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
 
         return Task.CompletedTask;
     }
@@ -110,7 +102,7 @@ public class WithTwoSubscriptionsOnASingleObserverAndMultipleCommits : UsingPoll
     protected override Task Context()
     {
         base.Context();
-        StoreEvents.Advanced.CommitSingle();
+        StoreEvents.CommitSingle();
         _observeCommits1 = PollingClient.ObserveFrom();
         _observeCommits1Complete = _observeCommits1.Take(5).ToTask();
         _observeCommits2Complete = _observeCommits1.Take(10).ToTask();
@@ -126,7 +118,7 @@ public class WithTwoSubscriptionsOnASingleObserverAndMultipleCommits : UsingPoll
             {
                 for (var i = 0; i < 15; i++)
                 {
-                    StoreEvents.Advanced.CommitSingle();
+                    StoreEvents.CommitSingle();
                 }
             });
 
@@ -159,8 +151,8 @@ public class WhenPollingFromBucket1 : UsingPollingClient
     protected override async Task Context()
     {
         await base.Context().ConfigureAwait(false);
-        await StoreEvents.Advanced.CommitMany(4, null, "bucket_2").ConfigureAwait(false);
-        await StoreEvents.Advanced.CommitMany(4, null, "bucket_1").ConfigureAwait(false);
+        await StoreEvents.CommitMany(4, null, "bucket_2").ConfigureAwait(false);
+        await StoreEvents.CommitMany(4, null, "bucket_1").ConfigureAwait(false);
         _observeCommits = PollingClient.ObserveFrom();
         _commitObserved = _observeCommits.FirstAsync().ToTask();
     }
@@ -196,17 +188,19 @@ public abstract class UsingPollingClient : SpecificationBase
 
     protected PollingClientRx PollingClient { get; private set; } = null!;
 
-    protected IStoreEvents StoreEvents { get; private set; } = null!;
+    protected ICommitEvents StoreEvents { get; private set; } = null!;
 
     protected override Task Context()
     {
-        StoreEvents = Wireup.Init(NullLoggerFactory.Instance).UsingInMemoryPersistence().Build();
-        PollingClient = new PollingClientRx(StoreEvents.Advanced, PollingInterval);
+        var collection = new ServiceCollection().RegisterInMemoryEventStore().RegisterJsonSerialization().AddLogging();
+
+        var serviceProvider = collection.BuildServiceProvider();
+        StoreEvents = serviceProvider.GetRequiredService<ICommitEvents>();
+        PollingClient = new PollingClientRx(serviceProvider.GetRequiredService<IManagePersistence>(), PollingInterval);
         return Task.CompletedTask;
     }
 
     protected override void Cleanup()
     {
-        StoreEvents.Dispose();
     }
 }

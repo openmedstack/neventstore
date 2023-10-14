@@ -32,20 +32,25 @@ public class CommitAttemptStream : IEventStream
     }
 
     public IReadOnlyCollection<EventMessage> CommittedEvents { get; } = new List<EventMessage>();
-    public IDictionary<string, object> CommittedHeaders { get; } = new Dictionary<string, object>();
+    public IReadOnlyDictionary<string, object> CommittedHeaders { get; } = new Dictionary<string, object>();
 
     public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
         get { return _attempt.Events.ToList(); }
     }
 
-    public IDictionary<string, object> UncommittedHeaders
+    public IReadOnlyDictionary<string, object> UncommittedHeaders
     {
-        get { return _attempt.Headers; }
+        get { return _attempt.Headers.ToDictionary(); }
     }
 
     public void Add(EventMessage uncommittedEvent)
     {
+    }
+
+    public void Add(string key, object value)
+    {
+        throw new NotImplementedException();
     }
 
     public void SetPersisted(int commitSequence)

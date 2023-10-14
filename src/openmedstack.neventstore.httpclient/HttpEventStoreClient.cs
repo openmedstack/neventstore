@@ -6,8 +6,9 @@ namespace OpenMedStack.NEventStore.HttpClient;
 /// <summary>
 /// Defines the HTTP based implementation of <see cref="IStoreEvents"/>.
 /// </summary>
-public class HttpEventStoreClient : IStoreEvents
+public class HttpEventStoreClient
 {
+    private readonly ICommitEvents _persistence;
     private readonly ILoggerFactory _logger;
 
     /// <summary>
@@ -24,23 +25,20 @@ public class HttpEventStoreClient : IStoreEvents
         ILoggerFactory logger)
     {
         _logger = logger;
-        Advanced = new HttpEventStorePersistence(new System.Net.Http.HttpClient(handler, false)
+        _persistence = new HttpEventStorePersistence(new System.Net.Http.HttpClient(handler, false)
             { BaseAddress = baseUri }, serializer);
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        Advanced.Dispose();
+        _persistence.Dispose();
     }
-
-    /// <inheritdoc />
-    public IPersistStreams Advanced { get; }
 
     /// <inheritdoc />
     public async Task<IEventStream> CreateStream(string bucketId, string streamId, CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, 0, int.MaxValue,
+        return await OptimisticEventStream.Create(bucketId, streamId, _persistence, 0, int.MaxValue,
             _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
@@ -52,14 +50,14 @@ public class HttpEventStoreClient : IStoreEvents
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(bucketId, streamId, Advanced, minRevision, maxRevision,
+        return await OptimisticEventStream.Create(bucketId, streamId, _persistence, minRevision, maxRevision,
             _logger.CreateLogger<OptimisticEventStream>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<IEventStream> OpenStream(ISnapshot snapshot, int maxRevision, CancellationToken cancellationToken)
     {
-        return await OptimisticEventStream.Create(snapshot, Advanced, maxRevision,
+        return await OptimisticEventStream.Create(snapshot, _persistence, maxRevision,
             _logger.CreateLogger<OptimisticEventStream>(), cancellationToken);
     }
 }

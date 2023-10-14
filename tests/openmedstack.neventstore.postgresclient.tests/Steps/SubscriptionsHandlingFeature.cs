@@ -1,6 +1,9 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
+using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Persistence.Sql;
 using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 using OpenMedStack.NEventStore.Serialization;
@@ -11,10 +14,11 @@ namespace OpenMedStack.NEventStore.PostgresClient.Tests.Steps;
 [Binding]
 public class SubscriptionsHandlingFeature : IDisposable
 {
+    private IManagePersistence _managePersistence = null!;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ManualResetEventSlim _waitHandle = new();
     private PgPublicationClient _client = null!;
-    private IStoreEvents _eventStore = null!;
+    private ICommitEvents _eventStore = null!;
     private Task _subscriptionTask = null!;
 
     private const string ConnectionString =
@@ -23,13 +27,13 @@ public class SubscriptionsHandlingFeature : IDisposable
     [Given(@"a postgres server for NEventStore")]
     public void GivenAPostgresServerForNEventStore()
     {
-        _eventStore = OpenMedStack.NEventStore.Wireup.Init(NullLoggerFactory.Instance)
-            .UsingSqlPersistence(NpgsqlFactory.Instance, ConnectionString)
-            .WithDialect(new PostgreSqlDialect(NullLogger.Instance))
-            .WithStreamIdHasher(new Sha1StreamIdHasher())
-            .InitializeStorageEngine()
-            .UsingJsonSerialization()
-            .Build();
+        var serviceCollection = new ServiceCollection()
+            .RegisterJsonSerialization()
+            .RegisterSqlEventStore<PostgreSqlDialect, Sha1StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
+
+        _eventStore = serviceProvider.GetRequiredService<ICommitEvents>();
     }
 
     [Given(@"a commit publication")]
@@ -75,9 +79,10 @@ public class SubscriptionsHandlingFeature : IDisposable
     [When(@"a row is inserted into a table")]
     public async Task WhenARowIsInsertedIntoATable()
     {
-        var stream = await _eventStore.OpenStream(Guid.NewGuid(), 0).ConfigureAwait(false);
+        var stream = await OptimisticEventStream.Create(Bucket.Default, Guid.NewGuid().ToString(), _eventStore, 0,
+            int.MaxValue, NullLogger<OptimisticEventStream>.Instance).ConfigureAwait(false);
         stream.Add(new EventMessage(new TestEvent { Value = DateTimeOffset.UtcNow.ToString("F") }));
-        await _eventStore.Advanced.Commit(stream).ConfigureAwait(false);
+        await _eventStore.Commit(stream).ConfigureAwait(false);
     }
 
     [Then(@"a notification is received")]
