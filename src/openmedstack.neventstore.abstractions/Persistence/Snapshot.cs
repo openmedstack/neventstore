@@ -6,7 +6,6 @@ namespace OpenMedStack.NEventStore.Abstractions.Persistence;
 ///     Represents a materialized view of a stream at specific revision.
 /// </summary>
 [DataContract]
-[Serializable]
 public class Snapshot : ISnapshot
 {
     /// <summary>

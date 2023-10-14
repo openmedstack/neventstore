@@ -3,7 +3,6 @@
 /// <summary>
 /// ApplicationException has been deprecated in .NET Core
 /// </summary>
-[Serializable]
 public class PollingClientException : Exception
 {
     public PollingClientException() { }

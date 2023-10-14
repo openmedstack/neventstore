@@ -6,7 +6,6 @@ using System.Runtime.Serialization;
 /// <summary>
 ///     Indicates that a unique constraint or duplicate key violation occurred.
 /// </summary>
-[Serializable]
 public class UniqueKeyViolationException : Exception
 {
     /// <summary>

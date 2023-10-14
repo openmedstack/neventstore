@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <summary>
 ///     Represents a general failure of the storage engine or persistence infrastructure.
 /// </summary>
-[Serializable]
 public class StorageException : Exception
 {
     /// <summary>

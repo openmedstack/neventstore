@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-[Serializable]
 public class SimpleMessage
 {
     public SimpleMessage()

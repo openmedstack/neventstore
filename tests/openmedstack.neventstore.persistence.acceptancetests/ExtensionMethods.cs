@@ -76,8 +76,7 @@ public static class ExtensionMethods
         return stream;
     }
 
-    [Serializable]
-    public class SomeDomainEvent
+        public class SomeDomainEvent
     {
         public string SomeProperty { get; set; } = null!;
 

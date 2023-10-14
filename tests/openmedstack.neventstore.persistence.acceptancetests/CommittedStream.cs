@@ -59,7 +59,6 @@ public class CommittedStream : IEventStream
 
     public void Add(string key, object value)
     {
-        throw new NotImplementedException();
     }
 
     public void SetPersisted(int commitSequence)

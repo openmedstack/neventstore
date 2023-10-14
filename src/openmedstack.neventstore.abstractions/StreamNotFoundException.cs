@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <summary>
 ///     Represents an attempt to retrieve a nonexistent event stream.
 /// </summary>
-[Serializable]
 public class StreamNotFoundException : Exception
 {
     /// <summary>

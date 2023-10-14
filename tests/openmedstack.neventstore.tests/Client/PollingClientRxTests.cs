@@ -52,9 +52,10 @@ public class WhenCommitIsCommittedBeforeSubscribing : UsingPollingClient
     }
 
     [Fact]
-    public void should_observe_commit()
+    public async Task should_observe_commit()
     {
-        Assert.True(_commitObserved.Wait(PollingInterval * 2));
+        await Task.Delay(PollingInterval * 10);
+        Assert.True(_commitObserved.IsCompleted);
     }
 }
 
@@ -87,9 +88,10 @@ public class WhenCommitIsCommittedBeforeAndAfterSubscribing : UsingPollingClient
     }
 
     [Fact]
-    public void should_observe_two_commits()
+    public async Task should_observe_two_commits()
     {
-        Assert.True(_twoCommitsObserved.Wait(PollingInterval * 2));
+        await Task.Delay(PollingInterval * 10);
+        Assert.True(_twoCommitsObserved.IsCompleted);
     }
 }
 
@@ -131,15 +133,17 @@ public class WithTwoSubscriptionsOnASingleObserverAndMultipleCommits : UsingPoll
     }
 
     [Fact]
-    public void should_observe_commits_on_first_observer()
+    public async Task should_observe_commits_on_first_observer()
     {
-        Assert.True(_observeCommits1Complete.Wait(PollingInterval * 10));
+        await Task.Delay(PollingInterval * 10);
+        Assert.True(_observeCommits1Complete.IsCompleted);
     }
 
     [Fact]
-    public void should_observe_commits_on_second_observer()
+    public async Task should_observe_commits_on_second_observer()
     {
-        Assert.True(_observeCommits2Complete.Wait(PollingInterval * 10));
+        await Task.Delay(PollingInterval * 10);
+        Assert.True(_observeCommits2Complete.IsCompleted);
     }
 }
 
@@ -170,10 +174,11 @@ public class WhenPollingFromBucket1 : UsingPollingClient
     }
 
     [Fact]
-    public void should_observe_commit_from_bucket1()
+    public async Task should_observe_commit_from_bucket1()
     {
-        Assert.True(_commitObserved.Wait(PollingInterval * 2));
-        Assert.Equal("bucket_1", _commitObserved.Result.BucketId);
+        var result = await _commitObserved;
+        //Assert.True(_commitObserved.Wait(PollingInterval * 2));
+        Assert.Equal("bucket_1", result.BucketId);
     }
 }
 

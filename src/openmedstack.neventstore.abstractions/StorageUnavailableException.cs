@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <summary>
 ///     Indicates that the underlying persistence medium is unavailable or offline.
 /// </summary>
-[Serializable]
 public class StorageUnavailableException : StorageException
 {
     /// <summary>

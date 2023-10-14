@@ -16,8 +16,8 @@ using Xunit;
 
 public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
 {
-    private readonly DateTime _endDate =DateTime.UtcNow.Date.AddDays(1);// new(2013, 1, 2);
-    private readonly DateTime _startDate =DateTime.UtcNow.Date; //new(2013, 1, 1);
+    private readonly DateTime _endDate = DateTime.UtcNow.Date.AddDays(1); // new(2013, 1, 2);
+    private readonly DateTime _startDate = DateTime.UtcNow.Date; //new(2013, 1, 1);
     private ICommit[] _commits = null!;
     private InMemoryPersistenceEngine _engine = null!;
 
@@ -26,12 +26,12 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
         OnStart().Wait();
     }
 
-    protected override Task Context()
+    protected override async Task Context()
     {
         _engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
-        _engine.Initialize();
+        await _engine.Initialize();
         var streamId = Guid.NewGuid().ToString();
-        _engine.Commit(new CommitAttemptStream(
+        await _engine.Commit(new CommitAttemptStream(
             new CommitAttempt(
                 Bucket.Default,
                 streamId,
@@ -41,7 +41,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 _startDate,
                 new Dictionary<string, object>(),
                 new List<EventMessage> { new EventMessage(new object()) })));
-        _engine.Commit(new CommitAttemptStream(
+        await _engine.Commit(new CommitAttemptStream(
             new CommitAttempt(
                 Bucket.Default,
                 streamId,
@@ -51,8 +51,6 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 _endDate,
                 new Dictionary<string, object>(),
                 new List<EventMessage> { new EventMessage(new object()) })));
-
-        return Task.CompletedTask;
     }
 
     protected override async Task Because()

@@ -25,13 +25,48 @@ public class CommitAttempt
         IDictionary<string, object>? headers,
         IList<EventMessage> events)
     {
-        Guard.NotNullOrWhiteSpace(nameof(bucketId), bucketId);
-        Guard.NotNullOrWhiteSpace(nameof(streamId), streamId);
-        Guard.NotLessThanOrEqualTo(nameof(streamRevision), streamRevision, 0);
-        Guard.NotDefault(nameof(commitId), commitId);
-        Guard.NotLessThanOrEqualTo(nameof(commitSequence), commitSequence, 0);
-        Guard.NotLessThan(nameof(commitSequence), streamRevision, 0);
-        Guard.NotEmpty(nameof(events), events);
+        if (string.IsNullOrWhiteSpace(bucketId))
+        {
+            throw new ArgumentException("Cannot be null or whitespace", nameof(bucketId));
+        }
+
+        if (string.IsNullOrWhiteSpace(streamId))
+        {
+            throw new ArgumentException("Cannot be null or whitespace", nameof(streamId));
+        }
+
+        if (streamRevision.CompareTo(0) <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(streamRevision),
+                $"{nameof(streamRevision)} has value {streamRevision} which is less than or equal to {0}");
+        }
+
+        if (commitId.CompareTo(default) == 0)
+        {
+            throw new ArgumentException(
+                $"{nameof(commitId)} has value {commitId} which cannot be equal to it's default value {default(Guid)}",
+                nameof(commitId));
+        }
+
+        if (commitSequence.CompareTo(0) <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(commitSequence),
+                $"{nameof(commitSequence)} has value {commitSequence} which is less than or equal to {0}");
+        }
+
+        if (streamRevision.CompareTo(0) < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(commitSequence),
+                $"{nameof(commitSequence)} has value {streamRevision} which is less than {0}");
+        }
+
+        if (events.Count == 0)
+        {
+            throw new ArgumentException($"{nameof(events)} cannot be empty", nameof(events));
+        }
 
         BucketId = bucketId;
         StreamId = streamId;

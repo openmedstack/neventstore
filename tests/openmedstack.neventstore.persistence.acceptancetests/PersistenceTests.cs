@@ -1071,7 +1071,6 @@ public abstract class PersistenceEngineConcern : SpecificationBase, IClassFixtur
     }
 }
 
-[Serializable]
 public class Pippo
 {
     public string S { get; set; } = null!;

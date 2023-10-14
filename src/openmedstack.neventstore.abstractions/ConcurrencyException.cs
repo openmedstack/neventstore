@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore;
 /// <summary>
 ///     Represents an optimistic concurrency conflict between multiple writers.
 /// </summary>
-[Serializable]
 public class ConcurrencyException : Exception
 {
     /// <summary>

@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <summary>
 ///     Represents an attempt to commit the same information more than once.
 /// </summary>
-[Serializable]
 public class DuplicateCommitException : Exception
 {
     /// <summary>

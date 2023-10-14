@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Abstractions;
 /// <summary>
 ///     Represents a single element in a stream of events.
 /// </summary>
-[Serializable]
 [DataContract]
 public sealed class EventMessage
 {
