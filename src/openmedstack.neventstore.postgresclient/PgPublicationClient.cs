@@ -12,13 +12,15 @@ using Npgsql.Replication.PgOutput.Messages;
 using System.Threading;
 using System.Threading.Tasks;
 
-public abstract class PgPublicationClient
+public abstract class PgPublicationClient : IAsyncDisposable
 {
     private readonly string _replicationSlotName;
     private readonly string _publicationName;
     private readonly string _connectionString;
     private readonly ISerialize _serializer;
     private readonly ILogger _logger;
+    private LogicalReplicationConnection? _logicalReplicationConnection;
+    private PgOutputReplicationSlot? _slot = null;
 
     protected PgPublicationClient(
         string replicationSlotName,
@@ -38,11 +40,11 @@ public abstract class PgPublicationClient
     {
         try
         {
-            var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
-            await using var _ = logicalReplicationConnection.ConfigureAwait(false);
-            await logicalReplicationConnection.Open(cancellationToken).ConfigureAwait(false);
-
-            await logicalReplicationConnection.CreatePgOutputReplicationSlot(_replicationSlotName,
+            _logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
+            await _logicalReplicationConnection.Open(cancellationToken).ConfigureAwait(false);
+            await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true,
+                cancellationToken: cancellationToken);
+            _slot = await _logicalReplicationConnection.CreatePgOutputReplicationSlot(_replicationSlotName,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation("Replication slot created");
@@ -63,23 +65,29 @@ public abstract class PgPublicationClient
         {
             try
             {
-                var logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
-                await using var _ = logicalReplicationConnection.ConfigureAwait(false);
-                await logicalReplicationConnection.Open(stoppingToken).ConfigureAwait(false);
-                var replication = logicalReplicationConnection.StartReplication(
-                    new PgOutputReplicationSlot(_replicationSlotName),
+                if (_logicalReplicationConnection == null)
+                {
+                    await CreateSubscriptionSlot(stoppingToken);
+                }
+
+                var replication = _logicalReplicationConnection!.StartReplication(
+                    _slot!,
                     new PgOutputReplicationOptions(_publicationName, 1),
                     stoppingToken);
-                await foreach (var item in replication.WithCancellation(stoppingToken).ConfigureAwait(false))
+                await foreach (var item in replication.ConfigureAwait(false))
                 {
                     if (item is InsertMessage insert)
                     {
                         await Handle(insert, stoppingToken).ConfigureAwait(false);
                     }
 
-                    logicalReplicationConnection.SetReplicationStatus(item.WalEnd);
-                    await logicalReplicationConnection.SendStatusUpdate(stoppingToken).ConfigureAwait(false);
+                    _logicalReplicationConnection!.SetReplicationStatus(item.WalEnd);
+                    await _logicalReplicationConnection.SendStatusUpdate(stoppingToken).ConfigureAwait(false);
                 }
+            }
+            catch (PostgresException p)
+            {
+                _logger.LogError(p, "{error}", p.Message);
             }
             catch (Exception e)
             {
@@ -117,8 +125,7 @@ public abstract class PgPublicationClient
             var t = c.GetStream();
             await using var _ = t.ConfigureAwait(false);
             var bytes = DecodeHex(t);
-//                var json = Encoding.UTF8.GetString(bytes);
-var ms = new MemoryStream(bytes);
+            var ms = new MemoryStream(bytes);
             await using var __ = ms.ConfigureAwait(false);
             var payload = _serializer.Deserialize<List<EventMessage>>(ms);
             if (payload != null)
@@ -139,7 +146,7 @@ var ms = new MemoryStream(bytes);
     {
         var stream = c.GetStream();
         await using var _ = stream.ConfigureAwait(false);
-        var headers = _serializer.Deserialize<Dictionary<string, object>>(stream);
+        var headers = _serializer.Deserialize<Dictionary<string, object>>(DecodeHex(stream));
         if (headers != null)
         {
             foreach (var (_, value) in headers
@@ -190,4 +197,16 @@ var ms = new MemoryStream(bytes);
         Type type,
         object value,
         CancellationToken cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_logicalReplicationConnection != null)
+        {
+            await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true).ConfigureAwait(false);
+            await _logicalReplicationConnection.DisposeAsync();
+        }
+
+        GC.SuppressFinalize(this);
+    }
 }

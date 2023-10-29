@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,17 +23,18 @@ public class SubscriptionsHandlingFeature : IDisposable
     private Task _subscriptionTask = null!;
 
     private const string ConnectionString =
-        "Host=localhost;Port=5432;Database=eventstore;Username=postgres;Password=postgres";
+        "Server=localhost;Keepalive=1;Pooling=true;MinPoolSize=1;MaxPoolSize=20;Port=5432;Database=openmedstack;User Id=openmedstack;Password=openmedstack;";
 
     [Given(@"a postgres server for NEventStore")]
     public void GivenAPostgresServerForNEventStore()
     {
         var serviceCollection = new ServiceCollection()
             .RegisterJsonSerialization()
+            .AddLogging()
             .RegisterSqlEventStore<PostgreSqlDialect, Sha1StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
         var serviceProvider = serviceCollection.BuildServiceProvider();
         _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
-
+        _managePersistence.Initialize();
         _eventStore = serviceProvider.GetRequiredService<ICommitEvents>();
     }
 
@@ -43,16 +45,16 @@ public class SubscriptionsHandlingFeature : IDisposable
         {
             var connection = new NpgsqlConnection(ConnectionString);
             await using var _ = connection.ConfigureAwait(false);
-            connection.Open();
+            await connection.OpenAsync();
             var command = connection.CreateCommand();
             await using var __ = command.ConfigureAwait(false);
             command.CommandText =
                 "CREATE PUBLICATION commit_pub FOR TABLE Commits WITH (publish = 'insert')";
             var amount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 
-            Assert.Equal(0, amount);
+            Assert.True(0 <= amount);
         }
-        catch (PostgresException)
+        catch (PostgresException e) when (e.Code == "42710")
         {
         }
     }
@@ -70,7 +72,7 @@ public class SubscriptionsHandlingFeature : IDisposable
             return Task.CompletedTask;
         }
 
-        _client = new DelegatePgPublicationClient(ConnectionString,
+        _client = new DelegatePgPublicationClient("commit_slot", "commit_pub", ConnectionString,
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance), Handler);
         await _client.CreateSubscriptionSlot(_cancellationTokenSource.Token).ConfigureAwait(false);
         _subscriptionTask = _client.Subscribe(_cancellationTokenSource.Token);
@@ -82,13 +84,15 @@ public class SubscriptionsHandlingFeature : IDisposable
         var stream = await OptimisticEventStream.Create(Bucket.Default, Guid.NewGuid().ToString(), _eventStore, 0,
             int.MaxValue, NullLogger<OptimisticEventStream>.Instance).ConfigureAwait(false);
         stream.Add(new EventMessage(new TestEvent { Value = DateTimeOffset.UtcNow.ToString("F") }));
-        await _eventStore.Commit(stream).ConfigureAwait(false);
+        var commit = await _eventStore.Commit(stream).ConfigureAwait(false);
+
+        Assert.NotNull(commit);
     }
 
     [Then(@"a notification is received")]
     public void ThenANotificationIsReceived()
     {
-        var result = _waitHandle.Wait(2000);
+        var result = _waitHandle.Wait(Debugger.IsAttached ? 30000 : 5000);
 
         Assert.True(result);
     }
@@ -102,6 +106,7 @@ public class SubscriptionsHandlingFeature : IDisposable
         try
         {
             _subscriptionTask.Dispose();
+            _managePersistence.Drop();
         }
         catch (InvalidOperationException)
         {

@@ -287,19 +287,6 @@ public class WhenCommittingAStreamWithTheSameSequenceId : PersistenceEngineConce
         _concurrentAttempt.Add(new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test 3" }));
         attempt1 = attempt1.BuildNextAttempt();
         _ = (await Persistence.Commit(attempt1))!;
-//        _concurrentAttempt = new CommitAttemptStream(new CommitAttempt(
-//            commit.BucketId, // <--- Same bucket
-//            commit.StreamId, // <--- Same stream it
-//            commit.StreamRevision + 10,
-//            Guid.NewGuid(),
-//            commit.CommitSequence - 1, // <--- Same commit seq
-//            DateTimeOffset.UtcNow,
-//            attempt1.CommittedHeaders,
-//            new[]
-//            {
-//                new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test 3" })
-//            }
-//        ));
     }
 
     protected override async Task Because()

@@ -13,10 +13,12 @@ public class DelegatePgPublicationClient : PgPublicationClient
 
     /// <inheritdoc />
     public DelegatePgPublicationClient(
+        string replicationSlotName,
+        string publicationName,
         string connectionString,
         ISerialize serializer,
         Func<Type, object, CancellationToken, Task> handler)
-        : base("commit_slot", "commit_pub", connectionString, serializer, NullLogger.Instance)
+        : base(replicationSlotName, publicationName, connectionString, serializer, NullLogger.Instance)
     {
         _handler = handler;
     }

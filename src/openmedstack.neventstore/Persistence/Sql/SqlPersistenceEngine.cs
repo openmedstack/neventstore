@@ -178,28 +178,32 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             return null;
         }
 
-        var attempt = CommitAttempt.FromStream(eventStream, commitId ?? Guid.NewGuid());
+        var id = commitId ?? Guid.NewGuid();
+        var attempt = CommitAttempt.FromStream(eventStream, id);
         ICommit commit;
         try
         {
             commit = await PersistCommit(attempt).ConfigureAwait(false);
             _logger.LogDebug(PersistenceMessages.CommitPersisted, attempt.CommitId);
         }
-        catch (Exception e)
+        catch (UniqueKeyViolationException e)
         {
-            if (e is not UniqueKeyViolationException)
+            if (await DetectDuplicate(attempt).ConfigureAwait(false))
+            {
+                _logger.LogInformation(PersistenceMessages.DuplicateCommit);
+                throw new ConcurrencyException(e.Message, e);
+            }
+
+            _logger.LogInformation(PersistenceMessages.ConcurrentWriteDetected);
+
+            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
+            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
+            if (eventStream.StreamRevision <= currentRevision)
             {
                 throw;
             }
 
-            if (await DetectDuplicate(attempt).ConfigureAwait(false))
-            {
-                _logger.LogInformation(PersistenceMessages.DuplicateCommit);
-                throw new DuplicateCommitException(e.Message, e);
-            }
-
-            _logger.LogInformation(PersistenceMessages.ConcurrentWriteDetected);
-            throw new ConcurrencyException(e.Message, e);
+            return await PersistCommit(CommitAttempt.FromStream(eventStream, id));
         }
 
         return commit;
