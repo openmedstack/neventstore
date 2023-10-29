@@ -11,7 +11,7 @@ public class OracleNativeDialect : CommonSqlDialect
     private Action<IConnectionFactory, IDbConnection, IDbStatement, byte[]>? _addPayloadParamater;
 
     /// <inheritdoc />
-    public OracleNativeDialect(ILogger logger)
+    public OracleNativeDialect(ILogger<OracleNativeDialect> logger)
         : base(logger)
     {
     }

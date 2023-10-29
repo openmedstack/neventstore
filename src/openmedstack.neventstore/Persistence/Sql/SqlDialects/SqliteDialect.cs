@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 public class SqliteDialect : CommonSqlDialect
 {
     /// <inheritdoc />
-    public SqliteDialect(ILogger logger)
+    public SqliteDialect(ILogger<SqliteDialect> logger)
         : base(logger)
     {
     }

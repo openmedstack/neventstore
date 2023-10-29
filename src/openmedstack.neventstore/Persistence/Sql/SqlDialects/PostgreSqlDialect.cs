@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 public class PostgreSqlDialect : CommonSqlDialect
 {
     /// <inheritdoc />
-    public PostgreSqlDialect(ILogger logger)
+    public PostgreSqlDialect(ILogger<PostgreSqlDialect> logger)
         : base(logger)
     {
     }

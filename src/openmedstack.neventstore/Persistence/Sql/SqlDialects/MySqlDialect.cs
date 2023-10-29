@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 public class MySqlDialect : CommonSqlDialect
 {
     private const int UniqueKeyViolation = 1062;
-        
+
     /// <inheritdoc />
-    public MySqlDialect(ILogger logger)
+    public MySqlDialect(ILogger<MySqlDialect> logger)
         : base(logger)
     {
     }

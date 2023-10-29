@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 public class FirebirdSqlDialect : CommonSqlDialect
 {
     /// <inheritdoc />
-    public FirebirdSqlDialect(ILogger logger)
+    public FirebirdSqlDialect(ILogger<FirebirdSqlDialect> logger)
         : base(logger)
     {
     }

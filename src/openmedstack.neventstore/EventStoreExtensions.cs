@@ -25,17 +25,21 @@ public static class EventStoreExtensions
         DbProviderFactory dbProviderFactory,
         string connectionString,
         int defaultPageSize = 128)
-        where TDialect : ISqlDialect
-        where THasher : IStreamIdHasher
+        where TDialect : class, ISqlDialect
+        where THasher : class, IStreamIdHasher
     {
-        serviceCollection.AddSingleton<IStreamIdHasher, Sha1StreamIdHasher>();
+        serviceCollection.AddSingleton<ISqlDialect, TDialect>();
+        serviceCollection.AddSingleton<IStreamIdHasher, THasher>();
         serviceCollection.AddSingleton<SqlPersistenceEngine>(sp => new SqlPersistenceEngine(
             new NetStandardConnectionFactory(dbProviderFactory, connectionString,
                 sp.GetRequiredService<ILogger<NetStandardConnectionFactory>>()),
-            sp.GetRequiredService<TDialect>(),
+            sp.GetRequiredService<ISqlDialect>(),
             sp.GetRequiredService<ISerialize>(),
-            defaultPageSize, sp.GetRequiredService<THasher>(),
+            defaultPageSize, sp.GetRequiredService<IStreamIdHasher>(),
             sp.GetRequiredService<ILogger<SqlPersistenceEngine>>()));
+        serviceCollection.AddSingleton<ICommitEvents>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
+        serviceCollection.AddSingleton<IAccessSnapshots>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
+        serviceCollection.AddSingleton<IManagePersistence>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
         return serviceCollection;
     }
 

@@ -24,7 +24,7 @@ public class PersistenceEngineFixture : PersistenceEngineFixtureBase
             var engine = new SqlPersistenceEngine(
                 new NetStandardConnectionFactory(FirebirdClientFactory.Instance, connectionString,
                     NullLogger<NetStandardConnectionFactory>.Instance),
-                new FirebirdSqlDialect(NullLogger.Instance),
+                new FirebirdSqlDialect(NullLogger<FirebirdSqlDialect>.Instance),
                 new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
                 pageSize,
                 new Sha1StreamIdHasher(),
