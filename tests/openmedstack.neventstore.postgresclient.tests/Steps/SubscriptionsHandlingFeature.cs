@@ -54,7 +54,7 @@ public class SubscriptionsHandlingFeature : IDisposable
 
             Assert.True(0 <= amount);
         }
-        catch (PostgresException e) when (e.Code == "42710")
+        catch (PostgresException e) when (e.SqlState == "42710")
         {
         }
     }

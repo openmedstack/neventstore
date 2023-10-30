@@ -66,7 +66,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
 
         _logger.LogDebug(PersistenceMessages.InitializingStorage);
 
-        var statements = _dialect.InitializeStorage.Split(new[] { "__" }, StringSplitOptions.RemoveEmptyEntries);
+        var statements = _dialect.InitializeStorage.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var s in statements)
         {
@@ -385,6 +385,8 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
     }
 
     public bool IsDisposed { get; private set; }
+
+    private static readonly string[] Separator = { "__" };
 
     protected virtual void Dispose(bool disposing)
     {

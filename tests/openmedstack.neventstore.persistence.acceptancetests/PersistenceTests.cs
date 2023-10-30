@@ -1054,7 +1054,7 @@ public abstract class PersistenceEngineConcern : SpecificationBase, IClassFixtur
     protected override void Cleanup()
     {
         base.Cleanup();
-        _fixture.Dispose();
+        //_fixture.Dispose();
     }
 }
 

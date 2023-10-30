@@ -16,7 +16,7 @@ public abstract class PersistenceEngineFixtureBase : IDisposable
         Persistence = commitEvents;
         Snapshots = accessSnapshots;
         PersistenceManagement = managePersistence;
-        PersistenceManagement.Initialize();
+        PersistenceManagement.Initialize().Wait();
     }
 
     public ICommitEvents Persistence { get; private set; } = null!;
@@ -25,7 +25,7 @@ public abstract class PersistenceEngineFixtureBase : IDisposable
 
     public void Dispose()
     {
-        PersistenceManagement?.Drop();
+        PersistenceManagement.Drop();
         GC.SuppressFinalize(this);
     }
 }

@@ -34,11 +34,9 @@ public partial class FeatureSteps : IAsyncDisposable
                 collection =>
                 {
                     collection.AddGrpc();
-                    // collection.AddTransient<EventStoreController>();
-                    collection.AddControllers().AddNewtonsoftJson(o =>
-                    {
-                        o.SerializerSettings.Formatting = Formatting.None;
-                    });
+                    collection.AddTransient<EventStoreController>();
+                    collection.AddControllers()
+                        .AddNewtonsoftJson(o => { o.SerializerSettings.Formatting = Formatting.None; });
                 },
                 app =>
                 {
@@ -52,17 +50,17 @@ public partial class FeatureSteps : IAsyncDisposable
         _server.Start();
     }
 
-    [Given(@"an HTTP client")]
-    public void GivenAnHttpClient()
+    [Given(@"an (.+) client")]
+    public void GivenAnHttpClient(string type)
     {
-        _client = new HttpEventStorePersistence(_server.CreateClient(), new TestJsonSerializer());
-    }
-
-    [Given(@"an GRPC client")]
-    public void GivenAnGrpcClient()
-    {
-        _client = new GrpcEventStorePersistence(new Uri("http://localhost"),
-            new TestJsonSerializer(), new GrpcChannelOptions{DisposeHttpClient = true, HttpClient = _server.CreateClient()});
+        _client = type switch
+        {
+            "HTTP" => new HttpEventStorePersistence(_server.CreateClient(), new TestJsonSerializer()),
+            "GRPC" => new GrpcEventStorePersistence(new Uri("http://localhost"),
+                new TestJsonSerializer(),
+                new GrpcChannelOptions { DisposeHttpClient = true, HttpClient = _server.CreateClient() }),
+            _ => throw new ArgumentException(@"Unknown type", nameof(type))
+        };
     }
 
     public async ValueTask DisposeAsync()
