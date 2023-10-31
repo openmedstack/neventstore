@@ -11,10 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.acceptancetests", "tests\openmedstack.neventstore.persistence.acceptancetests\openmedstack.neventstore.persistence.acceptancetests.csproj", "{8BFE371A-285C-4711-9217-E3A122F5E60F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.firebirdsql.tests", "tests\openmedstack.neventstore.persistence.firebirdsql.tests\openmedstack.neventstore.persistence.firebirdsql.tests.csproj", "{FAB3D477-2916-43CF-B006-0D2CBECCBD24}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "openmedstack.neventstore.persistence.postgresql.tests", "tests\openmedstack.neventstore.persistence.postgresql.tests\openmedstack.neventstore.persistence.postgresql.tests.csproj", "{045829E3-4CF6-4F71-8F82-DF419074A476}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EC1E5A3A-6909-435A-883C-B7E152E6688C}"
 	ProjectSection(SolutionItems) = preProject
 		build.ps1 = build.ps1
@@ -41,8 +37,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.gr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.server.client.tests", "tests\openmedstack.neventstore.server.client.tests\openmedstack.neventstore.server.client.tests.csproj", "{26060BED-67A0-4F3F-8522-8CC584818C2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.persistence.inmemory.tests", "tests\openmedstack.neventstore.persistence.inmemory.tests\openmedstack.neventstore.persistence.inmemory.tests.csproj", "{97F4D898-DCF9-4234-A995-5A0F242ABACF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.build", "src\openmedstack.neventstore.build\openmedstack.neventstore.build.csproj", "{395AC3C0-661C-4E45-97B3-1DB99A2CF220}"
 EndProject
 Global
@@ -63,14 +57,6 @@ Global
 		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BFE371A-285C-4711-9217-E3A122F5E60F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FAB3D477-2916-43CF-B006-0D2CBECCBD24}.Release|Any CPU.Build.0 = Release|Any CPU
-		{045829E3-4CF6-4F71-8F82-DF419074A476}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{045829E3-4CF6-4F71-8F82-DF419074A476}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{045829E3-4CF6-4F71-8F82-DF419074A476}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{045829E3-4CF6-4F71-8F82-DF419074A476}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0CF9EA8-D902-4101-AE13-50F6402B0EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -103,10 +89,6 @@ Global
 		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{97F4D898-DCF9-4234-A995-5A0F242ABACF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{97F4D898-DCF9-4234-A995-5A0F242ABACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{97F4D898-DCF9-4234-A995-5A0F242ABACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{97F4D898-DCF9-4234-A995-5A0F242ABACF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -118,11 +100,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{9319A568-60F5-4164-AFAE-6D71FCCF75CA} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
-		{FAB3D477-2916-43CF-B006-0D2CBECCBD24} = {1D0BF739-F744-4B0B-9162-78770E21A030}
-		{045829E3-4CF6-4F71-8F82-DF419074A476} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{26060BED-67A0-4F3F-8522-8CC584818C2B} = {1D0BF739-F744-4B0B-9162-78770E21A030}
-		{97F4D898-DCF9-4234-A995-5A0F242ABACF} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67B44C3E-DC8A-4BB3-9CD4-5D81241AC7A5}

@@ -11,7 +11,7 @@ public class SimpleMessage
         Contents = new List<string>();
     }
 
-    public Guid Id { get; set; }
+    public string? Id { get; set; }
     public DateTime Created { get; set; }
     public string? Value { get; set; }
     public int Count { get; set; }
