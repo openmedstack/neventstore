@@ -22,7 +22,8 @@ public sealed class VersionTask : FrostingTask<BuildContext>
         {
             context.Log.Information("Reverting to assembly version");
 
-            var version = Assembly.GetAssembly(typeof(VersionTask))!.GetName().Version!;
+            var assembly = Assembly.GetAssembly(typeof(VersionTask))!;
+            var version = assembly.GetName().Version!;
             var versionString = version.ToString();
             context.Log.Information(versionString);
             versionInfo = new GitVersion

@@ -42,8 +42,16 @@ public abstract class PgPublicationClient : IAsyncDisposable
         {
             _logicalReplicationConnection = new LogicalReplicationConnection(_connectionString);
             await _logicalReplicationConnection.Open(cancellationToken).ConfigureAwait(false);
-            await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true,
-                cancellationToken: cancellationToken);
+            try
+            {
+                await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true,
+                    cancellationToken: cancellationToken);
+            }
+            catch
+            {
+                // Empty
+            }
+
             _slot = await _logicalReplicationConnection.CreatePgOutputReplicationSlot(_replicationSlotName,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 

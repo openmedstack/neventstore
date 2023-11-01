@@ -21,10 +21,7 @@ public sealed class TestsTask : FrostingTask<BuildContext>
         var projects = new FilePathCollection
         {
             new FilePath("./tests/openmedstack.neventstore.tests/openmedstack.neventstore.tests.csproj"),
-            new FilePath(
-                "./tests/openmedstack.neventstore.persistence.inmemory.tests/openmedstack.neventstore.persistence.inmemory.tests.csproj"),
-            new FilePath(
-                "./tests/openmedstack.neventstore.server.client.tests/openmedstack.neventstore.server.client.tests.csproj")
+            new FilePath("./tests/openmedstack.neventstore.server.client.tests/openmedstack.neventstore.server.client.tests.csproj")
         };
 
         foreach (var project in projects)

@@ -191,7 +191,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             if (await DetectDuplicate(attempt).ConfigureAwait(false))
             {
                 _logger.LogInformation(PersistenceMessages.DuplicateCommit);
-                throw new ConcurrencyException(e.Message, e);
+                throw new DuplicateCommitException(e.Message, e);
             }
 
             _logger.LogInformation(PersistenceMessages.ConcurrentWriteDetected);
@@ -315,7 +315,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
     public async Task<bool> Drop()
     {
         _logger.LogWarning(PersistenceMessages.DroppingTables);
-        return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.Drop)).ConfigureAwait(false) > 0;
+        return await ExecuteCommand(cmd => cmd.ExecuteWithoutExceptions(_dialect.Drop)).ConfigureAwait(false) > 0;
     }
 
     public async Task<bool> DeleteStream(string bucketId, string streamId)

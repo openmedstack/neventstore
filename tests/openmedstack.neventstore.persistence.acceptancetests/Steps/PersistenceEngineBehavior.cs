@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Persistence.InMemory;
+using OpenMedStack.NEventStore.Persistence.Sql;
+using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
+using OpenMedStack.NEventStore.Serialization;
 using TechTalk.SpecFlow;
 
 namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
@@ -17,7 +21,14 @@ public partial class PersistenceEngineBehavior
     [AfterScenario]
     public async Task AfterScenario()
     {
-        await PersistenceManagement.Drop().ConfigureAwait(false);
+        try
+        {
+            await PersistenceManagement.Drop().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Empty
+        }
     }
 
     [Given("a (.+) persistence engine")]
@@ -26,7 +37,7 @@ public partial class PersistenceEngineBehavior
         var (commitEvents, accessSnapshots, managePersistence) = type switch
         {
             "in-memory" => CreateInMemoryPersistence(ConfiguredPageSizeForTesting),
-            //"postgres" => SqlPersistenceEngineFactory.Create(2),
+            "postgres" => CreatePostgresPersistence(ConfiguredPageSizeForTesting),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -44,6 +55,21 @@ public partial class PersistenceEngineBehavior
     private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreateInMemoryPersistence(int pageSize)
     {
         var engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
+        return (engine, engine, engine);
+    }
+
+    private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreatePostgresPersistence(int pageSize)
+    {
+        var engine = new SqlPersistenceEngine(
+            new NetStandardConnectionFactory(
+                NpgsqlFactory.Instance,
+                "Server=localhost;Port=5432;Database=openmedstack;User Id=openmedstack;Password=openmedstack;",
+                NullLogger<NetStandardConnectionFactory>.Instance),
+            new PostgreSqlDialect(NullLogger<PostgreSqlDialect>.Instance),
+            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+            pageSize,
+            new Sha1StreamIdHasher(),
+            NullLogger<SqlPersistenceEngine>.Instance);
         return (engine, engine, engine);
     }
 }

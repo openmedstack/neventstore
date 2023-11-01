@@ -8,4 +8,4 @@ services:
     environment:
       - POSTGRES_USER=openmedstack
       - POSTGRES_PASSWORD=openmedstack
-      - POSTGRES_DB=eventdb
+      - POSTGRES_DB=openmedstack

@@ -25,7 +25,7 @@ public class SubscriptionsHandlingFeature : IDisposable
         "Server=localhost;Keepalive=1;Pooling=true;MinPoolSize=1;MaxPoolSize=20;Port=5432;Database=openmedstack;User Id=openmedstack;Password=openmedstack;";
 
     [Given(@"a postgres server for NEventStore")]
-    public void GivenAPostgresServerForNEventStore()
+    public async Task GivenAPostgresServerForNEventStore()
     {
         var serviceCollection = new ServiceCollection()
             .RegisterJsonSerialization()
@@ -33,7 +33,7 @@ public class SubscriptionsHandlingFeature : IDisposable
             .RegisterSqlEventStore<PostgreSqlDialect, Sha1StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
         var serviceProvider = serviceCollection.BuildServiceProvider();
         _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
-        _managePersistence.Initialize();
+        await _managePersistence.Initialize();
         _eventStore = serviceProvider.GetRequiredService<ICommitEvents>();
     }
 
@@ -42,16 +42,12 @@ public class SubscriptionsHandlingFeature : IDisposable
     {
         try
         {
-            var connection = new NpgsqlConnection(ConnectionString);
-            await using var _ = connection.ConfigureAwait(false);
-            await connection.OpenAsync();
-            var command = connection.CreateCommand();
-            await using var __ = command.ConfigureAwait(false);
+            await using var connection = new NpgsqlConnection(ConnectionString);
+            await connection.OpenAsync().ConfigureAwait(false);
+            await using var command = connection.CreateCommand();
             command.CommandText =
                 "CREATE PUBLICATION commit_pub FOR TABLE Commits WITH (publish = 'insert')";
-            var amount = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-
-            Assert.True(0 <= amount);
+            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
         catch (PostgresException e) when (e.SqlState == "42710")
         {

@@ -150,7 +150,7 @@ public class OracleNativeDialect : CommonSqlDialect
         {
             var payloadParam = Activator.CreateInstance(oracleParamaterType, new[] { Payload, blobDbType });
             ((OracleDbStatement)cmd2).AddParameter(Payload, payloadParam!);
-            object oracleConnection = ((ConnectionScope)connection2).Current;
+            object oracleConnection = connection2; //((ConnectionScope)connection2).Current;
             var oracleBlob = Activator.CreateInstance(oracleBlobType, new[] { oracleConnection });
             oracleBlobWriteMethod!.Invoke(oracleBlob, new object[] { payload2, 0, payload2.Length });
             oracleParamaterValueProperty!.SetValue(payloadParam, oracleBlob, null);

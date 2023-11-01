@@ -33,7 +33,7 @@ public class NetStandardConnectionFactory : IConnectionFactory
 
     protected virtual IDbConnection Open(string connectionString)
     {
-        return new ConnectionScope(connectionString, () => OpenConnection(connectionString), _logger);
+        return OpenConnection(connectionString);
     }
 
     protected virtual IDbConnection OpenConnection(string connectionString)
@@ -46,7 +46,6 @@ public class NetStandardConnectionFactory : IConnectionFactory
         }
 
         connection.ConnectionString = connectionString;
-
         try
         {
             _logger.LogTrace(PersistenceMessages.OpeningConnection, connectionString);

@@ -41,7 +41,7 @@ public abstract class DockerTestTask : FrostingTask<BuildContext>
 
         context.Log.Information(reportName);
 
-        var coreTestSettings = new DotNetTestSettings()
+        var coreTestSettings = new DotNetTestSettings
         {
             NoBuild = true,
             NoRestore = true,
