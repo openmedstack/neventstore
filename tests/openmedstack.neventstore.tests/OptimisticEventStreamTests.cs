@@ -1,3 +1,5 @@
+using NSubstitute;
+
 namespace OpenMedStack.NEventStore.Tests;
 
 using OpenMedStack.NEventStore.Abstractions;
@@ -6,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FakeItEasy;
 using Microsoft.Extensions.Logging.Abstractions;
 using NEventStore.Persistence.AcceptanceTests.BDD;
 using Xunit;
@@ -34,7 +35,7 @@ public class WhenBuildingAStream : OnTheEventStream
         _committed[3].Headers["Common"] = string.Empty;
         _committed[0].Headers["Unique"] = string.Empty;
 
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, MinRevision, MaxRevision, default))
+        Persistence.GetFrom(BucketId, StreamId, MinRevision, MaxRevision, default)
             .Returns(_committed.ToAsyncEnumerable());
 
         return Task.CompletedTask;
@@ -106,7 +107,7 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
             BuildCommitStub(8, 3, _eventsPerCommit) // 7-8
         };
 
-        A.CallTo(() => Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default))
+        Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default)
             .Returns(_committed.ToAsyncEnumerable());
 
         return Task.CompletedTask;
@@ -232,9 +233,11 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
 
     protected override Task Context()
     {
-        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
-            .Invokes((IEventStream e, Guid? g, CancellationToken _) =>
+        Persistence.When(x => x.Commit(Arg.Any<IEventStream>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>()))
+            .Do(c =>
             {
+                var e = c.ArgAt<IEventStream>(0);
+                var g = c.ArgAt<Guid?>(1);
                 if (e.UncommittedEvents.Count <= 0)
                 {
                     return;
@@ -250,18 +253,18 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
                     e.UncommittedHeaders.ToDictionary(),
                     e.UncommittedEvents.ToList());
                 e.SetPersisted(e.CommitSequence + 1);
-            })
-            .ReturnsLazily(
-                (IEventStream _, Guid? _, CancellationToken _) => new Commit(
-                    _constructed.BucketId,
-                    _constructed.StreamId,
-                    _constructed.StreamRevision,
-                    _constructed.CommitId,
-                    _constructed.CommitSequence,
-                    _constructed.CommitStamp,
-                    0,
-                    _constructed.Headers,
-                    _constructed.Events));
+            });
+        Persistence.Commit(Arg.Any<IEventStream>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>())
+            .ReturnsForAnyArgs(c => Task.FromResult<ICommit?>(new Commit(
+                _constructed.BucketId,
+                _constructed.StreamId,
+                _constructed.StreamRevision,
+                _constructed.CommitId,
+                _constructed.CommitSequence,
+                _constructed.CommitStamp,
+                0,
+                _constructed.Headers,
+                _constructed.Events)));
         Stream.Add(_uncommitted);
         foreach (var item in _headers)
         {
@@ -276,8 +279,9 @@ public class WhenCommittingAnyUncommittedChanges : OnTheEventStream
     [Fact]
     public void should_provide_a_commit_to_the_underlying_infrastructure()
     {
-        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
-            .MustHaveHappened(1, Times.Exactly);
+        Persistence.Received(1).Commit(Arg.Any<IEventStream>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+//        A.CallTo(() => Persistence.Commit(A<IEventStream>._, A<Guid?>._, A<CancellationToken>._))
+//            .MustHaveHappened(1, Times.Exactly);
     }
 
     [Fact]
@@ -391,7 +395,7 @@ public abstract class OnTheEventStream : SpecificationBase, IClassFixture<FakeTi
         OnStart().Wait();
     }
 
-    protected ICommitEvents Persistence => _persistence ??= A.Fake<ICommitEvents>();
+    protected ICommitEvents Persistence => _persistence ??= Substitute.For<ICommitEvents>();
 
     protected OptimisticEventStream Stream
     {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Tests.Client;
@@ -7,8 +8,6 @@ using System;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
-using FakeItEasy;
-using Microsoft.Extensions.Logging.Abstractions;
 using NEventStore;
 using NEventStore.Persistence.AcceptanceTests;
 using NEventStore.Persistence.AcceptanceTests.BDD;
@@ -20,7 +19,7 @@ public class CreatingPollingClientTests
     public void When_interval_less_than_zero_then_should_throw()
     {
         Assert.Throws<ArgumentException>(
-            () => { _ = new PollingClientRx(A.Fake<IManagePersistence>(), TimeSpan.MinValue); });
+            () => { _ = new PollingClientRx(Substitute.For<IManagePersistence>(), TimeSpan.MinValue); });
     }
 }
 

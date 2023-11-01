@@ -44,7 +44,6 @@ public class DefaultSerializationWireupTests
         [Fact]
         public void should_throw_an_invalid_operation_exception()
         {
-            // _exception.Should().NotBeOfType<ArgumentNullException>();
             Assert.IsType<InvalidOperationException>(_exception);
         }
     }
