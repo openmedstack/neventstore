@@ -35,7 +35,7 @@ public class WhenBuildingAStream : OnTheEventStream
         _committed[3].Headers["Common"] = string.Empty;
         _committed[0].Headers["Unique"] = string.Empty;
 
-        Persistence.GetFrom(BucketId, StreamId, MinRevision, MaxRevision, default)
+        Persistence.Get(BucketId, StreamId, MinRevision, MaxRevision, default)
             .Returns(_committed.ToAsyncEnumerable());
 
         return Task.CompletedTask;
@@ -107,7 +107,7 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
             BuildCommitStub(8, 3, _eventsPerCommit) // 7-8
         };
 
-        Persistence.GetFrom(BucketId, StreamId, 0, int.MaxValue, default)
+        Persistence.Get(BucketId, StreamId, 0, int.MaxValue, default)
             .Returns(_committed.ToAsyncEnumerable());
 
         return Task.CompletedTask;

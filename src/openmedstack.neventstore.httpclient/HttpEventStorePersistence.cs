@@ -39,7 +39,7 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ICommit> GetFrom(
+    public async IAsyncEnumerable<ICommit> Get(
         string bucketId,
         string streamId,
         int minRevision = 0,

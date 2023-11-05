@@ -74,7 +74,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         }
     }
 
-    public virtual IAsyncEnumerable<ICommit> GetFrom(
+    public virtual IAsyncEnumerable<ICommit> Get(
         string bucketId,
         string streamId,
         int minRevision,

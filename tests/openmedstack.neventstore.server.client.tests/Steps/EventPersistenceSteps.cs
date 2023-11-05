@@ -28,7 +28,7 @@ public partial class FeatureSteps
     [Then(@"I can load the event stream from the event store")]
     public async Task ThenICanLoadTheEventStreamFromTheEventStore()
     {
-        var stream = _client.GetFrom("test", _commitResult!.StreamId, 0, int.MaxValue, CancellationToken.None);
+        var stream = _client.Get("test", _commitResult!.StreamId, 0, int.MaxValue, CancellationToken.None);
         _streamCount = await stream.Count().ConfigureAwait(false);
     }
 

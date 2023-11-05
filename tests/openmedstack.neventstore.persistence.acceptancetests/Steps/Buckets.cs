@@ -61,7 +61,7 @@ public partial class PersistenceEngineBehavior
         _streamId = Guid.NewGuid().ToString();
         var now = SystemTime.UtcNow;
         await Persistence.Commit(_streamId.BuildAttempt(BucketAId)).ConfigureAwait(false);
-        var enumerable = Persistence.GetFrom(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
+        var enumerable = Persistence.Get(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
         _attemptACommitStamp =
             (await enumerable.First())
             .CommitStamp;
@@ -88,7 +88,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should persist to the correct bucket")]
     public async Task ThenShouldPersistToTheCorrectBucket()
     {
-        var enumerable = Persistence.GetFrom(BucketBId, _streamId, 0, int.MaxValue, CancellationToken.None);
+        var enumerable = Persistence.Get(BucketBId, _streamId, 0, int.MaxValue, CancellationToken.None);
         var stream = await enumerable.ToList();
         Assert.NotNull(stream);
         Assert.Single(stream);
@@ -97,7 +97,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should not affect the stream from the other bucket")]
     public async Task ThenShouldNotAffectTheStreamFromTheOtherBucket()
     {
-        var enumerable = Persistence.GetFrom(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
+        var enumerable = Persistence.Get(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
         var stream = await enumerable.ToList();
         Assert.NotNull(stream);
         Assert.Single(stream);
@@ -207,7 +207,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenReadsTheWholeBody()
     {
         var commits = await Persistence
-            .GetFrom(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).Single();
+            .Get(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).Single();
         Assert.Equal(bodyLength, commits.Events.Single().Body.ToString()!.Length);
     }
 }

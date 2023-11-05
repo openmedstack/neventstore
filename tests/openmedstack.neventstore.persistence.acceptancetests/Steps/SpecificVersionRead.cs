@@ -24,7 +24,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenGettingASpecificRevision(int from, int to)
     {
         _committed = await Persistence
-            .GetFrom(Bucket.Default, _streamId, from, to,
+            .Get(Bucket.Default, _streamId, from, to,
                 CancellationToken.None).ToArray().ConfigureAwait(false);
     }
 

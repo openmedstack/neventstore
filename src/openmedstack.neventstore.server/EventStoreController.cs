@@ -22,7 +22,7 @@ public class EventStoreController : Controller
         string streamId,
         int? minRevision,
         int? maxRevision,
-        CancellationToken cancellationToken) => _persistence.GetFrom(
+        CancellationToken cancellationToken) => _persistence.Get(
         bucketId,
         streamId,
         minRevision ?? 0,

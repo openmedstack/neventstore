@@ -59,7 +59,7 @@ public class EventStoreService : EventStore.EventStoreBase
         IServerStreamWriter<CommitInfo> responseStream,
         ServerCallContext context)
     {
-        var stream = _persistence.GetFrom(request.BucketId, request.StreamId, request.MinRevision, request.MaxRevision,
+        var stream = _persistence.Get(request.BucketId, request.StreamId, request.MinRevision, request.MaxRevision,
             context.CancellationToken);
 
         await WriteToStream(responseStream, context, stream).ConfigureAwait(false);

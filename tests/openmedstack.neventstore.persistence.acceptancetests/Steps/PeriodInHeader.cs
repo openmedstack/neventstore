@@ -25,7 +25,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenGettingCommit()
     {
         _persisted = await Persistence
-            .GetFrom(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).First()
+            .Get(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).First()
             .ConfigureAwait(false);
     }
 

@@ -47,7 +47,7 @@ public sealed class OptimisticEventStream : IEventStream
         CancellationToken cancellationToken = default)
     {
         var instance = Create(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
-        var commits = persistence.GetFrom(bucketId, streamId, minRevision, maxRevision, cancellationToken);
+        var commits = persistence.Get(bucketId, streamId, minRevision, maxRevision, cancellationToken);
         await instance.PopulateStream(minRevision, maxRevision, commits, cancellationToken).ConfigureAwait(false);
 
         if (minRevision > 0 && instance._committed.Count == 0)
@@ -67,7 +67,7 @@ public sealed class OptimisticEventStream : IEventStream
         CancellationToken cancellationToken)
     {
         var instance = Create(snapshot.BucketId, snapshot.StreamId, logger);
-        var commits = persistence.GetFrom(
+        var commits = persistence.Get(
             snapshot.BucketId,
             snapshot.StreamId,
             snapshot.StreamRevision,
@@ -133,7 +133,7 @@ public sealed class OptimisticEventStream : IEventStream
     public async Task Update(ICommitEvents commitEvents, CancellationToken cancellationToken = default)
     {
         var revision = StreamRevision - UncommittedEvents.Count;
-        var commits = commitEvents.GetFrom(BucketId, StreamId, revision + 1, int.MaxValue,
+        var commits = commitEvents.Get(BucketId, StreamId, revision + 1, int.MaxValue,
             cancellationToken);
         await PopulateStream(revision + 1, int.MaxValue, commits, cancellationToken).ConfigureAwait(false);
         var toBeCommitted = UncommittedEvents.ToArray();

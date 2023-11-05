@@ -37,7 +37,7 @@ public partial class FeatureSteps
     public async Task ThenICanLoadTheEventStreamFromTheEventStoreUsingTheGrpcClient(string type)
     {
         var client = GetClient(type);
-        var stream = client.GetFrom("test", _commitResult!.StreamId, 0, int.MaxValue, CancellationToken.None);
+        var stream = client.Get("test", _commitResult!.StreamId, 0, int.MaxValue, CancellationToken.None);
         _streamCount = await stream.Count().ConfigureAwait(false);
     }
 

@@ -82,7 +82,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<ICommit> GetFrom(
+    public IAsyncEnumerable<ICommit> Get(
         string bucketId,
         string streamId,
         int minRevision,

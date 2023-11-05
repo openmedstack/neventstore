@@ -41,7 +41,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         return Task.CompletedTask;
     }
 
-    public IAsyncEnumerable<ICommit> GetFrom(
+    public IAsyncEnumerable<ICommit> Get(
         string bucketId,
         string streamId,
         int minRevision,

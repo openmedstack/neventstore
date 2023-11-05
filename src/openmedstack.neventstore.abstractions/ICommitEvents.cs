@@ -20,7 +20,7 @@ public interface ICommitEvents : IDisposable
     /// <returns>A series of committed events from the stream specified sorted in ascending order.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    IAsyncEnumerable<ICommit> GetFrom(string bucketId, string streamId, int minRevision, int maxRevision, CancellationToken cancellationToken);
+    IAsyncEnumerable<ICommit> Get(string bucketId, string streamId, int minRevision, int maxRevision, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Writes the to-be-committed events stream provided to the underlying persistence mechanism.
