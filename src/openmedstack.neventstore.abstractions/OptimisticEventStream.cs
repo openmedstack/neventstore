@@ -16,10 +16,6 @@ public sealed class OptimisticEventStream : IEventStream
     private readonly List<EventMessage> _events = new();
     private readonly Dictionary<string, object> _uncommittedHeaders = new();
     private readonly Dictionary<string, object> _committedHeaders = new();
-    private readonly ICollection<Guid> _identifiers = new HashSet<Guid>();
-
-//    private readonly ImmutableArray<EventMessage> _immutableCollection;
-//    private readonly ImmutableArray<EventMessage> _uncommittedEvents;
 
     private OptimisticEventStream(
         string bucketId,
@@ -166,7 +162,6 @@ public sealed class OptimisticEventStream : IEventStream
             }
 
             _logger.LogTrace(Resources.AddingCommitsToStream, commit.CommitId, commit.Events.Count, StreamId);
-            _identifiers.Add(commit.CommitId);
 
             CommitSequence = commit.CommitSequence;
             var currentRevision = commit.StreamRevision - commit.Events.Count + 1;
