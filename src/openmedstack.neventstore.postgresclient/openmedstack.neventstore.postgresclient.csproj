@@ -5,7 +5,7 @@
         <RootNamespace>OpenMedStack.NEventStore.PostgresClient</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Npgsql" Version="7.0.4" />
+        <PackageReference Include="Npgsql" Version="7.0.6" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj" />
