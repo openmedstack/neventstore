@@ -503,9 +503,9 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         throw new ObjectDisposedException(PersistenceMessages.AlreadyDisposed);
     }
 
-    private Task<T> ExecuteCommand<T>(Func<IDbStatement, Task<T>> command)
+    private async Task<T> ExecuteCommand<T>(Func<IDbStatement, Task<T>> command)
     {
-        return ExecuteCommand((_, statement) => command(statement));
+        return await ExecuteCommand((_, statement) => command(statement));
     }
 
     protected virtual async Task<T> ExecuteCommand<T>(Func<IDbConnection, IDbStatement, Task<T>> command)
