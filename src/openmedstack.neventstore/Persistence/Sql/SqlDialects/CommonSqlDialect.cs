@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 
 using System;
@@ -84,7 +86,11 @@ public abstract class CommonSqlDialect : ISqlDialect
 
     public abstract bool IsDuplicate(Exception exception);
 
-    public virtual void AddPayloadParamater(IConnectionFactory connectionFactory, IDbConnection connection, IDbStatement cmd, byte[] payload)
+    public virtual void AddPayloadParamater(
+        IConnectionFactory connectionFactory,
+        IDbConnection connection,
+        IDbStatement cmd,
+        byte[] payload)
     {
         cmd.AddParameter(Payload, payload);
     }
@@ -102,5 +108,6 @@ public abstract class CommonSqlDialect : ISqlDialect
 
     public virtual IDbTransaction? OpenTransaction(IDbConnection connection) => null;
 
-    public virtual IDbStatement BuildStatement(IDbConnection connection) => new CommonDbStatement(this, connection, Logger);
+    public virtual IDbStatement BuildStatement(IDbConnection connection) =>
+        new CommonDbStatement(this, connection, Logger);
 }

@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Reflection;
 using Cake.Common.Tools.GitVersion;
 using Cake.Core.Diagnostics;
 using Cake.Frosting;
@@ -10,38 +8,13 @@ namespace OpenMedStack.NEventStore.Build;
 [TaskDescription("Retrieves the current version from the git repository")]
 public sealed class VersionTask : FrostingTask<BuildContext>
 {
-    // Tasks can be asynchronous
     public override void Run(BuildContext context)
     {
-        GitVersion versionInfo;
-        try
+        GitVersion versionInfo = context.GitVersion(new GitVersionSettings
         {
-            versionInfo = context.GitVersion(new GitVersionSettings { UpdateAssemblyInfo = false });
-        }
-        catch (Win32Exception)
-        {
-            context.Log.Information("Reverting to assembly version");
-
-            var assembly = Assembly.GetAssembly(typeof(VersionTask))!;
-            var version = assembly.GetName().Version!;
-            var versionString = version.ToString();
-            context.Log.Information(versionString);
-            versionInfo = new GitVersion
-            {
-                AssemblySemVer = versionString,
-                BranchName = "master",
-                InformationalVersion = versionString,
-                FullSemVer = versionString,
-                SemVer = versionString,
-                LegacySemVer = versionString,
-                Major = version.Major,
-                Minor = version.Minor,
-                Patch = version.Build,
-                MajorMinorPatch = $"{version.Major}.{version.Minor}.{version.Build}",
-                CommitsSinceVersionSource = 0,
-                NuGetVersion = versionString
-            };
-        }
+            UpdateAssemblyInfo = false,
+            OutputType = GitVersionOutput.Json
+        });
 
         if (versionInfo.BranchName == "master" || versionInfo.BranchName.StartsWith("tags/"))
         {

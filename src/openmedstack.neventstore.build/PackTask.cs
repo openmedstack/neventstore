@@ -7,7 +7,8 @@ using Cake.Frosting;
 namespace OpenMedStack.NEventStore.Build;
 
 [TaskName("Pack")]
-[IsDependentOn(typeof(PersistenceTestsTask))]
+//[IsDependentOn(typeof(PersistenceTestsTask))]
+[IsDependentOn(typeof(TestsTask))]
 public sealed class PackTask : FrostingTask<BuildContext>
 {
     /// <inheritdoc />

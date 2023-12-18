@@ -7,6 +7,7 @@ using OpenMedStack.NEventStore.Serialization;
 
 namespace OpenMedStack.NEventStore;
 
+using System.Diagnostics.CodeAnalysis;
 using OpenMedStack.NEventStore.Persistence.InMemory;
 
 public static class EventStoreExtensions
@@ -20,7 +21,9 @@ public static class EventStoreExtensions
         return services;
     }
 
-    public static IServiceCollection RegisterSqlEventStore<TDialect, THasher>(
+    public static IServiceCollection RegisterSqlEventStore<
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+            TDialect, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THasher>(
         this IServiceCollection serviceCollection,
         DbProviderFactory dbProviderFactory,
         string connectionString,
@@ -37,9 +40,9 @@ public static class EventStoreExtensions
             sp.GetRequiredService<ISerialize>(),
             defaultPageSize, sp.GetRequiredService<IStreamIdHasher>(),
             sp.GetRequiredService<ILogger<SqlPersistenceEngine>>()));
-        serviceCollection.AddSingleton<ICommitEvents>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
-        serviceCollection.AddSingleton<IAccessSnapshots>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
-        serviceCollection.AddSingleton<IManagePersistence>(sp=>sp.GetRequiredService<SqlPersistenceEngine>());
+        serviceCollection.AddSingleton<ICommitEvents>(sp => sp.GetRequiredService<SqlPersistenceEngine>());
+        serviceCollection.AddSingleton<IAccessSnapshots>(sp => sp.GetRequiredService<SqlPersistenceEngine>());
+        serviceCollection.AddSingleton<IManagePersistence>(sp => sp.GetRequiredService<SqlPersistenceEngine>());
         return serviceCollection;
     }
 
