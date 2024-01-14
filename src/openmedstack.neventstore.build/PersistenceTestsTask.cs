@@ -8,7 +8,7 @@ namespace OpenMedStack.NEventStore.Build;
 public sealed class PersistenceTestsTask : DockerTestTask
 {
     protected override string[] DockerComposeFiles { get; } =
-        { "./tests/openmedstack.neventstore.persistence.acceptancetests/docker-compose.yml" };
+        ["./tests/openmedstack.neventstore.persistence.acceptancetests/docker-compose.yml"];
 
     protected override FilePath Project { get; } =
         new(

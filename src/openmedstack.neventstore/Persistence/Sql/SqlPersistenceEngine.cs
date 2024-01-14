@@ -386,7 +386,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
 
     public bool IsDisposed { get; private set; }
 
-    private static readonly string[] Separator = { "__" };
+    private static readonly string[] Separator = ["__"];
 
     protected virtual void Dispose(bool disposing)
     {

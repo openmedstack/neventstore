@@ -141,18 +141,18 @@ public class OracleNativeDialect : CommonSqlDialect
         var oracleBlobType = assembly.GetType(assemblyName + ".Types.OracleBlob", true);
         var oracleBlobWriteMethod = oracleBlobType!.GetMethod(
             "Write",
-            new[] { typeof(byte[]), typeof(int), typeof(int) });
+            [typeof(byte[]), typeof(int), typeof(int)]);
         var oracleParamapterType = assembly.GetType(assemblyName + ".Client.OracleDbType", true);
         var blobField = oracleParamapterType!.GetField("Blob");
         var blobDbType = blobField!.GetValue(null);
 
         return (_, connection2, cmd2, payload2) =>
         {
-            var payloadParam = Activator.CreateInstance(oracleParamaterType, new[] { Payload, blobDbType });
+            var payloadParam = Activator.CreateInstance(oracleParamaterType, [Payload, blobDbType]);
             ((OracleDbStatement)cmd2).AddParameter(Payload, payloadParam!);
             object oracleConnection = connection2; //((ConnectionScope)connection2).Current;
-            var oracleBlob = Activator.CreateInstance(oracleBlobType, new[] { oracleConnection });
-            oracleBlobWriteMethod!.Invoke(oracleBlob, new object[] { payload2, 0, payload2.Length });
+            var oracleBlob = Activator.CreateInstance(oracleBlobType, [oracleConnection]);
+            oracleBlobWriteMethod!.Invoke(oracleBlob, [payload2, 0, payload2.Length]);
             oracleParamaterValueProperty!.SetValue(payloadParam, oracleBlob, null);
         };
     }
@@ -162,7 +162,7 @@ public class OracleNativeDialect : CommonSqlDialect
         query = RemovePaging(query);
         if (query.EndsWith(";"))
         {
-            query = query.TrimEnd(new[] { ';' });
+            query = query.TrimEnd([';']);
         }
 
         var value = string.Format(OracleNativeStatements.LimitedQueryFormat, query);

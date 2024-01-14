@@ -63,7 +63,7 @@ public class CommonDbStatement : IDbStatement
         try
         {
             var totalRowsAffected = 0;
-            foreach (var text in commandText.Split(new[] { "__" }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var text in commandText.Split(["__"], StringSplitOptions.RemoveEmptyEntries))
             {
                 using var command = BuildCommand(text);
                 totalRowsAffected += command.ExecuteNonQuery();

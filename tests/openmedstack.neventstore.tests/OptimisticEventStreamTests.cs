@@ -21,13 +21,13 @@ public class WhenBuildingAStream : OnTheEventStream
 
     protected override Task Context()
     {
-        _committed = new[]
-        {
+        _committed =
+        [
             BuildCommitStub(2, 1, _eachCommitHas), // 1-2
             BuildCommitStub(4, 2, _eachCommitHas), // 3-4
             BuildCommitStub(6, 3, _eachCommitHas), // 5-6
             BuildCommitStub(8, 3, _eachCommitHas) // 7-8
-        };
+        ];
 
         _committed[0].Headers["Common"] = string.Empty;
         _committed[1].Headers["Common"] = string.Empty;
@@ -99,13 +99,13 @@ public class WhenTheHeadEventRevisionIsLessThanTheMaxDesiredRevision : OnTheEven
 
     protected override Task Context()
     {
-        _committed = new[]
-        {
+        _committed =
+        [
             BuildCommitStub(2, 1, _eventsPerCommit), // 1-2
             BuildCommitStub(4, 2, _eventsPerCommit), // 3-4
             BuildCommitStub(6, 3, _eventsPerCommit), // 5-6
             BuildCommitStub(8, 3, _eventsPerCommit) // 7-8
-        };
+        ];
 
         Persistence.Get(BucketId, StreamId, 0, int.MaxValue, default)
             .Returns(_committed.ToAsyncEnumerable());

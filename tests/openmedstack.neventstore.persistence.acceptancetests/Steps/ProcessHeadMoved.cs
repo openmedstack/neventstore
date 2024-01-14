@@ -19,7 +19,7 @@ public partial class PersistenceEngineBehavior
     [Given("a persisted stream with a single event")]
     public async Task APersistedStreamWithASingleEvent()
     {
-        _committed = new[] { BuildCommitStub(1, 1, 1) };
+        _committed = [BuildCommitStub(1, 1, 1)];
         var stream = OptimisticEventStream.Create(BucketId, StreamId, NullLogger<OptimisticEventStream>.Instance);
         stream.Add(_committed[0].Events.First());
         await Persistence.Commit(stream, Guid.NewGuid());

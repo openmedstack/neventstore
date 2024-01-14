@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 public class PollingClient : IDisposable
 {
     private static readonly TaskStatus[] DisposableStatuses =
-        { TaskStatus.RanToCompletion, TaskStatus.Faulted, TaskStatus.Canceled };
+        [TaskStatus.RanToCompletion, TaskStatus.Faulted, TaskStatus.Canceled];
 
     private readonly CancellationTokenSource _cts = new();
     private readonly ILogger _logger;

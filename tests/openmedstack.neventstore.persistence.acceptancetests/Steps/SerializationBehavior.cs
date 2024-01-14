@@ -80,12 +80,12 @@ public class SerializationBehavior
     [Given(@"a list of event messages")]
     public void GivenAListOfEventMessages()
     {
-        _eventMessages = new List<EventMessage>
-        {
+        _eventMessages =
+        [
             new("some value"),
             new(42),
             new(new SimpleMessage())
-        };
+        ];
     }
 
     [When(@"serializing the event messages")]

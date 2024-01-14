@@ -18,10 +18,11 @@ internal class Program
         var configuration = new EventStoreConfiguration
         {
             Name = typeof(EventStoreController).Assembly.GetName().Name!,
-            Urls = new[] { "https://localhost:5001" },
+            Urls = ["https://localhost:5001"],
             TenantPrefix = "test",
             QueueName = "eventstore",
-            ServiceBus = new Uri("loopback://localhost")
+            ServiceBus = new Uri("loopback://localhost"),
+            ConnectionString = ""
         };
 
         var chassis = Chassis.From(configuration)
