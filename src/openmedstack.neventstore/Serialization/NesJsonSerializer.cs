@@ -46,7 +46,8 @@ internal class NesJsonSerializer : ISerialize
         _logger.LogTrace(Messages.DeserializingStream, typeof(T));
         using var stream = new MemoryStream(input);
         var streamReader = new StreamReader(stream);
-        var jsonReader = new JsonTextReader(streamReader);
+        var json = streamReader.ReadToEnd();
+        var jsonReader = new JsonTextReader(new StringReader(json));
         return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 }

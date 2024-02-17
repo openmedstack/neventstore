@@ -60,7 +60,7 @@ public class CommitAttempt
         {
             throw new ArgumentOutOfRangeException(
                 nameof(commitSequence),
-                $"{nameof(commitSequence)} has value {streamRevision} which is less than {0}");
+                $"{nameof(commitSequence)} has value {streamRevision} which is less than 0");
         }
 
         if (events.Count == 0)

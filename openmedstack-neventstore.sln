@@ -39,6 +39,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.build", "src\openmedstack.neventstore.build\openmedstack.neventstore.build.csproj", "{395AC3C0-661C-4E45-97B3-1DB99A2CF220}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.dynamodb", "src\openmedstack.neventstore.dynamodb\openmedstack.neventstore.dynamodb.csproj", "{B56887F2-6987-438C-B7AC-39EB2733C942}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.dynamodb.tests", "tests\openmedstack.neventstore.dynamodb.tests\openmedstack.neventstore.dynamodb.tests.csproj", "{CD431507-D3BF-405B-A225-301A1FBC7F71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +97,14 @@ Global
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B56887F2-6987-438C-B7AC-39EB2733C942}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B56887F2-6987-438C-B7AC-39EB2733C942}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B56887F2-6987-438C-B7AC-39EB2733C942}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B56887F2-6987-438C-B7AC-39EB2733C942}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD431507-D3BF-405B-A225-301A1FBC7F71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD431507-D3BF-405B-A225-301A1FBC7F71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD431507-D3BF-405B-A225-301A1FBC7F71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD431507-D3BF-405B-A225-301A1FBC7F71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,6 +114,7 @@ Global
 		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{26060BED-67A0-4F3F-8522-8CC584818C2B} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{CD431507-D3BF-405B-A225-301A1FBC7F71} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67B44C3E-DC8A-4BB3-9CD4-5D81241AC7A5}

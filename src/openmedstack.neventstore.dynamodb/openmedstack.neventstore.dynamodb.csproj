@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\shared.proj"/>
+    <PropertyGroup>
+        <RootNamespace>OpenMedStack.NEventStore.DynamoDb</RootNamespace>
+        <PackageTags>OpenMedStack Architecture EventStore DynamoDB</PackageTags>
+        <Description>NEventStore for OpenMedStack based applications.</Description>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.301.13" />
+    </ItemGroup>
+
+</Project>

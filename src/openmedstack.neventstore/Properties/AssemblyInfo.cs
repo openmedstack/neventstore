@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("openmedstack.neventstore.tests")]
+[assembly: InternalsVisibleTo("openmedstack.neventstore.dynamodb.tests")]
 [assembly: InternalsVisibleTo("openmedstack.neventstore.persistence.acceptancetests")]
 [assembly: InternalsVisibleTo("openmedstack.neventstore.postgresclient")]
 [assembly: InternalsVisibleTo("openmedstack.neventstore.postgresclient.tests")]

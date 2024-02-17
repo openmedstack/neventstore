@@ -1,4 +1,4 @@
-namespace OpenMedStack.NEventStore.Abstractions.Persistence;
+namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 public static class Bucket
 {

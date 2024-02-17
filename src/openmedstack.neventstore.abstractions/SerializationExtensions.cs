@@ -1,13 +1,9 @@
-using OpenMedStack.NEventStore.Abstractions;
-
-namespace OpenMedStack.NEventStore.Serialization;
-
-using System.IO;
+namespace OpenMedStack.NEventStore.Abstractions;
 
 /// <summary>
 ///     Implements extension methods that make call to the serialization infrastructure more simple.
 /// </summary>
-internal static class SerializationExtensions
+public static class SerializationExtensions
 {
     /// <summary>
     ///     Serializes the object provided.

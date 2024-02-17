@@ -27,7 +27,7 @@ public partial class PersistenceEngineBehavior
     [When(@"getting streams from now onwards")]
     public async Task WhenGettingStreamsFromNowOnwards()
     {
-        var enumerable = PersistenceManagement.GetFrom(_now);
+        var enumerable = PersistenceManagement.GetFrom(Bucket.Default, _now);
         _committed = await enumerable.ToArray().ConfigureAwait(false);
     }
 
@@ -51,7 +51,7 @@ public partial class PersistenceEngineBehavior
     [When(@"loading streams from now onwards")]
     public async Task WhenLoadingStreamsFromNowOnwards()
     {
-        var asyncEnumerable = PersistenceManagement.GetFrom(_now);
+        var asyncEnumerable = PersistenceManagement.GetFrom(Bucket.Default, _now);
         _loaded = await asyncEnumerable.ToArray(CancellationToken.None).ConfigureAwait(false);
     }
 
@@ -68,7 +68,7 @@ public partial class PersistenceEngineBehavior
         _thrown = (await Catch.Exception(
                 async () =>
                 {
-                    var enumerable = PersistenceManagement.GetFrom(DateTimeOffset.MinValue);
+                    var enumerable = PersistenceManagement.GetFrom(Bucket.Default, DateTimeOffset.MinValue);
                     _ = await enumerable.FirstOrDefault(CancellationToken.None).ConfigureAwait(false);
                 })
             .ConfigureAwait(false))!;

@@ -12,18 +12,22 @@ public static class PersistStreamsExtensions
     ///     Gets all commits on or after from the specified starting time from the default bucket.
     /// </summary>
     /// <param name="managePersistence">The IPersistStreams instance.</param>
+    /// <param name="bucket">The bucket to retrieve commits from</param>
     /// <param name="start">The point in time at which to start.</param>
     /// <returns>All commits that have occurred on or after the specified starting time.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    public static IAsyncEnumerable<ICommit> GetFrom(this IManagePersistence managePersistence, DateTimeOffset start)
+    public static IAsyncEnumerable<ICommit> GetFrom(
+        this IManagePersistence managePersistence,
+        string bucket,
+        DateTimeOffset start)
     {
         if (managePersistence == null)
         {
             throw new ArgumentException("persistStreams is null");
         }
 
-        return managePersistence.GetFrom(Bucket.Default, start);
+        return managePersistence.GetFrom(bucket, start);
     }
 
     /// <summary>

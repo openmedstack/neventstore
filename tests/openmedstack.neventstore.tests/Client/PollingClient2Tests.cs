@@ -35,7 +35,7 @@ public class BaseHandlingCommittedEvents : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.StartFromBucket(Bucket.Default);
+        Sut.StartFromBucket(Tests.Bucket.Default);
 
         return Task.CompletedTask;
     }
@@ -67,7 +67,7 @@ public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.StartFromBucket(Bucket.Default);
+        Sut.StartFromBucket(Tests.Bucket.Default);
         for (var i = 0; i < 15; i++)
         {
             StoreEvents.CommitSingle();
@@ -103,7 +103,7 @@ public class VerifyStoppingCommitPollingClient : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.StartFromBucket(Bucket.Default);
+        Sut.StartFromBucket(Tests.Bucket.Default);
 
         return Task.CompletedTask;
     }
@@ -140,7 +140,7 @@ public class VerifyRetryCommitPollingClient : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.StartFromBucket(Bucket.Default);
+        Sut.StartFromBucket(Tests.Bucket.Default);
 
         return Task.CompletedTask;
     }
@@ -176,7 +176,7 @@ public class VerifyRetryThenMoveNext : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.StartFromBucket(Bucket.Default);
+        Sut.StartFromBucket(Tests.Bucket.Default);
 
         return Task.CompletedTask;
     }
@@ -211,7 +211,7 @@ public class VerifyManualPlling : UsingPollingClient2
 
     protected override Task Because()
     {
-        Sut.ConfigurePollingFunction(Bucket.Default);
+        Sut.ConfigurePollingFunction(Tests.Bucket.Default);
         Sut.PollNow();
 
         return Task.CompletedTask;

@@ -13,19 +13,23 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
-        <PackageReference Include="Npgsql" Version="8.0.1" />
-        <PackageReference Include="OpenMedStack.Autofac.NEventstore.Sql" Version="2.1.1" />
-        <PackageReference Include="OpenMedStack.Autofac.MassTransit" Version="2.1.1" />
-        <PackageReference Include="OpenMedStack.Web.Autofac" Version="2.1.1" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.60.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.1"/>
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.0"/>
+        <PackageReference Include="Npgsql" Version="8.0.1"/>
+        <PackageReference Include="OpenMedStack.Autofac.NEventstore.Sql" Version="2.1.1"/>
+        <PackageReference Include="OpenMedStack.Autofac.MassTransit" Version="2.1.1"/>
+        <PackageReference Include="OpenMedStack.Web.Autofac" Version="2.1.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Protos\" />
+        <Folder Include="Protos\"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\openmedstack.neventstore\openmedstack.neventstore.csproj" />
+        <ProjectReference Include="..\openmedstack.neventstore\openmedstack.neventstore.csproj"/>
     </ItemGroup>
 
 </Project>

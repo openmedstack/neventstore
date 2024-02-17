@@ -1,5 +1,4 @@
 using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using TechTalk.SpecFlow;
 using Xunit;
 
@@ -16,7 +15,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should not find any commits stored")]
     public async Task ThenShouldNotFindAnyCommitsStored()
     {
-        var enumerable = PersistenceManagement.GetFrom(DateTimeOffset.MinValue);
+        var enumerable = PersistenceManagement.GetFrom(Bucket.Default, DateTimeOffset.MinValue);
         Assert.Empty(await enumerable.ToList(CancellationToken.None));
     }
 
