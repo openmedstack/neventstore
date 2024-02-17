@@ -5,6 +5,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
+using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Serialization;
 using Xunit;
 
@@ -14,6 +15,7 @@ public class DynamoDbPersistenceEngineTests
 {
     private readonly AmazonDynamoDBClient _dbClient;
     private readonly DynamoDBContext _context;
+    private readonly DynamoDbPersistenceEngine _engine;
 
     public DynamoDbPersistenceEngineTests()
     {
@@ -26,6 +28,8 @@ public class DynamoDbPersistenceEngineTests
             });
 
         _context = new DynamoDBContext(_dbClient);
+        _engine =
+            new DynamoDbPersistenceEngine(_context, new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance));
     }
 
     [Fact]
@@ -34,14 +38,41 @@ public class DynamoDbPersistenceEngineTests
         await CreateTable(_dbClient);
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
-        var engine =
-            new DynamoDbPersistenceEngine(_context, new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance));
+
         var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
         stream.Add(new EventMessage(1));
         stream.Add(new EventMessage(2));
-        var commitResult = await engine.Commit(stream);
+        var commitResult = await _engine.Commit(stream);
 
         Assert.NotNull(commitResult);
+    }
+
+    [Fact]
+    public async Task CanCommitSnapshot()
+    {
+        await CreateTable(_dbClient);
+        var bucket = Guid.NewGuid().ToString("N");
+        var streamId = Guid.NewGuid().ToString("N");
+
+        var snapshot = new Snapshot(bucket, streamId, 1, new EventMessage(1));
+        var commitResult = await _engine.AddSnapshot(snapshot);
+
+        Assert.True(commitResult);
+    }
+
+    [Fact]
+    public async Task CanLoadSnapshot()
+    {
+        await CreateTable(_dbClient);
+        var bucket = Guid.NewGuid().ToString("N");
+        var streamId = Guid.NewGuid().ToString("N");
+
+        var snapshot = new Snapshot(bucket, streamId, 1, new EventMessage(1));
+        var commitResult = await _engine.AddSnapshot(snapshot);
+        Assert.True(commitResult);
+
+        var reloaded = await _engine.GetSnapshot(bucket, streamId, 1, default);
+        Assert.NotNull(reloaded);
     }
 
     [Fact]
@@ -80,28 +111,42 @@ public class DynamoDbPersistenceEngineTests
         {
             await dbClient.CreateTableAsync(new CreateTableRequest("commits",
             [
-                new(nameof(DynamoDbCommit.BucketAndStreamAndSequence), KeyType.HASH),
-                new(nameof(DynamoDbCommit.StreamRevision), KeyType.RANGE)
+                new(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
+                new(nameof(DynamoDbCommit.CommitSequence), KeyType.RANGE)
             ])
             {
                 AttributeDefinitions =
                 [
-                    new AttributeDefinition(nameof(DynamoDbCommit.BucketAndStreamAndSequence), ScalarAttributeType.S),
+                    new AttributeDefinition(nameof(DynamoDbCommit.BucketAndStream), ScalarAttributeType.S),
+                    new AttributeDefinition(nameof(DynamoDbCommit.CommitSequence), ScalarAttributeType.N),
                     new AttributeDefinition(nameof(DynamoDbCommit.StreamRevision), ScalarAttributeType.N)
+                ],
+                LocalSecondaryIndexes =
+                [
+                    new LocalSecondaryIndex
+                    {
+                        IndexName = "RevisionIndex",
+                        KeySchema =
+                        [
+                            new KeySchemaElement(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
+                            new KeySchemaElement(nameof(DynamoDbCommit.StreamRevision), KeyType.RANGE)
+                        ],
+                        Projection = new Projection { ProjectionType = ProjectionType.ALL }
+                    }
                 ],
                 ProvisionedThroughput = new ProvisionedThroughput(1, 1)
             });
         }
 
-        if (tables.TableNames.Contains("snapshots"))
+        if (!tables.TableNames.Contains("snapshots"))
         {
             await dbClient.CreateTableAsync(new CreateTableRequest("snapshots",
                 [
-                    new(nameof(DynamoDbSnapshots.BucketAndStreamAndRevision), KeyType.HASH),
+                    new(nameof(DynamoDbSnapshots.BucketAndStream), KeyType.HASH),
                     new(nameof(DynamoDbSnapshots.StreamRevision), KeyType.RANGE)
                 ],
                 [
-                    new AttributeDefinition(nameof(DynamoDbSnapshots.BucketAndStreamAndRevision),
+                    new AttributeDefinition(nameof(DynamoDbSnapshots.BucketAndStream),
                         ScalarAttributeType.S),
                     new AttributeDefinition(nameof(DynamoDbSnapshots.StreamRevision), ScalarAttributeType.N)
                 ],

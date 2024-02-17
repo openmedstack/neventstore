@@ -6,27 +6,26 @@ namespace OpenMedStack.NEventStore.DynamoDb;
 [DynamoDBTable("commits", LowerCamelCaseProperties = false)]
 internal class DynamoDbCommit
 {
-    [DynamoDBHashKey] public required string BucketAndStreamAndSequence { get; set; }
+    [DynamoDBHashKey] public required string BucketAndStream { get; set; }
     [DynamoDBProperty] public required string BucketId { get; set; }
     [DynamoDBProperty] public required string StreamId { get; set; }
-    [DynamoDBRangeKey] public int StreamRevision { get; set; }
+    [DynamoDBLocalSecondaryIndexRangeKey] public int StreamRevision { get; set; }
     [DynamoDBProperty] public required string CommitId { get; set; }
-    [DynamoDBProperty] public int CommitSequence { get; set; }
+    [DynamoDBRangeKey] public int CommitSequence { get; set; }
     [DynamoDBProperty] public long CommitStamp { get; set; }
     [DynamoDBProperty] public byte[] Headers { get; set; } = Array.Empty<byte>();
     [DynamoDBProperty] public byte[] Events { get; set; } = Array.Empty<byte>();
 
     public static DynamoDbCommit FromStream(IEventStream eventStream, Guid? commitId, ISerialize serializer)
-    {
-        var sequence = eventStream.CommitSequence + 1;
+    {;
         return new DynamoDbCommit
         {
-            BucketAndStreamAndSequence = $"{eventStream.BucketId}{eventStream.StreamId}{sequence}",
+            BucketAndStream = $"{eventStream.BucketId}{eventStream.StreamId}",
             BucketId = eventStream.BucketId,
             StreamId = eventStream.StreamId,
             StreamRevision = eventStream.StreamRevision,
             CommitId = (commitId ?? Guid.NewGuid()).ToString("N"),
-            CommitSequence = sequence,
+            CommitSequence = eventStream.CommitSequence + 1,
             CommitStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             Headers = serializer.Serialize(eventStream.UncommittedHeaders),
             Events = serializer.Serialize(eventStream.UncommittedEvents)

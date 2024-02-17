@@ -31,16 +31,13 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
         int maxRevision,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var query = _context.ScanAsync<DynamoDbCommit>(
-            [
-                new ScanCondition(nameof(DynamoDbCommit.BucketId), ScanOperator.Equal, bucketId),
-                new ScanCondition(nameof(DynamoDbCommit.StreamId), ScanOperator.Equal, streamId),
-                new ScanCondition(nameof(DynamoDbCommit.StreamRevision), ScanOperator.GreaterThanOrEqual, minRevision),
-                new ScanCondition(nameof(DynamoDbCommit.StreamRevision), ScanOperator.LessThanOrEqual, maxRevision)
-            ],
+        var query = _context.QueryAsync<DynamoDbCommit>(
+            $"{bucketId}{streamId}",
+            QueryOperator.Between,
+            [minRevision, maxRevision],
             new DynamoDBOperationConfig
             {
-                ConsistentRead = true, RetrieveDateTimeInUtc = true
+                ConsistentRead = true, RetrieveDateTimeInUtc = true, IndexName = "RevisionIndex"
             });
         var commits = await query.GetNextSetAsync(cancellationToken).ConfigureAwait(false);
         while (commits.Count > 0 && !cancellationToken.IsCancellationRequested)
@@ -85,13 +82,10 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        var query = _context.FromQueryAsync<DynamoDbCommit>(
-            new QueryOperationConfig
-            {
-                BackwardSearch = true, ConsistentRead = true, Limit = 1,
-                Filter = new QueryFilter(nameof(DynamoDbSnapshots.StreamRevision), QueryOperator.LessThanOrEqual,
-                    [new AttributeValue { N = maxRevision.ToString() }])
-            },
+        var query = _context.QueryAsync<DynamoDbSnapshots>(
+            $"{bucketId}{streamId}",
+            QueryOperator.LessThanOrEqual,
+            [maxRevision],
             new DynamoDBOperationConfig
             {
                 ConsistentRead = true, RetrieveDateTimeInUtc = true, BackwardQuery = true,
@@ -102,7 +96,7 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
             commit.BucketId,
             commit.StreamId,
             commit.StreamRevision,
-            _serializer.Deserialize<object>(commit.Events)!);
+            _serializer.Deserialize<object>(commit.Payload)!);
     }
 
     public async Task<bool> AddSnapshot(ISnapshot snapshot)
