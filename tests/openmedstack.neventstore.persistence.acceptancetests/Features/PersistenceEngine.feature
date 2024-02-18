@@ -31,7 +31,7 @@ I want to ensure that the persistence engine behaves as expected
     Scenario Outline: When a commit is successfully persisted
         Given a <type> persistence engine
         And the persistence is initialized
-        And a persisted event stream
+        And a persisted event stream in bucket default
         When getting commit
         Then should correctly persist the stream identifier
         And should correctly persist the stream revision

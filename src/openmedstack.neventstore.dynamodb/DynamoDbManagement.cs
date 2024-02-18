@@ -7,6 +7,8 @@ namespace OpenMedStack.NEventStore.DynamoDb;
 
 public class DynamoDbManagement : IManagePersistence
 {
+    private const string CommitsTableName = "commits";
+    private const string SnapshotsTableName = "snapshots";
     private readonly IAmazonDynamoDB _dbClient;
 
     public DynamoDbManagement(IAmazonDynamoDB dbClient)
@@ -18,9 +20,9 @@ public class DynamoDbManagement : IManagePersistence
     {
         var tables = await _dbClient.ListTablesAsync().ConfigureAwait(false);
 
-        if (!tables.TableNames.Contains("commits"))
+        if (!tables.TableNames.Contains(CommitsTableName))
         {
-            await _dbClient.CreateTableAsync(new CreateTableRequest("commits",
+            await _dbClient.CreateTableAsync(new CreateTableRequest(CommitsTableName,
             [
                 new(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
                 new(nameof(DynamoDbCommit.CommitSequence), KeyType.RANGE)
@@ -52,9 +54,9 @@ public class DynamoDbManagement : IManagePersistence
             }).ConfigureAwait(false);
         }
 
-        if (!tables.TableNames.Contains("snapshots"))
+        if (!tables.TableNames.Contains(SnapshotsTableName))
         {
-            await _dbClient.CreateTableAsync(new CreateTableRequest("snapshots",
+            await _dbClient.CreateTableAsync(new CreateTableRequest(SnapshotsTableName,
                 [
                     new(nameof(DynamoDbSnapshots.BucketAndStream), KeyType.HASH),
                     new(nameof(DynamoDbSnapshots.StreamRevision), KeyType.RANGE)
@@ -70,7 +72,7 @@ public class DynamoDbManagement : IManagePersistence
 
     public IAsyncEnumerable<ICommit> GetFrom(string bucketId, long checkpointToken, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
@@ -83,14 +85,14 @@ public class DynamoDbManagement : IManagePersistence
 
     public Task<bool> Purge(string bucketId)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public async Task<bool> Drop()
     {
         var responses = await Task.WhenAll(
-            _dbClient.DeleteTableAsync("commits"),
-            _dbClient.DeleteTableAsync("snapshots")).ConfigureAwait(false);
+            _dbClient.DeleteTableAsync(CommitsTableName),
+            _dbClient.DeleteTableAsync(SnapshotsTableName)).ConfigureAwait(false);
         return responses.All(response => response.HttpStatusCode == HttpStatusCode.OK);
     }
 
@@ -99,7 +101,7 @@ public class DynamoDbManagement : IManagePersistence
         var pk = $"{bucketId}{streamId}";
         var items = await _dbClient.QueryAsync(new QueryRequest
         {
-            TableName = "commits",
+            TableName = CommitsTableName,
             KeyConditionExpression = $"{nameof(DynamoDbCommit.BucketAndStream)} = :pk",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                 { [":pk"] = new AttributeValue(pk) },
@@ -108,7 +110,7 @@ public class DynamoDbManagement : IManagePersistence
         }).ConfigureAwait(false);
         var response = await _dbClient.BatchWriteItemAsync(new Dictionary<string, List<WriteRequest>>
         {
-            ["commits"] = items.Items.Select(item => new WriteRequest
+            [CommitsTableName] = items.Items.Select(item => new WriteRequest
             {
                 DeleteRequest = new DeleteRequest
                 {

@@ -13,6 +13,9 @@ public class DynamoDbPersistenceEngine(
     ISerialize serializer,
     ILogger<DynamoDbPersistenceEngine> logger) : ICommitEvents, IAccessSnapshots
 {
+    private const string SnapshotsTableName = "snapshots";
+    private const string CommitsTableName = "commits";
+    private const string CommitId = "CommitId";
     private bool _disposed;
 
     public void Dispose()
@@ -34,7 +37,7 @@ public class DynamoDbPersistenceEngine(
         minRevision = minRevision < 0 ? 0 : minRevision;
         var queryRequest = new QueryRequest
         {
-            TableName = "commits", IndexName = "RevisionIndex", ConsistentRead = true,
+            TableName = CommitsTableName, IndexName = "RevisionIndex", ConsistentRead = true,
             KeyConditionExpression =
                 "BucketAndStream = :v_BucketAndStream AND StreamRevision BETWEEN :v_MinRevision AND :v_MaxRevision",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -59,7 +62,7 @@ public class DynamoDbPersistenceEngine(
                 commit["BucketId"].S,
                 commit["StreamId"].S,
                 int.Parse(commit["StreamRevision"].N),
-                Guid.Parse(commit["CommitId"].S),
+                Guid.Parse(commit[CommitId].S),
                 int.Parse(commit["CommitSequence"].N),
                 DateTimeOffset.FromUnixTimeSeconds(long.Parse(commit["CommitStamp"].N)),
                 0,
@@ -126,12 +129,12 @@ public class DynamoDbPersistenceEngine(
     {
         var queryRequest = new QueryRequest
         {
-            TableName = "commits",
+            TableName = CommitsTableName,
             ConsistentRead = true,
             ScanIndexForward = false,
             Limit = 1,
             Select = Select.SPECIFIC_ATTRIBUTES,
-            ProjectionExpression = "CommitId",
+            ProjectionExpression = CommitId,
             KeyConditionExpression =
                 "BucketAndStream = :v_BucketAndStream AND CommitSequence = :v_CommitSequence",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
@@ -141,7 +144,7 @@ public class DynamoDbPersistenceEngine(
             }
         };
         var response = await context.QueryAsync(queryRequest).ConfigureAwait(false);
-        var s = response.Items[0]["CommitId"].S;
+        var s = response.Items[0][CommitId].S;
         return response.HttpStatusCode == HttpStatusCode.OK && s == attempt.CommitId;
     }
 
@@ -153,7 +156,7 @@ public class DynamoDbPersistenceEngine(
     {
         var queryRequest = new QueryRequest
         {
-            TableName = "snapshots",
+            TableName = SnapshotsTableName,
             ConsistentRead = true,
             Limit = 1,
             KeyConditionExpression =
