@@ -17,7 +17,8 @@ internal class DynamoDbCommit
     [DynamoDBProperty] public byte[] Events { get; set; } = Array.Empty<byte>();
 
     public static DynamoDbCommit FromStream(IEventStream eventStream, Guid? commitId, ISerialize serializer)
-    {;
+    {
+        ;
         return new DynamoDbCommit
         {
             BucketAndStream = $"{eventStream.BucketId}{eventStream.StreamId}",

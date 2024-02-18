@@ -115,10 +115,10 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 
         string SerializeBody(object body)
         {
-            using var stream = new MemoryStream();
-            _serializer.Serialize(stream, body);
-            stream.Flush();
-            var bytes = Convert.ToBase64String(stream.ToArray());
+            using var s = new MemoryStream();
+            _serializer.Serialize(s, body);
+            s.Flush();
+            var bytes = Convert.ToBase64String(s.ToArray());
             return bytes;
         }
     }
@@ -143,12 +143,12 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
     }
 
     /// <inheritdoc />
-    public async Task<bool> AddSnapshot(ISnapshot snapshot)
+    public async Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default)
     {
         var response = await _client.PostAsync("snapshots", new StringContent(
             JsonConvert.SerializeObject(snapshot),
             Encoding.UTF8,
-            ApplicationJson)).ConfigureAwait(false);
+            ApplicationJson), cancellationToken).ConfigureAwait(false);
         return response.IsSuccessStatusCode;
     }
 

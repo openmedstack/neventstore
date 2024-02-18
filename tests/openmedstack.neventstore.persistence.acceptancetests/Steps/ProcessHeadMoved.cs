@@ -60,7 +60,7 @@ public partial class PersistenceEngineBehavior
         }
 
         return new Commit(
-            Bucket.Default,
+            "default",
             StreamId,
             revision,
             Guid.NewGuid(),

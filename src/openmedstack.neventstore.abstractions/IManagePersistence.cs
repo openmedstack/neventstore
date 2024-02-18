@@ -18,17 +18,6 @@ public interface IManagePersistence
     Task Initialize();
 
     /// <summary>
-    ///     Gets all commits on or after from the specified starting time.
-    /// </summary>
-    /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
-    /// <param name="start">The point in time at which to start.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
-    /// <returns>All commits that have occurred on or after the specified starting time.</returns>
-    /// <exception cref="StorageException" />
-    /// <exception cref="StorageUnavailableException" />
-    IAsyncEnumerable<ICommit> GetFrom(string bucketId, DateTimeOffset start, CancellationToken cancellationToken = default);
-
-    /// <summary>
     ///     Gets all commits after from the specified checkpoint. Use null to get from the beginning.
     /// </summary>
     /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
@@ -36,22 +25,6 @@ public interface IManagePersistence
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <returns>An enumerable of Commits.</returns>
     IAsyncEnumerable<ICommit> GetFrom(string bucketId, long checkpointToken, CancellationToken cancellationToken);
-
-    IAsyncEnumerable<ICommit> GetFrom(
-        long checkpointToken = 0L,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Gets all commits on or after from the specified starting time and before the specified end time.
-    /// </summary>
-    /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
-    /// <param name="start">The point in time at which to start.</param>
-    /// <param name="end">The point in time at which to end.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation.</param>
-    /// <returns>All commits that have occurred on or after the specified starting time and before the end time.</returns>
-    /// <exception cref="StorageException" />
-    /// <exception cref="StorageUnavailableException" />
-    IAsyncEnumerable<ICommit> GetFromTo(string bucketId, DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Gets identifiers for all streams whose head and last snapshot revisions differ by at least the threshold specified.
@@ -63,11 +36,6 @@ public interface IManagePersistence
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
     IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(string bucketId, int maxThreshold, CancellationToken cancellationToken);
-
-    /// <summary>
-    ///     Completely DESTROYS the contents of ANY and ALL streams that have been successfully persisted.  Use with caution.
-    /// </summary>
-    Task<bool> Purge();
 
     /// <summary>
     ///     Completely DESTROYS the contents of ANY and ALL streams that have been successfully persisted

@@ -12,12 +12,12 @@ public partial class PersistenceEngineBehavior
     private ICommit _persisted = null!;
     private string _streamId = null!;
 
-    [Given(@"a persisted event stream")]
-    public Task GivenAPersistedEventStream()
+    [Given(@"a persisted event stream in bucket (.+)")]
+    public Task GivenAPersistedEventStreamInBucket(string bucketId)
     {
         _now = SystemTime.UtcNow; //.AddYears(1);
         _streamId = Guid.NewGuid().ToString();
-        _attempt = _streamId.BuildAttempt();
+        _attempt = _streamId.BuildAttempt(bucketId);
 
         return Persistence.Commit(_attempt);
     }
@@ -65,7 +65,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should cause the stream to be found in the list of streams to snapshot")]
     public async Task ThenShouldCauseTheStreamToBeFoundInTheListOfStreamsToSnapshot()
     {
-        var streamHead = PersistenceManagement.GetStreamsToSnapshot(Bucket.Default, 1, CancellationToken.None);
+        var streamHead = PersistenceManagement.GetStreamsToSnapshot("default", 1, CancellationToken.None);
         Assert.NotNull(await streamHead.FirstOrDefault(x => x.StreamId == _streamId, CancellationToken.None));
     }
 }

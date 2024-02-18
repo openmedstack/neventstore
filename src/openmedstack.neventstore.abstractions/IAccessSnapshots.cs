@@ -25,7 +25,8 @@ public interface IAccessSnapshots
     /// </summary>
     /// <param name="snapshot">The snapshot to save.</param>
     /// <returns>If the snapshot was added, returns true; otherwise false.</returns>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    Task<bool> AddSnapshot(ISnapshot snapshot);
+    Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default);
 }

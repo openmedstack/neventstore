@@ -152,7 +152,7 @@ public class SerializationBehavior
     public void GivenASnapshot()
     {
         var payload = new Dictionary<string, List<int>>();
-        _snapshot = new Snapshot(Bucket.Default, Guid.NewGuid().ToString(), 42, payload);
+        _snapshot = new Snapshot("default", Guid.NewGuid().ToString(), 42, payload);
     }
 
     [When(@"serializing the snapshot")]

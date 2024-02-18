@@ -24,6 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\src\openmedstack.neventstore.dynamodb\openmedstack.neventstore.dynamodb.csproj" />
         <ProjectReference Include="..\..\src\openmedstack.neventstore\openmedstack.neventstore.csproj" />
     </ItemGroup>
 

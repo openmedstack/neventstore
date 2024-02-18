@@ -9,3 +9,7 @@ services:
       - POSTGRES_USER=openmedstack
       - POSTGRES_PASSWORD=openmedstack
       - POSTGRES_DB=openmedstack
+  dynamodb:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"

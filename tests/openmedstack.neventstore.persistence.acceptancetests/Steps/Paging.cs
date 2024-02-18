@@ -22,7 +22,7 @@ public partial class PersistenceEngineBehavior
     [When(@"loading streams from a checkpoint")]
     public async Task WhenLoadingStreamsFromACheckpoint()
     {
-        var enumerable = PersistenceManagement.GetFrom(Bucket.Default, CheckPoint, CancellationToken.None);
+        var enumerable = PersistenceManagement.GetFrom("default", CheckPoint, CancellationToken.None);
         _loadedIds = (await enumerable.ToList().ConfigureAwait(false)).Select(c => c.CommitId).ToArray();
     }
 
@@ -45,7 +45,7 @@ public partial class PersistenceEngineBehavior
 
         for (var i = 0; i < _moreThanPageSize; i++)
         {
-            var stream = OptimisticEventStream.Create(Bucket.Default, Guid.NewGuid().ToString("N"));
+            var stream = OptimisticEventStream.Create("default", Guid.NewGuid().ToString("N"));
             stream.Add(new EventMessage(new Pippo { S = "Hi " + i }));
             await Persistence.Commit(stream);
         }
@@ -54,7 +54,7 @@ public partial class PersistenceEngineBehavior
     [When(@"getting all commits")]
     public async Task WhenGettingAllCommits()
     {
-        var asyncEnumerable = PersistenceManagement.GetFrom(Bucket.Default, 0, CancellationToken.None);
+        var asyncEnumerable = PersistenceManagement.GetFrom("default", 0, CancellationToken.None);
         _returnedCommits = await asyncEnumerable.ToArray().ConfigureAwait(false);
     }
 

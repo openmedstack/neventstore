@@ -151,7 +151,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         return Task.FromResult(this[bucketId].GetSnapshot(streamId, maxRevision));
     }
 
-    public Task<bool> AddSnapshot(ISnapshot snapshot)
+    public Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default)
     {
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.AddingSnapshot, snapshot.StreamId, snapshot.StreamRevision);

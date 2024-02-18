@@ -75,9 +75,9 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
     }
 
     /// <inheritdoc />
-    public async Task<bool> AddSnapshot(ISnapshot snapshot)
+    public async Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default)
     {
-        var response = await _client.AddSnapshotAsync(null);
+        var response = await _client.AddSnapshotAsync(null, cancellationToken: cancellationToken);
         return response.Value;
     }
 

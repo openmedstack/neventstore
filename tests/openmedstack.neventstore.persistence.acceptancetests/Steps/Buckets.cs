@@ -7,8 +7,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private const string BucketAId = "a";
-    private const string BucketBId = "b";
+    private const string BucketAId = "A";
+    private const string BucketBId = "B";
     private List<Guid> _committedOnBucket1 = null!;
     private List<Guid> _committedOnBucket2 = null!;
     private DateTimeOffset _attemptACommitStamp;
@@ -149,7 +149,7 @@ public partial class PersistenceEngineBehavior
     [When(@"getting commits from bucket A")]
     public async Task WhenGettingCommitsFromBucketA()
     {
-        var enumerable = PersistenceManagement.GetFrom(BucketAId, _now);
+        var enumerable = PersistenceManagement.GetFrom(BucketAId, 0, CancellationToken.None);
         _returnedCommits = await enumerable.ToArray().ConfigureAwait(false);
     }
 
@@ -170,7 +170,7 @@ public partial class PersistenceEngineBehavior
     [When(@"getting all commits from bucket A")]
     public async Task WhenGettingAllCommitsFromBucketA()
     {
-        var enumerable = PersistenceManagement.GetFromStart("a");
+        var enumerable = PersistenceManagement.GetFromStart("A");
         _returnedCommits = await enumerable.ToArray().ConfigureAwait(false);
     }
 
@@ -198,7 +198,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenCommittingStreamWithALargePayload()
     {
         _streamId = Guid.NewGuid().ToString();
-        var stream = OptimisticEventStream.Create(Bucket.Default, _streamId);
+        var stream = OptimisticEventStream.Create("default", _streamId);
         stream.Add(new EventMessage(new string('a', bodyLength)));
         await Persistence.Commit(stream);
     }
@@ -207,7 +207,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenReadsTheWholeBody()
     {
         var commits = await Persistence
-            .Get(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).Single();
+            .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).Single();
         Assert.Equal(bodyLength, commits.Events.Single().Body.ToString()!.Length);
     }
 }

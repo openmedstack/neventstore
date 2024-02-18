@@ -1,5 +1,4 @@
 using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using TechTalk.SpecFlow;
 using Xunit;
 
@@ -12,10 +11,10 @@ public partial class PersistenceEngineBehavior
     [Given(@"an event stream with 3 commits")]
     public async Task GivenAnEventStreamWith3Commits()
     {
-        _oldest = (await Persistence.CommitSingle().ConfigureAwait(false))!; // 2 events, revision 1-2
-        _oldest2 = (await Persistence.CommitNext(_oldest).ConfigureAwait(false))!; // 2 events, revision 3-4
-        _oldest3 = (await Persistence.CommitNext(_oldest2).ConfigureAwait(false))!; // 2 events, revision 5-6
-        await Persistence.CommitNext(_oldest3).ConfigureAwait(false); // 2 events, revision 7-8
+        _oldest = (await Persistence.CommitSingle())!; // 2 events, revision 1-2
+        _oldest2 = (await Persistence.CommitNext(_oldest))!; // 2 events, revision 3-4
+        _oldest3 = (await Persistence.CommitNext(_oldest2))!; // 2 events, revision 5-6
+        await Persistence.CommitNext(_oldest3); // 2 events, revision 7-8
 
         _streamId = _oldest.StreamId;
     }
@@ -24,7 +23,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenGettingASpecificRevision(int from, int to)
     {
         _committed = await Persistence
-            .Get(Bucket.Default, _streamId, from, to,
+            .Get("default", _streamId, from, to,
                 CancellationToken.None).ToArray().ConfigureAwait(false);
     }
 

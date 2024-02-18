@@ -1,6 +1,10 @@
+using Amazon;
+using Amazon.DynamoDBv2;
+using Amazon.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
+using OpenMedStack.NEventStore.DynamoDb;
 using OpenMedStack.NEventStore.Persistence.InMemory;
 using OpenMedStack.NEventStore.Persistence.Sql;
 using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
@@ -38,6 +42,7 @@ public partial class PersistenceEngineBehavior
         {
             "in-memory" => CreateInMemoryPersistence(ConfiguredPageSizeForTesting),
             "postgres" => CreatePostgresPersistence(ConfiguredPageSizeForTesting),
+            "dynamodb" => CreateDynamoDbPersistence(),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -71,5 +76,24 @@ public partial class PersistenceEngineBehavior
             new Sha1StreamIdHasher(),
             NullLogger<SqlPersistenceEngine>.Instance);
         return (engine, engine, engine);
+    }
+
+
+    private (ICommitEvents commitEvents, IAccessSnapshots accessSnapshots, IManagePersistence managePersistence)
+        CreateDynamoDbPersistence()
+    {
+        var client = new AmazonDynamoDBClient(
+            new BasicAWSCredentials("blah", "blah"),
+            new AmazonDynamoDBConfig
+            {
+                AllowAutoRedirect = true, RegionEndpoint = RegionEndpoint.EUCentral1,
+                ServiceURL = "http://localhost:8000"
+            });
+        var engine = new DynamoDbPersistenceEngine(
+            client,
+            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+            NullLogger<DynamoDbPersistenceEngine>.Instance);
+        var management = new DynamoDbManagement(client);
+        return (engine, engine, management);
     }
 }

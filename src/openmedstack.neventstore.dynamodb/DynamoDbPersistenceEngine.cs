@@ -1,26 +1,24 @@
-﻿using System.Runtime.CompilerServices;
-using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.DocumentModel;
+﻿using System.Net;
+using System.Runtime.CompilerServices;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Microsoft.Extensions.Logging;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 
 namespace OpenMedStack.NEventStore.DynamoDb;
 
-public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
+public class DynamoDbPersistenceEngine(
+    IAmazonDynamoDB context,
+    ISerialize serializer,
+    ILogger<DynamoDbPersistenceEngine> logger) : ICommitEvents, IAccessSnapshots
 {
-    private readonly IDynamoDBContext _context;
-    private readonly ISerialize _serializer;
-
-    public DynamoDbPersistenceEngine(IDynamoDBContext context, ISerialize serializer)
-    {
-        _context = context;
-        _serializer = serializer;
-    }
+    private bool _disposed;
 
     public void Dispose()
     {
-        _context.Dispose();
+        context.Dispose();
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -31,32 +29,42 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
         int maxRevision,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var query = _context.QueryAsync<DynamoDbCommit>(
-            $"{bucketId}{streamId}",
-            QueryOperator.Between,
-            [minRevision, maxRevision],
-            new DynamoDBOperationConfig
-            {
-                ConsistentRead = true, RetrieveDateTimeInUtc = true, IndexName = "RevisionIndex"
-            });
-        var commits = await query.GetNextSetAsync(cancellationToken).ConfigureAwait(false);
-        while (commits.Count > 0 && !cancellationToken.IsCancellationRequested)
+        ThrowWhenDisposed();
+        maxRevision = maxRevision == int.MaxValue ? int.MaxValue : maxRevision + 1;
+        minRevision = minRevision < 0 ? 0 : minRevision;
+        var queryRequest = new QueryRequest
         {
-            foreach (var commit in commits)
+            TableName = "commits", IndexName = "RevisionIndex", ConsistentRead = true,
+            KeyConditionExpression =
+                "BucketAndStream = :v_BucketAndStream AND StreamRevision BETWEEN :v_MinRevision AND :v_MaxRevision",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                yield return new Commit(
-                    commit.BucketId,
-                    commit.StreamId,
-                    commit.StreamRevision,
-                    Guid.Parse(commit.CommitId),
-                    commit.CommitSequence,
-                    DateTimeOffset.FromUnixTimeSeconds(commit.CommitStamp),
-                    0,
-                    _serializer.Deserialize<Dictionary<string, object>>(commit.Headers),
-                    _serializer.Deserialize<List<EventMessage>>(commit.Events));
-            }
+                { ":v_BucketAndStream", new AttributeValue { S = $"{bucketId}{streamId}" } },
+                { ":v_MinRevision", new AttributeValue { N = minRevision.ToString() } },
+                { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
+            },
+            ScanIndexForward = true
+        };
+        var response = await context.QueryAsync(queryRequest, cancellationToken).ConfigureAwait(false);
+        if (response.HttpStatusCode != HttpStatusCode.OK)
+        {
+            yield break;
+        }
 
-            commits = await query.GetNextSetAsync(cancellationToken).ConfigureAwait(false);
+        var commits = response.Items;
+        foreach (var commit in commits
+            .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
+        {
+            yield return new Commit(
+                commit["BucketId"].S,
+                commit["StreamId"].S,
+                int.Parse(commit["StreamRevision"].N),
+                Guid.Parse(commit["CommitId"].S),
+                int.Parse(commit["CommitSequence"].N),
+                DateTimeOffset.FromUnixTimeSeconds(long.Parse(commit["CommitStamp"].N)),
+                0,
+                serializer.Deserialize<Dictionary<string, object>>(commit["Headers"].B),
+                serializer.Deserialize<List<EventMessage>>(commit["Events"].B));
         }
     }
 
@@ -65,15 +73,76 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
         Guid? commitId = null,
         CancellationToken cancellationToken = default)
     {
+        ThrowWhenDisposed();
         var id = commitId ?? Guid.NewGuid();
-        var attempt = DynamoDbCommit.FromStream(eventStream, id, _serializer);
-        await _context.SaveAsync(attempt, cancellationToken).ConfigureAwait(false);
-        return new Commit(attempt.BucketId, attempt.StreamId, attempt.StreamRevision, id,
-            attempt.CommitSequence,
-            DateTimeOffset.FromUnixTimeSeconds(attempt.CommitStamp),
-            0,
-            eventStream.UncommittedHeaders.ToDictionary(),
-            eventStream.UncommittedEvents);
+        var attempt = DynamoDbCommit.FromStream(eventStream, id, serializer);
+        try
+        {
+            await context.Save(attempt, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return new Commit(
+                attempt.BucketId,
+                attempt.StreamId,
+                attempt.StreamRevision,
+                id,
+                attempt.CommitSequence,
+                DateTimeOffset.FromUnixTimeSeconds(attempt.CommitStamp),
+                0,
+                eventStream.UncommittedHeaders.ToDictionary(),
+                eventStream.UncommittedEvents);
+        }
+        catch (ConditionalCheckFailedException e)
+        {
+            if (await DetectDuplicate(attempt).ConfigureAwait(false))
+            {
+                logger.LogError(e, "Duplicate commit detected");
+                throw new DuplicateCommitException(e.Message, e);
+            }
+
+            logger.LogError(e, "Concurrent commit detected. Retrying");
+
+            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
+            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
+            if (eventStream.StreamRevision <= currentRevision)
+            {
+                throw;
+            }
+
+            return await Commit(eventStream, id, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private void ThrowWhenDisposed()
+    {
+        if (!_disposed)
+        {
+            return;
+        }
+
+        logger.LogWarning("Accessing a disposed object");
+        throw new ObjectDisposedException("Already disposed");
+    }
+
+    private async Task<bool> DetectDuplicate(DynamoDbCommit attempt)
+    {
+        var queryRequest = new QueryRequest
+        {
+            TableName = "commits",
+            ConsistentRead = true,
+            ScanIndexForward = false,
+            Limit = 1,
+            Select = Select.SPECIFIC_ATTRIBUTES,
+            ProjectionExpression = "CommitId",
+            KeyConditionExpression =
+                "BucketAndStream = :v_BucketAndStream AND CommitSequence = :v_CommitSequence",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            {
+                { ":v_BucketAndStream", new AttributeValue { S = $"{attempt.BucketId}{attempt.StreamId}" } },
+                { ":v_CommitSequence", new AttributeValue { N = attempt.CommitSequence.ToString() } }
+            }
+        };
+        var response = await context.QueryAsync(queryRequest).ConfigureAwait(false);
+        var s = response.Items[0]["CommitId"].S;
+        return response.HttpStatusCode == HttpStatusCode.OK && s == attempt.CommitId;
     }
 
     public async Task<ISnapshot?> GetSnapshot(
@@ -82,27 +151,38 @@ public class DynamoDbPersistenceEngine : ICommitEvents, IAccessSnapshots
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        var query = _context.QueryAsync<DynamoDbSnapshots>(
-            $"{bucketId}{streamId}",
-            QueryOperator.LessThanOrEqual,
-            [maxRevision],
-            new DynamoDBOperationConfig
+        var queryRequest = new QueryRequest
+        {
+            TableName = "snapshots",
+            ConsistentRead = true,
+            Limit = 1,
+            KeyConditionExpression =
+                "BucketAndStream = :v_BucketAndStream AND StreamRevision <= :v_MaxRevision",
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                ConsistentRead = true, RetrieveDateTimeInUtc = true, BackwardQuery = true,
-            });
-        var commits = await query.GetNextSetAsync(cancellationToken).ConfigureAwait(false);
-        var commit = commits[0];
+                { ":v_BucketAndStream", new AttributeValue { S = $"{bucketId}{streamId}" } },
+                { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
+            },
+            ScanIndexForward = false
+        };
+        var response = await context.QueryAsync(queryRequest, cancellationToken).ConfigureAwait(false);
+        if (response.HttpStatusCode != HttpStatusCode.OK)
+        {
+            return null;
+        }
+
+        var commit = response.Items[0];
+
         return new Snapshot(
-            commit.BucketId,
-            commit.StreamId,
-            commit.StreamRevision,
-            _serializer.Deserialize<object>(commit.Payload)!);
+            commit["BucketId"].S,
+            commit["StreamId"].S,
+            int.Parse(commit["StreamRevision"].N),
+            serializer.Deserialize<object>(commit["Payload"].B)!);
     }
 
-    public async Task<bool> AddSnapshot(ISnapshot snapshot)
+    public async Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken)
     {
-        var attempt = DynamoDbSnapshots.FromSnapshot(snapshot, _serializer);
-        await _context.SaveAsync(attempt).ConfigureAwait(false);
-        return true;
+        var attempt = DynamoDbSnapshots.FromSnapshot(snapshot, serializer);
+        return await context.Save(attempt, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 }

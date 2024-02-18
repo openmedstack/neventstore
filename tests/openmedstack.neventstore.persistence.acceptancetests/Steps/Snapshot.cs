@@ -21,7 +21,7 @@ public partial class PersistenceEngineBehavior
     public async Task GivenANonSnapshottedEventStream()
     {
         _streamId = Guid.NewGuid().ToString();
-        _snapshot = new Snapshot(Bucket.Default, _streamId, 1, "Snapshot");
+        _snapshot = new Snapshot("default", _streamId, 1, "Snapshot");
         await Persistence.CommitSingle(_streamId).ConfigureAwait(false);
     }
 
@@ -41,7 +41,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldBeAbleToLoadTheSnapshot()
     {
         var snapshot =
-            await Snapshots.GetSnapshot(Bucket.Default, _streamId, _snapshot.StreamRevision, CancellationToken.None);
+            await Snapshots.GetSnapshot("default", _streamId, _snapshot.StreamRevision, CancellationToken.None);
         Assert.NotNull(snapshot);
     }
 
@@ -53,11 +53,11 @@ public partial class PersistenceEngineBehavior
         var commit2 = (await Persistence.CommitNext(commit1).ConfigureAwait(false))!; // rev 3-4
         await Persistence.CommitNext(commit2).ConfigureAwait(false); // rev 5-6
 
-        await Snapshots.AddSnapshot(new Snapshot(Bucket.Default, _streamId, 1, string.Empty))
+        await Snapshots.AddSnapshot(new Snapshot("default", _streamId, 1, string.Empty))
             .ConfigureAwait(false); //Too far back
-        await Snapshots.AddSnapshot(_correct = new Snapshot(Bucket.Default, _streamId, 3, "Snapshot"))
+        await Snapshots.AddSnapshot(_correct = new Snapshot("default", _streamId, 3, "Snapshot"))
             .ConfigureAwait(false);
-        await Snapshots.AddSnapshot(_tooFarForward = new Snapshot(Bucket.Default, _streamId, 5, string.Empty))
+        await Snapshots.AddSnapshot(_tooFarForward = new Snapshot("default", _streamId, 5, string.Empty))
             .ConfigureAwait(false);
     }
 
@@ -65,7 +65,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenLoadingASnapshotToFarAhead()
     {
         _snapshot = (await Snapshots
-            .GetSnapshot(Bucket.Default, _streamId, _tooFarForward.StreamRevision - 1, CancellationToken.None)
+            .GetSnapshot("default", _streamId, _tooFarForward.StreamRevision - 1, CancellationToken.None)
             .ConfigureAwait(false))!;
     }
 
@@ -99,14 +99,14 @@ public partial class PersistenceEngineBehavior
     [When(@"adding a snapshot to the most recent commit")]
     public void WhenAddingASnapshotToTheMostRecentCommit()
     {
-        Snapshots.AddSnapshot(new Snapshot(Bucket.Default, _streamId, _newest.StreamRevision, SnapshotData));
+        Snapshots.AddSnapshot(new Snapshot("default", _streamId, _newest.StreamRevision, SnapshotData));
     }
 
     [Then(@"should no longer find the stream in the set of streams to be snapshotted")]
     public async Task ThenShouldNoLongerFindTheStreamInTheSetOfStreamsToBeSnapshotted()
     {
         Assert.DoesNotContain(
-            await PersistenceManagement.GetStreamsToSnapshot(Bucket.Default, 1, CancellationToken.None).ToList(),
+            await PersistenceManagement.GetStreamsToSnapshot("default", 1, CancellationToken.None).ToList(),
             x => x.StreamId == _streamId);
     }
 
@@ -116,7 +116,7 @@ public partial class PersistenceEngineBehavior
         _streamId = Guid.NewGuid().ToString();
         _oldest = (await Persistence.CommitSingle(_streamId).ConfigureAwait(false))!;
         _oldest2 = (await Persistence.CommitNext(_oldest).ConfigureAwait(false))!;
-        await Snapshots.AddSnapshot(new Snapshot(Bucket.Default, _streamId, _oldest2.StreamRevision, SnapshotData))
+        await Snapshots.AddSnapshot(new Snapshot("default", _streamId, _oldest2.StreamRevision, SnapshotData))
             .ConfigureAwait(false);
     }
 
@@ -130,7 +130,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldFindTheStreamInTheSetOfStreamsToBeSnapshottedWhenWithinTheSnapshotThreshold()
     {
         var value = await PersistenceManagement
-            .GetStreamsToSnapshot(Bucket.Default, WithinThreshold, CancellationToken.None)
+            .GetStreamsToSnapshot("default", WithinThreshold, CancellationToken.None)
             .FirstOrDefault(x => x.StreamId == _streamId);
         Assert.NotNull(value);
     }
@@ -139,7 +139,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldNotFindTheStreamInTheSetOfStreamsToBeSnapshottedWhenOutsideTheSnapshotThreshold()
     {
         Assert.DoesNotContain(await PersistenceManagement
-            .GetStreamsToSnapshot(Bucket.Default, OverThreshold, CancellationToken.None)
+            .GetStreamsToSnapshot("default", OverThreshold, CancellationToken.None)
             .ToList(), x => x.StreamId == _streamId);
     }
 }

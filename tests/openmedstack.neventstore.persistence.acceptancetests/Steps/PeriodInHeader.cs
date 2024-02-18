@@ -13,7 +13,7 @@ public partial class PersistenceEngineBehavior
     {
         _streamId = Guid.NewGuid().ToString();
         var attempt = OptimisticEventStream.Create(
-            Bucket.Default,
+            "default",
             _streamId, NullLogger<OptimisticEventStream>.Instance);
         attempt.Add(new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }));
         attempt.Add("key.1", "value");
@@ -25,7 +25,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenGettingCommit()
     {
         _persisted = await Persistence
-            .Get(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None).First()
+            .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).First()
             .ConfigureAwait(false);
     }
 

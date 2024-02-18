@@ -1,5 +1,4 @@
 using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using TechTalk.SpecFlow;
 using Xunit;
 
@@ -18,7 +17,7 @@ public partial class PersistenceEngineBehavior
         var streamId = Guid.NewGuid().ToString();
         var attempt1 = streamId.BuildAttempt();
         await Persistence.Commit(attempt1);
-        _concurrentAttempt = await OptimisticEventStream.Create(Bucket.Default, streamId, Persistence);
+        _concurrentAttempt = await OptimisticEventStream.Create("default", streamId, Persistence);
         foreach (var header in attempt1.CommittedHeaders)
         {
             _concurrentAttempt.Add(header.Key, header.Value);
@@ -68,9 +67,9 @@ public partial class PersistenceEngineBehavior
         _secondAttempt = new CommitAttempt(
             commit.BucketId,
             commit.StreamId,
-            commit.StreamRevision + 1,
+            commit.StreamRevision,
             commit.CommitId,
-            commit.CommitSequence + 1,
+            commit.CommitSequence,
             commit.CommitStamp,
             commit.Headers,
             commit.Events.ToList());

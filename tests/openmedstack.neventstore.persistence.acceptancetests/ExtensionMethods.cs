@@ -48,7 +48,7 @@ public static class ExtensionMethods
         this string streamId,
         string? bucketId = null)
     {
-        bucketId ??= Bucket.Default;
+        bucketId ??= "default";
 
         var stream = OptimisticEventStream.Create(bucketId, streamId, NullLogger<OptimisticEventStream>.Instance);
         stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Test" }));

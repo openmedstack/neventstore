@@ -276,7 +276,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return ExecuteQuery(Query, cancellationToken).FirstOrDefault(cancellationToken);
     }
 
-    public virtual async Task<bool> AddSnapshot(ISnapshot snapshot)
+    public virtual async Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default)
     {
         _logger.LogDebug(PersistenceMessages.AddingSnapshot, snapshot.StreamId, snapshot.StreamRevision);
         var streamId = _streamIdHasher.GetHash(snapshot.StreamId);

@@ -1,7 +1,5 @@
 using Amazon;
 using Amazon.DynamoDBv2;
-using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
@@ -14,8 +12,8 @@ namespace OpenMedStack.NEventStore.DynamoDb.Tests;
 public class DynamoDbPersistenceEngineTests
 {
     private readonly AmazonDynamoDBClient _dbClient;
-    private readonly DynamoDBContext _context;
     private readonly DynamoDbPersistenceEngine _engine;
+    private readonly DynamoDbManagement _management;
 
     public DynamoDbPersistenceEngineTests()
     {
@@ -27,15 +25,17 @@ public class DynamoDbPersistenceEngineTests
                 ServiceURL = "http://localhost:8000"
             });
 
-        _context = new DynamoDBContext(_dbClient);
         _engine =
-            new DynamoDbPersistenceEngine(_context, new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance));
+            new DynamoDbPersistenceEngine(_dbClient,
+                new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+                NullLogger<DynamoDbPersistenceEngine>.Instance);
+        _management = new DynamoDbManagement(_dbClient);
     }
 
     [Fact]
     public async Task CanCommitStream()
     {
-        await CreateTable(_dbClient);
+        await _management.Initialize();
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
 
@@ -48,14 +48,55 @@ public class DynamoDbPersistenceEngineTests
     }
 
     [Fact]
+    public async Task WhenCommittingTwiceThenThrows()
+    {
+        await _management.Initialize();
+        var bucket = Guid.NewGuid().ToString("N");
+        var streamId = Guid.NewGuid().ToString("N");
+        var commitId = Guid.NewGuid();
+        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
+        stream.Add(new EventMessage(1));
+        stream.Add(new EventMessage(2));
+        _ = await _engine.Commit(stream, commitId);
+        await Assert.ThrowsAsync<DuplicateCommitException>(() => _ = _engine.Commit(stream, commitId));
+    }
+
+    [Fact]
+    public async Task WhenCommittingDuplicateCommitThenUpdatesStream()
+    {
+        await _management.Initialize();
+        var bucket = Guid.NewGuid().ToString("N");
+        var streamId = Guid.NewGuid().ToString("N");
+
+        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
+        stream.Add(new EventMessage(1));
+        stream.Add(new EventMessage(2));
+        var result = await _engine.Commit(stream);
+        stream.SetPersisted(result!.CommitSequence);
+        stream.Add(new EventMessage(3));
+        var stream2 = await OptimisticEventStream.Create(bucket, streamId, _engine, 0, int.MaxValue,
+            NullLogger<OptimisticEventStream>.Instance);
+        stream2.Add(new EventMessage(100));
+
+        await _engine.Commit(stream);
+        await _engine.Commit(stream2);
+
+        var finalStream = await OptimisticEventStream.Create(bucket, streamId, _engine, 0, int.MaxValue,
+            NullLogger<OptimisticEventStream>.Instance);
+
+        Assert.Equal(4, finalStream.StreamRevision);
+        Assert.Equal(3, finalStream.CommitSequence);
+    }
+
+    [Fact]
     public async Task CanCommitSnapshot()
     {
-        await CreateTable(_dbClient);
+        await _management.Initialize();
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
 
         var snapshot = new Snapshot(bucket, streamId, 1, new EventMessage(1));
-        var commitResult = await _engine.AddSnapshot(snapshot);
+        var commitResult = await _engine.AddSnapshot(snapshot, CancellationToken.None);
 
         Assert.True(commitResult);
     }
@@ -63,12 +104,12 @@ public class DynamoDbPersistenceEngineTests
     [Fact]
     public async Task CanLoadSnapshot()
     {
-        await CreateTable(_dbClient);
+        await _management.Initialize();
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
 
         var snapshot = new Snapshot(bucket, streamId, 1, new EventMessage(1));
-        var commitResult = await _engine.AddSnapshot(snapshot);
+        var commitResult = await _engine.AddSnapshot(snapshot, CancellationToken.None);
         Assert.True(commitResult);
 
         var reloaded = await _engine.GetSnapshot(bucket, streamId, 1, default);
@@ -76,14 +117,15 @@ public class DynamoDbPersistenceEngineTests
     }
 
     [Fact]
-    public async Task CanRetrieveAmongMany()
+    public async Task CanRetrieveStreamAmongMany()
     {
-        await CreateTable(_dbClient);
+        await _management.Initialize();
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
-        var streamId2 = Guid.NewGuid().ToString("N");
         var engine =
-            new DynamoDbPersistenceEngine(_context, new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance));
+            new DynamoDbPersistenceEngine(_dbClient,
+                new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+                NullLogger<DynamoDbPersistenceEngine>.Instance);
         var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
         stream.Add(new EventMessage(1));
         stream.Add(new EventMessage(2));
@@ -94,63 +136,16 @@ public class DynamoDbPersistenceEngineTests
         stream.SetPersisted(commitResult.CommitSequence);
         stream.Add(new EventMessage(3));
         await engine.Commit(stream);
-
-        var stream2 = OptimisticEventStream.Create(bucket, streamId2, NullLogger<OptimisticEventStream>.Instance);
-        stream2.Add(new EventMessage("a"));
-        await engine.Commit(stream2);
+        for (int i = 0; i < 100; i++)
+        {
+            var streamId2 = Guid.NewGuid().ToString("N");
+            var stream2 = OptimisticEventStream.Create(bucket, streamId2, NullLogger<OptimisticEventStream>.Instance);
+            stream2.Add(new EventMessage("a" + i));
+            await engine.Commit(stream2);
+        }
 
         var loaded = await engine.Get(bucket, streamId, 0, int.MaxValue, default).ToArray();
         Assert.Equal(2, loaded.Length);
-    }
-
-    private static async Task CreateTable(AmazonDynamoDBClient dbClient)
-    {
-        var tables = await dbClient.ListTablesAsync();
-
-        if (!tables.TableNames.Contains("commits"))
-        {
-            await dbClient.CreateTableAsync(new CreateTableRequest("commits",
-            [
-                new(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
-                new(nameof(DynamoDbCommit.CommitSequence), KeyType.RANGE)
-            ])
-            {
-                AttributeDefinitions =
-                [
-                    new AttributeDefinition(nameof(DynamoDbCommit.BucketAndStream), ScalarAttributeType.S),
-                    new AttributeDefinition(nameof(DynamoDbCommit.CommitSequence), ScalarAttributeType.N),
-                    new AttributeDefinition(nameof(DynamoDbCommit.StreamRevision), ScalarAttributeType.N)
-                ],
-                LocalSecondaryIndexes =
-                [
-                    new LocalSecondaryIndex
-                    {
-                        IndexName = "RevisionIndex",
-                        KeySchema =
-                        [
-                            new KeySchemaElement(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
-                            new KeySchemaElement(nameof(DynamoDbCommit.StreamRevision), KeyType.RANGE)
-                        ],
-                        Projection = new Projection { ProjectionType = ProjectionType.ALL }
-                    }
-                ],
-                ProvisionedThroughput = new ProvisionedThroughput(1, 1)
-            });
-        }
-
-        if (!tables.TableNames.Contains("snapshots"))
-        {
-            await dbClient.CreateTableAsync(new CreateTableRequest("snapshots",
-                [
-                    new(nameof(DynamoDbSnapshots.BucketAndStream), KeyType.HASH),
-                    new(nameof(DynamoDbSnapshots.StreamRevision), KeyType.RANGE)
-                ],
-                [
-                    new AttributeDefinition(nameof(DynamoDbSnapshots.BucketAndStream),
-                        ScalarAttributeType.S),
-                    new AttributeDefinition(nameof(DynamoDbSnapshots.StreamRevision), ScalarAttributeType.N)
-                ],
-                new ProvisionedThroughput(1, 1)));
-        }
+        Assert.Equal(3, loaded[1].StreamRevision);
     }
 }

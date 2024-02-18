@@ -6,24 +6,24 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    [When(@"purging all streams and commits")]
-    public async Task WhenPurgingAllStreamsAndCommits()
+    [When(@"purging all streams and commits in bucket (.+)")]
+    public async Task WhenPurgingAllStreamsAndCommits(string bucketId)
     {
-        await PersistenceManagement.Purge();
+        await PersistenceManagement.Purge(bucketId);
     }
 
-    [Then(@"should not find any commits stored")]
-    public async Task ThenShouldNotFindAnyCommitsStored()
+    [Then(@"should not find any commits stored in bucket (.+)")]
+    public async Task ThenShouldNotFindAnyCommitsStoredInBucket(string bucketId)
     {
-        var enumerable = PersistenceManagement.GetFrom(Bucket.Default, DateTimeOffset.MinValue);
+        var enumerable = PersistenceManagement.GetFrom(bucketId, 0, CancellationToken.None);
         Assert.Empty(await enumerable.ToList(CancellationToken.None));
     }
 
-    [Then(@"should not find any streams to snapshot")]
-    public async Task ThenShouldNotFindAnyStreamsToSnapshot()
+    [Then(@"should not find any streams to snapshot in bucket (.+)")]
+    public async Task ThenShouldNotFindAnyStreamsToSnapshotInBucket(string bucketId)
     {
         Assert.Empty(
-            await PersistenceManagement.GetStreamsToSnapshot(Bucket.Default, 0, CancellationToken.None).ToList());
+            await PersistenceManagement.GetStreamsToSnapshot(bucketId, 0, CancellationToken.None).ToList());
     }
 
     [When(@"the storage is disposed")]
@@ -55,7 +55,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should purge all commits stored in bucket (.+)")]
     public async Task ThenShouldPurgeAllCommitsStoredInBucket(string bucketId)
     {
-        var asyncEnumerable = PersistenceManagement.GetFrom(bucketId, DateTimeOffset.MinValue);
+        var asyncEnumerable = PersistenceManagement.GetFrom(bucketId, 0, CancellationToken.None);
         Assert.Equal(0, await asyncEnumerable.Count());
     }
 

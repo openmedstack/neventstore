@@ -13,6 +13,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Header has a name that contains a period
         Given a <type> persistence engine
@@ -25,6 +26,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: When a commit is successfully persisted
         Given a <type> persistence engine
@@ -56,6 +58,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Reading from a given revision to commit revision
         Given a <type> persistence engine
@@ -69,6 +72,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Committing a stream with the same sequence id
     Test to ensure the uniqueness of BucketId+StreamId+CommitSequence to avoid concurrency issues
@@ -82,6 +86,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Attempting to persist a commit twice
         Given a <type> persistence engine
@@ -119,6 +124,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Getting from checkpoint amount of commits exceeds page size
         Given a <type> persistence engine
@@ -303,10 +309,10 @@ I want to ensure that the persistence engine behaves as expected
     Scenario Outline: Purging all streams and commits
         Given a <type> persistence engine
         And the persistence is initialized
-        And a persisted event stream
-        When purging all streams and commits
-        Then should not find any commits stored
-        And should not find any streams to snapshot
+        And a persisted event stream in bucket A
+        When purging all streams and commits in bucket A
+        Then should not find any commits stored in bucket A
+        And should not find any streams to snapshot in bucket A
 
         Examples:
           | type      |
@@ -317,7 +323,8 @@ I want to ensure that the persistence engine behaves as expected
         Given a <type> persistence engine
         And the persistence is initialized
         And event streams persisted in different buckets
-        When purging all streams and commits
+        When purging all streams and commits in bucket A
+        And purging all streams and commits in bucket B
         Then should purge all commits stored in bucket A
         And should purge all commits stored in bucket B
         And should purge all streams to snapshot in bucket A
@@ -339,6 +346,7 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
 
     Scenario Outline: Large payload
         Given a <type> persistence engine

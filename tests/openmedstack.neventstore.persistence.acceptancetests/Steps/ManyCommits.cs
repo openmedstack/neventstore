@@ -21,7 +21,7 @@ public partial class PersistenceEngineBehavior
     [When(@"loading all committed events")]
     public async Task WhenLoadingAllCommittedEvents()
     {
-        _loaded = await Persistence.Get(Bucket.Default, _streamId, 0, int.MaxValue, CancellationToken.None)
+        _loaded = await Persistence.Get("default", _streamId, 0, int.MaxValue, CancellationToken.None)
             .ToArray()
             .ConfigureAwait(false);
     }

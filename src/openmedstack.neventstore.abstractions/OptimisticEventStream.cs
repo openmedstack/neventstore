@@ -83,7 +83,7 @@ public sealed class OptimisticEventStream : IEventStream
 
     public IReadOnlyCollection<EventMessage> CommittedEvents
     {
-        get { return _committed.ToList(); }
+        get { return _committed.ToImmutableArray(); }
     }
 
     public IReadOnlyDictionary<string, object> CommittedHeaders
@@ -93,7 +93,7 @@ public sealed class OptimisticEventStream : IEventStream
 
     public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
-        get { return _events.ToList(); }
+        get { return _events.ToImmutableArray(); }
     }
 
     public IReadOnlyDictionary<string, object> UncommittedHeaders

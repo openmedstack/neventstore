@@ -15,7 +15,7 @@ internal class NesJsonSerializer : ISerialize
     {
         Formatting = Formatting.None, DateFormatHandling = DateFormatHandling.IsoDateFormat,
         DateParseHandling = DateParseHandling.DateTimeOffset, FloatFormatHandling = FloatFormatHandling.String,
-        TypeNameHandling = TypeNameHandling.Auto, MetadataPropertyHandling = MetadataPropertyHandling.Default,
+        TypeNameHandling = TypeNameHandling.Objects, MetadataPropertyHandling = MetadataPropertyHandling.Default,
         MissingMemberHandling = MissingMemberHandling.Ignore
     };
 

@@ -19,7 +19,7 @@ public interface IEventStream
     string StreamId { get; }
 
     /// <summary>
-    ///     Gets the value which indiciates the most recent committed revision of event stream.
+    ///     Gets the value which indicates the most recent committed revision of event stream.
     /// </summary>
     int StreamRevision { get; }
 
