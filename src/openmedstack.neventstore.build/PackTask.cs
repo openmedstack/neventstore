@@ -40,5 +40,8 @@ public sealed class PackTask : FrostingTask<BuildContext>
         context.DotNetPack(
             "./src/openmedstack.neventstore.postgresclient/openmedstack.neventstore.postgresclient.csproj",
             packSettings);
+        context.DotNetPack(
+            "./src/openmedstack.neventstore.dynamodb/openmedstack.neventstore.dynamodb.csproj",
+            packSettings);
     }
 }
