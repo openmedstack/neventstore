@@ -3,11 +3,16 @@
     <Import Project="..\..\shared.proj"/>
     <PropertyGroup>
         <RootNamespace>OpenMedStack.NEventStore.DynamoDbClient</RootNamespace>
+        <PackageTags>OpenMedStack Architecture EventStore DynamoDB Streams</PackageTags>
+        <Description>NEventStore for OpenMedStack based applications.</Description>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.301.14" />
         <PackageReference Include="openmedstack" Version="2.1.1" />
-        <PackageReference Include="openmedstack.neventstore.abstractions" Version="1.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj" />
     </ItemGroup>
 </Project>

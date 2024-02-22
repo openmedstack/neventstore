@@ -6,22 +6,16 @@ using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.DynamoDbClient;
 
-public sealed class DelegateStreamClient : StreamClient
+public sealed class DelegateStreamClient(
+    AWSCredentials credentials,
+    AmazonDynamoDBStreamsConfig config,
+    Func<EventMessage, CancellationToken, Task> handler,
+    ISerialize serializer)
+    : StreamClient(credentials, config, serializer)
 {
-    private readonly Func<EventMessage, CancellationToken, Task> _handler;
-
-    public DelegateStreamClient(
-        AWSCredentials credentials,
-        AmazonDynamoDBStreamsConfig config,
-        Func<EventMessage, CancellationToken, Task> handler,
-        ISerialize serializer) : base(credentials, config, serializer)
-    {
-        _handler = handler;
-    }
-
     protected override async Task Handle(EventMessage message, CancellationToken cancellationToken)
     {
-        await _handler(message, cancellationToken);
+        await handler(message, cancellationToken);
     }
 }
 

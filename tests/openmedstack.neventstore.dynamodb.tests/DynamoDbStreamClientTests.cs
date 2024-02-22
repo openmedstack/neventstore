@@ -2,7 +2,6 @@ using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.Runtime;
 using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
 using OpenMedStack.Events;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.DynamoDbClient;
@@ -27,7 +26,8 @@ public class DynamoDbStreamClientTests : IDisposable
             {
                 AllowAutoRedirect = true,
                 RegionEndpoint = RegionEndpoint.EUCentral1,
-                ServiceURL = "http://localhost:8000"
+                ServiceURL = "http://localhost:8000",
+                UseHttp = true
             });
         _management = new DynamoDbManagement(_dbClient);
         _engine = new DynamoDbPersistenceEngine(_dbClient,
