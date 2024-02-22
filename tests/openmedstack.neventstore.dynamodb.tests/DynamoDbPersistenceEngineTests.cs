@@ -21,7 +21,8 @@ public class DynamoDbPersistenceEngineTests
             new BasicAWSCredentials("blah", "blah"),
             new AmazonDynamoDBConfig
             {
-                AllowAutoRedirect = true, RegionEndpoint = RegionEndpoint.EUCentral1,
+                AllowAutoRedirect = true,
+                RegionEndpoint = RegionEndpoint.EUCentral1,
                 ServiceURL = "http://localhost:8000"
             });
 

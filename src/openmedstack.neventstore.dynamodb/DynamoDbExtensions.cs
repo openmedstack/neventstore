@@ -4,7 +4,6 @@ using System.Reflection;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
-using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.DynamoDb;
 

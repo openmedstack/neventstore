@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\shared.proj"/>
+    <PropertyGroup>
+        <RootNamespace>OpenMedStack.NEventStore.DynamoDbClient</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.301.14" />
+        <PackageReference Include="openmedstack" Version="2.1.1" />
+        <PackageReference Include="openmedstack.neventstore.abstractions" Version="1.9.0" />
+    </ItemGroup>
+</Project>

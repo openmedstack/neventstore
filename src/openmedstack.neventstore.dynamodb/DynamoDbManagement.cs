@@ -49,7 +49,7 @@ public class DynamoDbManagement : IManagePersistence
                 ],
                 TableClass = TableClass.STANDARD,
                 StreamSpecification = new StreamSpecification
-                    { StreamEnabled = true, StreamViewType = StreamViewType.KEYS_ONLY },
+                    { StreamEnabled = true, StreamViewType = StreamViewType.NEW_IMAGE },
                 ProvisionedThroughput = new ProvisionedThroughput(1, 1)
             }).ConfigureAwait(false);
         }

@@ -95,11 +95,11 @@ public abstract class PgPublicationClient : IAsyncDisposable
             }
             catch (PostgresException p)
             {
-                _logger.LogError(p, "{error}", p.Message);
+                _logger.LogError(p, "{Error}", p.Message);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "{error}", e.Message);
+                _logger.LogError(e, "{Error}", e.Message);
             }
         }, stoppingToken);
     }
@@ -146,7 +146,7 @@ public abstract class PgPublicationClient : IAsyncDisposable
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "{error}", e.Message);
+            _logger.LogError(e, "{Error}", e.Message);
         }
     }
 
