@@ -1,28 +1,25 @@
 using System.Net;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Microsoft.Extensions.Logging;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.DynamoDb;
 
-public class DynamoDbManagement : IManagePersistence
+public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManagement> logger) : IManagePersistence
 {
     private const string CommitsTableName = "commits";
     private const string SnapshotsTableName = "snapshots";
-    private readonly IAmazonDynamoDB _dbClient;
-
-    public DynamoDbManagement(IAmazonDynamoDB dbClient)
-    {
-        _dbClient = dbClient;
-    }
 
     public async Task Initialize()
     {
-        var tables = await _dbClient.ListTablesAsync().ConfigureAwait(false);
+        var tables = await dbClient.ListTablesAsync().ConfigureAwait(false);
+        logger.LogInformation("Checking for existing tables among {ExistingTables}",
+            string.Join(", ", tables.TableNames));
 
         if (!tables.TableNames.Contains(CommitsTableName))
         {
-            await _dbClient.CreateTableAsync(new CreateTableRequest(CommitsTableName,
+            var createTableRequest = new CreateTableRequest(CommitsTableName,
             [
                 new(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
                 new(nameof(DynamoDbCommit.CommitSequence), KeyType.RANGE)
@@ -51,12 +48,22 @@ public class DynamoDbManagement : IManagePersistence
                 StreamSpecification = new StreamSpecification
                     { StreamEnabled = true, StreamViewType = StreamViewType.NEW_IMAGE },
                 ProvisionedThroughput = new ProvisionedThroughput(1, 1)
-            }).ConfigureAwait(false);
+            };
+            try
+            {
+                await dbClient.CreateTableAsync(createTableRequest).ConfigureAwait(false);
+            }
+            catch (ResourceInUseException e)
+            {
+                logger.LogError(e,
+                    "Failed to create table {TableName}. Name not found among {ExistingTables} before creating",
+                    CommitsTableName, string.Join(", ", tables.TableNames));
+            }
         }
 
         if (!tables.TableNames.Contains(SnapshotsTableName))
         {
-            await _dbClient.CreateTableAsync(new CreateTableRequest(SnapshotsTableName,
+            var createTableRequest = new CreateTableRequest(SnapshotsTableName,
                 [
                     new(nameof(DynamoDbSnapshots.BucketAndStream), KeyType.HASH),
                     new(nameof(DynamoDbSnapshots.StreamRevision), KeyType.RANGE)
@@ -66,7 +73,17 @@ public class DynamoDbManagement : IManagePersistence
                         ScalarAttributeType.S),
                     new AttributeDefinition(nameof(DynamoDbSnapshots.StreamRevision), ScalarAttributeType.N)
                 ],
-                new ProvisionedThroughput(1, 1))).ConfigureAwait(false);
+                new ProvisionedThroughput(1, 1));
+            try
+            {
+                await dbClient.CreateTableAsync(createTableRequest).ConfigureAwait(false);
+            }
+            catch (ResourceInUseException e)
+            {
+                logger.LogError(e,
+                    "Failed to create table {TableName}. Name not found among {ExistingTables} before creating",
+                    SnapshotsTableName, string.Join(", ", tables.TableNames));
+            }
         }
     }
 
@@ -90,16 +107,17 @@ public class DynamoDbManagement : IManagePersistence
 
     public async Task<bool> Drop()
     {
+        logger.LogInformation("Dropping tables {Commits} and {Snapshots}", CommitsTableName, SnapshotsTableName);
         var responses = await Task.WhenAll(
-            _dbClient.DeleteTableAsync(CommitsTableName),
-            _dbClient.DeleteTableAsync(SnapshotsTableName)).ConfigureAwait(false);
+            dbClient.DeleteTableAsync(CommitsTableName),
+            dbClient.DeleteTableAsync(SnapshotsTableName)).ConfigureAwait(false);
         return responses.All(response => response.HttpStatusCode == HttpStatusCode.OK);
     }
 
     public async Task<bool> DeleteStream(string bucketId, string streamId)
     {
         var pk = $"{bucketId}{streamId}";
-        var items = await _dbClient.QueryAsync(new QueryRequest
+        var items = await dbClient.QueryAsync(new QueryRequest
         {
             TableName = CommitsTableName,
             KeyConditionExpression = $"{nameof(DynamoDbCommit.BucketAndStream)} = :pk",
@@ -108,7 +126,7 @@ public class DynamoDbManagement : IManagePersistence
             Select = Select.SPECIFIC_ATTRIBUTES,
             ProjectionExpression = nameof(DynamoDbCommit.CommitSequence)
         }).ConfigureAwait(false);
-        var response = await _dbClient.BatchWriteItemAsync(new Dictionary<string, List<WriteRequest>>
+        var response = await dbClient.BatchWriteItemAsync(new Dictionary<string, List<WriteRequest>>
         {
             [CommitsTableName] = items.Items.Select(item => new WriteRequest
             {

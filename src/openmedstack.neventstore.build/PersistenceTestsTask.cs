@@ -4,7 +4,7 @@ using Cake.Frosting;
 namespace OpenMedStack.NEventStore.Build;
 
 [TaskName("Persistence-Tests")]
-[IsDependentOn(typeof(TestsTask))]
+[IsDependentOn(typeof(DynamoDbTestsTask))]
 public sealed class PersistenceTestsTask : DockerTestTask
 {
     protected override string[] DockerComposeFiles { get; } =

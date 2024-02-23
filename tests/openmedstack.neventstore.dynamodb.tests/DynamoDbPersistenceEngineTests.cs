@@ -9,7 +9,7 @@ using Xunit;
 
 namespace OpenMedStack.NEventStore.DynamoDb.Tests;
 
-public class DynamoDbPersistenceEngineTests
+public class DynamoDbPersistenceEngineTests : IAsyncDisposable
 {
     private readonly AmazonDynamoDBClient _dbClient;
     private readonly DynamoDbPersistenceEngine _engine;
@@ -30,7 +30,7 @@ public class DynamoDbPersistenceEngineTests
             new DynamoDbPersistenceEngine(_dbClient,
                 new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
                 NullLogger<DynamoDbPersistenceEngine>.Instance);
-        _management = new DynamoDbManagement(_dbClient);
+        _management = new DynamoDbManagement(_dbClient, NullLogger<DynamoDbManagement>.Instance);
     }
 
     [Fact]
@@ -148,5 +148,22 @@ public class DynamoDbPersistenceEngineTests
         var loaded = await engine.Get(bucket, streamId, 0, int.MaxValue, default).ToArray();
         Assert.Equal(2, loaded.Length);
         Assert.Equal(3, loaded[1].StreamRevision);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _management.Drop();
+        await CastAndDispose(_dbClient);
+        await CastAndDispose(_engine);
+
+        return;
+
+        static async ValueTask CastAndDispose(IDisposable resource)
+        {
+            if (resource is IAsyncDisposable resourceAsyncDisposable)
+                await resourceAsyncDisposable.DisposeAsync();
+            else
+                resource.Dispose();
+        }
     }
 }

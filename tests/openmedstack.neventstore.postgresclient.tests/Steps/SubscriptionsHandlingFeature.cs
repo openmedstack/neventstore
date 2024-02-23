@@ -106,6 +106,8 @@ public class SubscriptionsHandlingFeature : IDisposable
         catch (InvalidOperationException)
         {
         }
+
+        GC.SuppressFinalize(this);
     }
 }
 

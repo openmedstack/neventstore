@@ -93,7 +93,7 @@ public partial class PersistenceEngineBehavior
             client,
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
             NullLogger<DynamoDbPersistenceEngine>.Instance);
-        var management = new DynamoDbManagement(client);
+        var management = new DynamoDbManagement(client, NullLogger<DynamoDbManagement>.Instance);
         return (engine, engine, management);
     }
 }
