@@ -1,7 +1,6 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
-using OpenMedStack.Events;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.DynamoDbClient;
@@ -28,7 +27,8 @@ public abstract class StreamClient
             await _client.DescribeStreamAsync(
                 new DescribeStreamRequest
                     { StreamArn = streamArn }, cancellationToken);
-        foreach (var shard in describeStreamResponse.StreamDescription.Shards)
+        foreach (var shard in describeStreamResponse.StreamDescription.Shards
+            .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
             var shardIterator = await _client.GetShardIteratorAsync(new GetShardIteratorRequest
             {
@@ -41,18 +41,14 @@ public abstract class StreamClient
                 ShardIterator = shardIterator.ShardIterator
             }, cancellationToken);
             var messages = from record in records.Records
-                           let memoryStream = record.Dynamodb.NewImage["Events"].B
-                           let events = _serializer.Deserialize<EventMessage[]>(memoryStream)
-                           where events != null
-                           from @event in events
-                           select @event;
+                           let image = record.Dynamodb.NewImage
+                           select image.ToCommit(_serializer);
             foreach (var message in messages)
             {
-                cancellationToken.ThrowIfCancellationRequested();
                 await Handle(message, cancellationToken);
             }
         }
     }
 
-    protected abstract Task Handle(EventMessage message, CancellationToken cancellationToken);
+    protected abstract Task Handle(ICommit message, CancellationToken cancellationToken);
 }

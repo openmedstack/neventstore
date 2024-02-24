@@ -18,7 +18,6 @@ internal class DynamoDbCommit
 
     public static DynamoDbCommit FromStream(IEventStream eventStream, Guid? commitId, ISerialize serializer)
     {
-        ;
         return new DynamoDbCommit
         {
             BucketAndStream = $"{eventStream.BucketId}{eventStream.StreamId}",

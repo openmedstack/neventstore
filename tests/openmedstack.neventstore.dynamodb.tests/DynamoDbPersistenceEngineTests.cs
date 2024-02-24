@@ -155,6 +155,7 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         await _management.Drop();
         await CastAndDispose(_dbClient);
         await CastAndDispose(_engine);
+        GC.SuppressFinalize(this);
 
         return;
 

@@ -58,16 +58,7 @@ public class DynamoDbPersistenceEngine(
         foreach (var commit in commits
             .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
-            yield return new Commit(
-                commit["BucketId"].S,
-                commit["StreamId"].S,
-                int.Parse(commit["StreamRevision"].N),
-                Guid.Parse(commit[CommitId].S),
-                int.Parse(commit["CommitSequence"].N),
-                DateTimeOffset.FromUnixTimeSeconds(long.Parse(commit["CommitStamp"].N)),
-                0,
-                serializer.Deserialize<Dictionary<string, object>>(commit["Headers"].B),
-                serializer.Deserialize<List<EventMessage>>(commit["Events"].B));
+            yield return commit.ToCommit(serializer);
         }
     }
 

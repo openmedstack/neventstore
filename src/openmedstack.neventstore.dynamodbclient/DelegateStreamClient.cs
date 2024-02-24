@@ -7,11 +7,11 @@ namespace OpenMedStack.NEventStore.DynamoDbClient;
 public sealed class DelegateStreamClient(
     AWSCredentials credentials,
     AmazonDynamoDBStreamsConfig config,
-    Func<EventMessage, CancellationToken, Task> handler,
+    Func<ICommit, CancellationToken, Task> handler,
     ISerialize serializer)
     : StreamClient(credentials, config, serializer)
 {
-    protected override async Task Handle(EventMessage message, CancellationToken cancellationToken)
+    protected override async Task Handle(ICommit message, CancellationToken cancellationToken)
     {
         await handler(message, cancellationToken);
     }
