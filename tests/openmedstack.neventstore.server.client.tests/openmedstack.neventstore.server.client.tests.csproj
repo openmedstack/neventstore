@@ -3,6 +3,7 @@
     <Import Project="..\..\shared.proj" />
     <PropertyGroup>
         <RootNamespace>OpenMedStack.NEventStore.Server.Tests</RootNamespace>
+        <IsTrimmable>false</IsTrimmable>
     </PropertyGroup>
 
     <ItemGroup>

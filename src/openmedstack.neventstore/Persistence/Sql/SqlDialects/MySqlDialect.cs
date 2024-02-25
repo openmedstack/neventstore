@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 
 using System;
@@ -35,9 +37,11 @@ public class MySqlDialect : CommonSqlDialect
         return value;
     }
 
+    [UnconditionalSuppressMessage("Missing type annotation.", "IL2075")]
     public override bool IsDuplicate(Exception exception)
     {
-        var property = exception.GetType().GetProperty("Number")!;
+        var type = exception.GetType();
+        var property = type.GetProperty("Number")!;
         return UniqueKeyViolation == (int)property.GetValue(exception, null)!;
     }
 }
