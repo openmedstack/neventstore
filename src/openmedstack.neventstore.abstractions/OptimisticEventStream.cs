@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace OpenMedStack.NEventStore.Abstractions;
 
+/// <summary>
+/// Defines the default implementation of the <see cref="IEventStream"/> interface.
+/// </summary>
 [SuppressMessage(
     "Microsoft.Naming",
     "CA1711:IdentifiersShouldNotHaveIncorrectSuffix",
@@ -17,6 +20,12 @@ public sealed class OptimisticEventStream : IEventStream
     private readonly Dictionary<string, object> _uncommittedHeaders = new();
     private readonly Dictionary<string, object> _committedHeaders = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OptimisticEventStream"/> class.
+    /// </summary>
+    /// <param name="bucketId">The id of the tenant.</param>
+    /// <param name="streamId">The id of the stream.</param>
+    /// <param name="logger">The <see cref="ILogger{T}"/> to use.</param>
     private OptimisticEventStream(
         string bucketId,
         string streamId,
@@ -27,12 +36,31 @@ public sealed class OptimisticEventStream : IEventStream
         _logger = logger;
     }
 
+    /// <summary>
+    /// Creates a new empty event stream.
+    /// </summary>
+    /// <param name="bucketId">The bucket id.</param>
+    /// <param name="streamId">The stream id.</param>
+    /// <param name="logger">The <see cref="ILogger{TCategoryName}"/> to use.</param>
+    /// <returns>An empty event stream at version 0.</returns>
     public static OptimisticEventStream Create(
         string bucketId,
         string streamId,
         ILogger<OptimisticEventStream>? logger = null) =>
         new(bucketId, streamId, logger ?? NullLogger<OptimisticEventStream>.Instance);
 
+    /// <summary>
+    /// Loads an event stream from the event storage.
+    /// </summary>
+    /// <param name="bucketId">The bucket id.</param>
+    /// <param name="streamId">The stream id.</param>
+    /// <param name="persistence">The event storage.</param>
+    /// <param name="minRevision">The minimum revision to include.</param>
+    /// <param name="maxRevision">The maximum revision to include.</param>
+    /// <param name="logger">The <see cref="ILogger{TCategoryName}"/> to use.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for the async operation.</param>
+    /// <returns>An event stream with the commits within the requested range.</returns>
+    /// <exception cref="StreamNotFoundException">Thrown if the stream does not exist in the storage.</exception>
     public static async Task<OptimisticEventStream> Create(
         string bucketId,
         string streamId,
@@ -55,6 +83,15 @@ public sealed class OptimisticEventStream : IEventStream
         return instance;
     }
 
+    /// <summary>
+    /// Creates an event stream from the snapshot and the event storage.
+    /// </summary>
+    /// <param name="snapshot">The snapshot to build the stream from.</param>
+    /// <param name="persistence">The event storage.</param>
+    /// <param name="maxRevision">The maximum revision to include.</param>
+    /// <param name="logger">The <see cref="ILogger{TCategoryName}"/> to use.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for the async operation.</param>
+    /// <returns>An event stream based on the loaded snapshot.</returns>
     public static async Task<OptimisticEventStream> Create(
         ISnapshot snapshot,
         ICommitEvents persistence,
@@ -76,31 +113,62 @@ public sealed class OptimisticEventStream : IEventStream
         return instance;
     }
 
+    /// <summary>
+    /// Gets the bucket id.
+    /// </summary>
     public string BucketId { get; }
+
+    /// <summary>
+    /// Gets the stream id.
+    /// </summary>
     public string StreamId { get; }
+
+    /// <summary>
+    /// Gets the stream revision.
+    /// </summary>
     public int StreamRevision { get; private set; }
+
+    /// <summary>
+    /// Gets the commit sequence.
+    /// </summary>
     public int CommitSequence { get; private set; }
 
+    /// <summary>
+    /// Gets the committed events.
+    /// </summary>
     public IReadOnlyCollection<EventMessage> CommittedEvents
     {
         get { return _committed.ToImmutableArray(); }
     }
 
+    /// <summary>
+    /// Gets the committed headers.
+    /// </summary>
     public IReadOnlyDictionary<string, object> CommittedHeaders
     {
         get { return _committedHeaders; }
     }
 
+    /// <summary>
+    /// Gets the uncommitted events.
+    /// </summary>
     public IReadOnlyCollection<EventMessage> UncommittedEvents
     {
         get { return _events.ToImmutableArray(); }
     }
 
+    /// <summary>
+    /// Gets the uncommitted headers.
+    /// </summary>
     public IReadOnlyDictionary<string, object> UncommittedHeaders
     {
         get { return _uncommittedHeaders; }
     }
 
+    /// <summary>
+    /// Adds the event messages provided to the session to be tracked.
+    /// </summary>
+    /// <param name="uncommittedEvent">The <see cref="EventMessage"/> to add.</param>
     public void Add(EventMessage uncommittedEvent)
     {
         _logger.LogTrace(Resources.AppendingUncommittedToStream, uncommittedEvent.Body.GetType(), StreamId);
@@ -108,6 +176,11 @@ public sealed class OptimisticEventStream : IEventStream
         StreamRevision++;
     }
 
+    /// <summary>
+    /// Adds the key value pair to the uncommitted headers.
+    /// </summary>
+    /// <param name="key">The header key.</param>
+    /// <param name="value">The header value.</param>
     public void Add(string key, object value)
     {
         _uncommittedHeaders[key] = value;
@@ -126,6 +199,11 @@ public sealed class OptimisticEventStream : IEventStream
         ClearChanges();
     }
 
+    /// <summary>
+    /// Updates the event stream with the events contained in the event storage.
+    /// </summary>
+    /// <param name="commitEvents">The reference to the <see cref="ICommitEvents">event storage</see>.</param>
+    /// <param name="cancellationToken"></param>
     public async Task Update(ICommitEvents commitEvents, CancellationToken cancellationToken = default)
     {
         var revision = StreamRevision - UncommittedEvents.Count;
@@ -140,6 +218,9 @@ public sealed class OptimisticEventStream : IEventStream
         }
     }
 
+    /// <summary>
+    /// Removes all uncommitted events and headers from the stream.
+    /// </summary>
     internal void ClearChanges()
     {
         _logger.LogTrace(Resources.ClearingUncommittedChanges, StreamId);

@@ -33,3 +33,17 @@ public interface ICommitEvents : IDisposable
     /// <exception cref="StorageUnavailableException" />
     Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId = null, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Defines the commit dispatcher interface.
+/// </summary>
+public interface ICommitDispatcher : IDisposable
+{
+    /// <summary>
+    /// Dispatches the commit to the appropriate handlers.
+    /// </summary>
+    /// <param name="commit">The <see cref="ICommit"/> to dispatch.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation.</param>
+    /// <returns></returns>
+    Task<HandlingResult> Dispatch(ICommit commit, CancellationToken cancellationToken);
+}

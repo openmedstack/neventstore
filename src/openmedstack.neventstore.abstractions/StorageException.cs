@@ -10,7 +10,7 @@ public class StorageException : Exception
     /// <summary>
     ///     Initializes a new instance of the StorageException class.
     /// </summary>
-    public StorageException()
+    protected StorageException()
     { }
 
     /// <summary>

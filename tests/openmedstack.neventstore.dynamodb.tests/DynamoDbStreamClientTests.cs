@@ -45,10 +45,11 @@ public class DynamoDbStreamClientTests : IAsyncDisposable
                 UseHttp = true
             },
             Handle,
-            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance));
+            new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
+            logger.CreateLogger<DelegateStreamClient>());
     }
 
-    private Task Handle(ICommit commit, CancellationToken cancellationToken)
+    private Task<HandlingResult> Handle(ICommit commit, CancellationToken cancellationToken)
     {
         var message = commit.Events.FirstOrDefault();
         if (message?.Body is BaseEvent)
@@ -56,7 +57,7 @@ public class DynamoDbStreamClientTests : IAsyncDisposable
             _resetEvent.Set();
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(HandlingResult.MoveToNext);
     }
 
     [Fact]

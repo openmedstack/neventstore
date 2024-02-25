@@ -6,7 +6,10 @@ using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-internal class NesJsonSerializer : ISerialize
+/// <summary>
+/// The default JSON serializer for the NEventStore.
+/// </summary>
+public class NesJsonSerializer : ISerialize
 {
     private readonly ILogger<NesJsonSerializer> _logger;
     private readonly JsonSerializer _jsonSerializer;
@@ -19,12 +22,17 @@ internal class NesJsonSerializer : ISerialize
         MissingMemberHandling = MissingMemberHandling.Ignore
     };
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NesJsonSerializer"/> class.
+    /// </summary>
+    /// <param name="logger">The <see cref="ILogger{TCategoryName}"/> to use.</param>
     public NesJsonSerializer(ILogger<NesJsonSerializer> logger)
     {
         _logger = logger;
         _jsonSerializer = JsonSerializer.Create(_serializerOptions);
     }
 
+    /// <inheritdoc />
     public virtual void Serialize<T>(Stream output, T graph)
     {
         _logger.LogTrace(Messages.SerializingGraph, typeof(T));
@@ -33,6 +41,7 @@ internal class NesJsonSerializer : ISerialize
         streamWriter.Flush();
     }
 
+    /// <inheritdoc />
     public virtual T? Deserialize<T>(Stream input)
     {
         _logger.LogTrace(Messages.DeserializingStream, typeof(T));
@@ -41,6 +50,7 @@ internal class NesJsonSerializer : ISerialize
         return _jsonSerializer.Deserialize<T>(jsonReader);
     }
 
+    /// <inheritdoc />
     public T? Deserialize<T>(byte[] input)
     {
         _logger.LogTrace(Messages.DeserializingStream, typeof(T));
