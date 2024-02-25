@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Reflection;
 using Amazon.DynamoDBv2;
@@ -25,7 +26,8 @@ internal static class DynamoDbExtensions
             serializer.Deserialize<List<EventMessage>>(commit["Events"].B));
     }
 
-    public static async Task<bool> Save<T>(
+    public static async Task<bool>
+        Save<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(
         this IAmazonDynamoDB db,
         T item,
         bool overwriteExisting = false,

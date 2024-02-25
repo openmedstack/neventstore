@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <Version>1.9.2</Version>
+        <Version>2.0.0</Version>
         <TargetFramework>net8.0</TargetFramework>
         <Authors>Jacob Reimers</Authors>
         <Company>Reimers.dk</Company>
@@ -13,10 +13,12 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <langVersion>latest</langVersion>
+        <LangVersion>latest</LangVersion>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningsAsErrors/>
         <WarningsNotAsErrors>618;1701</WarningsNotAsErrors>
+        <IsTrimmable>true</IsTrimmable>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <None Include="../../README.md" Pack="true" PackagePath="/"/>
