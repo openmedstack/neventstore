@@ -47,11 +47,6 @@
 			<AutoGen>True</AutoGen>
 			<DependentUpon>MySqlStatements.resx</DependentUpon>
 		</Compile>
-		<Compile Update="Persistence\Sql\SqlDialects\OracleNativeStatements.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>OracleNativeStatements.resx</DependentUpon>
-		</Compile>
 		<Compile Update="Persistence\Sql\SqlDialects\PostgreSqlStatements.Designer.cs">
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
@@ -81,10 +76,6 @@
 		<EmbeddedResource Update="Persistence\Sql\SqlDialects\MySqlStatements.resx">
 			<Generator>ResXFileCodeGenerator</Generator>
 			<LastGenOutput>MySqlStatements.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
-		<EmbeddedResource Update="Persistence\Sql\SqlDialects\OracleNativeStatements.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>OracleNativeStatements.Designer.cs</LastGenOutput>
 		</EmbeddedResource>
 		<EmbeddedResource Update="Persistence\Sql\SqlDialects\PostgreSqlStatements.resx">
 			<Generator>ResXFileCodeGenerator</Generator>
