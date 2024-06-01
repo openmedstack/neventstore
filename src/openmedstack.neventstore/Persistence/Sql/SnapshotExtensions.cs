@@ -6,7 +6,6 @@ namespace OpenMedStack.NEventStore.Persistence.Sql;
 using System;
 using System.Data;
 using Microsoft.Extensions.Logging;
-using NEventStore;
 
 internal static class SnapshotExtensions
 {

@@ -1,4 +1,3 @@
-using Google.Protobuf;
 using Newtonsoft.Json;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Grpc;

@@ -32,9 +32,14 @@ public class EventStoreController : Controller
     [HttpPost("/commit")]
     public async Task<ICommit?> Commit([FromBody] CommitAttempt attempt, CancellationToken cancellationToken)
     {
-        var stream = await OptimisticEventStream.Create(attempt.BucketId, attempt.StreamId, _persistence, 0,
+        var stream = await OptimisticEventStream.Create(
+            attempt.BucketId,
+            attempt.StreamId,
+            _persistence,
+            0,
             attempt.StreamRevision,
-            NullLogger<OptimisticEventStream>.Instance, cancellationToken).ConfigureAwait(false);
+            NullLogger<OptimisticEventStream>.Instance,
+            cancellationToken).ConfigureAwait(false);
         foreach (var eventMessage in attempt.Events)
         {
             stream.Add(eventMessage);

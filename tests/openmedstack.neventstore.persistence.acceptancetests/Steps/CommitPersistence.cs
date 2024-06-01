@@ -1,5 +1,4 @@
 using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using TechTalk.SpecFlow;
 using Xunit;
 

@@ -1,5 +1,4 @@
 ﻿using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Persistence.AcceptanceTests;
 
 namespace OpenMedStack.NEventStore.Tests.Persistence.InMemory;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
-using NEventStore;
 using NEventStore.Persistence.AcceptanceTests.BDD;
 using NEventStore.Persistence.InMemory;
 using Xunit;

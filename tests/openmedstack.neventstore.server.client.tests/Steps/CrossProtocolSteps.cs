@@ -4,7 +4,6 @@ using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.GrpcClient;
 using OpenMedStack.NEventStore.HttpClient;
 using TechTalk.SpecFlow;
-using Xunit;
 
 namespace OpenMedStack.NEventStore.Server.Tests.Steps;
 

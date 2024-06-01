@@ -5,7 +5,6 @@ namespace OpenMedStack.NEventStore.Tests;
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
 using NEventStore;
 using NEventStore.Persistence.AcceptanceTests;
 using NEventStore.Persistence.AcceptanceTests.BDD;

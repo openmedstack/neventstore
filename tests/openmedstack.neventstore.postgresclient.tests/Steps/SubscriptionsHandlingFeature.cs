@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
-using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Persistence.Sql;
 using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 using OpenMedStack.NEventStore.Serialization;

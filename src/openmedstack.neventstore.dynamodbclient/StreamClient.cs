@@ -28,12 +28,12 @@ public abstract class StreamClient(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to use for the async operation.</param>
     public async Task Subscribe(CancellationToken cancellationToken = default)
     {
-        var streams = await _client.ListStreamsAsync(cancellationToken);
+        var streams = await _client.ListStreamsAsync(cancellationToken).ConfigureAwait(false);
         var streamArn = streams.Streams.First(x => x.TableName == "commits").StreamArn;
         var describeStreamResponse =
             await _client.DescribeStreamAsync(
                 new DescribeStreamRequest
-                    { StreamArn = streamArn }, cancellationToken);
+                    { StreamArn = streamArn }, cancellationToken).ConfigureAwait(false);
         foreach (var shard in describeStreamResponse.StreamDescription.Shards
             .TakeWhile(_ => !_stopped))
         {
@@ -42,7 +42,7 @@ public abstract class StreamClient(
                 StreamArn = streamArn,
                 ShardId = shard.ShardId,
                 ShardIteratorType = ShardIteratorType.TRIM_HORIZON
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
             if (shardIterator == null)
             {
                 break;
@@ -51,13 +51,13 @@ public abstract class StreamClient(
             var records = await _client.GetRecordsAsync(new GetRecordsRequest
             {
                 ShardIterator = shardIterator.ShardIterator
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
             var messages = from record in records.Records
                            let image = record.Dynamodb.NewImage
                            select image.ToCommit(serializer);
             foreach (var message in messages)
             {
-                if (!await InnerHandle(message, cancellationToken))
+                if (!await InnerHandle(message, cancellationToken).ConfigureAwait(false))
                 {
                     Stop();
                 }
@@ -67,14 +67,14 @@ public abstract class StreamClient(
 
     private async Task<bool> InnerHandle(ICommit message, CancellationToken cancellationToken)
     {
-        var result = await Handler(message, cancellationToken);
+        var result = await Handler(message, cancellationToken).ConfigureAwait(false);
         switch (result)
         {
             case HandlingResult.MoveToNext:
                 return true;
             case HandlingResult.Retry:
                 logger.LogInformation("Retrying commit {CommitId}", message.CommitId);
-                return await InnerHandle(message, cancellationToken);
+                return await InnerHandle(message, cancellationToken).ConfigureAwait(false);
             case HandlingResult.Stop:
                 logger.LogError("Error in dispatching commit. Received result: {Result}", result);
                 return false;

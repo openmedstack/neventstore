@@ -1,7 +1,6 @@
 namespace OpenMedStack.NEventStore.Persistence.Sql;
 
 using System;
-using System.Runtime.Serialization;
 
 /// <summary>
 ///     Indicates that a unique constraint or duplicate key violation occurred.

@@ -3,7 +3,6 @@ using OpenMedStack.NEventStore.Abstractions.Persistence;
 namespace OpenMedStack.NEventStore.Persistence.Sql;
 
 using System.Data;
-using Persistence;
 
 internal static class StreamHeadExtensions
 {

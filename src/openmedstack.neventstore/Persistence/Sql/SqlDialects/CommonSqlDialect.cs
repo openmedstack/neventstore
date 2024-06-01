@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 
 using System;
