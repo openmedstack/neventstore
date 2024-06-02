@@ -75,9 +75,9 @@ public class SubscriptionsHandlingFeature : IDisposable
     [When(@"a row is inserted into a table")]
     public async Task WhenARowIsInsertedIntoATable()
     {
-        var stream = await OptimisticEventStream.Create(Bucket.Default, Guid.NewGuid().ToString(), _eventStore, 0,
-            int.MaxValue, NullLogger<OptimisticEventStream>.Instance).ConfigureAwait(false);
-        stream.Add(new EventMessage(new TestEvent { Value = DateTimeOffset.UtcNow.ToString("F") }));
+        var stream = new CommitAttempt(Bucket.Default, Guid.NewGuid().ToString(), 1,
+            Guid.NewGuid(), 1, DateTimeOffset.UtcNow, new Dictionary<string, object>(),
+            [new EventMessage(new TestEvent { Value = DateTimeOffset.UtcNow.ToString("F") })]);
         var commit = await _eventStore.Commit(stream).ConfigureAwait(false);
 
         Assert.NotNull(commit);
@@ -108,9 +108,4 @@ public class SubscriptionsHandlingFeature : IDisposable
 
         GC.SuppressFinalize(this);
     }
-}
-
-public class TestEvent
-{
-    public string? Value { get; set; }
 }

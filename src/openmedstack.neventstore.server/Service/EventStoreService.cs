@@ -1,6 +1,5 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 using OpenMedStack.NEventStore.Grpc;
@@ -27,26 +26,20 @@ public class EventStoreService : EventStore.EventStoreBase
             return new EventMessage(info.Base64Payload, info.Headers.ToDictionary(x => x.Key, x => (object)x.Value));
         }
 
-        var stream = await OptimisticEventStream.Create(request.BucketId, request.StreamId, _persistence, 0,
-            request.StreamRevision,
-            NullLogger<OptimisticEventStream>.Instance, context.CancellationToken).ConfigureAwait(false);
-        foreach (var requestEvent in request.Events)
-        {
-            stream.Add(ToEventMessage(requestEvent));
-        }
+        var commitAttempt = new CommitAttempt(request.BucketId, request.StreamId, request.StreamRevision,
+            Guid.Parse(request.CommitId), request.CommitSequence,
+            DateTimeOffset.FromUnixTimeSeconds(request.CommitStamp),
+            request.Headers.ToDictionary(x => x.Key, x => (object)x.Value),
+            request.Events.Select(ToEventMessage).ToList());
 
-        foreach (var header in request.Headers)
-        {
-            stream.Add(header.Key, header.Value);
-        }
-
-        var info = await _persistence.Commit(stream, Guid.Parse(request.CommitId), context.CancellationToken)
+        var info = await _persistence.Commit(commitAttempt, context.CancellationToken)
             .ConfigureAwait(false);
         return info == null
             ? null
             : new CommitInfo
             {
-                BucketId = info.BucketId, CommitId = info.CommitId.ToString("N"),
+                BucketId = info.BucketId,
+                CommitId = info.CommitId.ToString("N"),
                 CheckpointToken = info.CheckpointToken,
                 CommitSequence = info.CommitSequence, CommitStamp = info.CommitStamp.ToUnixTimeSeconds(),
                 StreamId = info.StreamId, StreamRevision = info.StreamRevision,

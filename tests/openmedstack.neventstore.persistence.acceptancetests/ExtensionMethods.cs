@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests;
@@ -28,7 +27,7 @@ public static class ExtensionMethods
         string? bucketId = null)
     {
         var commits = new List<ICommit>();
-        IEventStream? attempt = null;
+        CommitAttempt? attempt = null;
 
         for (var i = 0; i < numberOfCommits; i++)
         {
@@ -43,39 +42,57 @@ public static class ExtensionMethods
         return commits;
     }
 
-    public static IEventStream BuildAttempt(
+    public static CommitAttempt BuildAttempt(
         this string streamId,
         string? bucketId = null)
     {
         bucketId ??= "default";
 
-        var stream = OptimisticEventStream.Create(bucketId, streamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Test" }));
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Test2" }));
-        stream.Add("A header", "A string value");
-        stream.Add("Another header", 2);
+        var stream = new CommitAttempt(bucketId, streamId, 2, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>
+            {
+                ["A header"] = "A string value",
+                ["Another header"] = 2
+            },
+            [
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Test" }),
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Test2" })
+            ]);
         return stream;
     }
 
-    public static IEventStream BuildNextAttempt(this IEventStream stream)
+    public static CommitAttempt BuildNextAttempt(this CommitAttempt stream)
     {
-        stream.SetPersisted(stream.CommitSequence + 1);
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }));
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" }));
-        stream.Add("A header", "A string value");
-        stream.Add("Another header", 2);
-        return stream;
+        var attempt = new CommitAttempt(stream.BucketId, stream.StreamId, stream.StreamRevision + 2, Guid.NewGuid(),
+            stream.CommitSequence + 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>
+            {
+                ["A header"] = "A string value",
+                ["Another header"] = 2
+            },
+            [
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }),
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" })
+            ]);
+        return attempt;
     }
 
-    public static IEventStream BuildNextAttempt(this ICommit commit)
+    public static CommitAttempt BuildNextAttempt(this ICommit commit)
     {
-        var stream = new CommittedStream(commit);
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }));
-        stream.Add(new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" }));
-        return stream;
+        return new CommitAttempt(commit.BucketId, commit.StreamId, commit.StreamRevision + 2, Guid.NewGuid(),
+            commit.CommitSequence + 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>
+            {
+                ["A header"] = "A string value",
+                ["Another header"] = 2
+            },
+            [
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Another test" }),
+                new EventMessage(new SomeDomainEvent { SomeProperty = "Another test2" })
+            ]);
     }
 
-        public class SomeDomainEvent
+    public class SomeDomainEvent
     {
         public string SomeProperty { get; set; } = null!;
 

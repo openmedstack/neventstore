@@ -6,7 +6,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private IEventStream _first = null!;
+    private CommitAttempt _first = null!;
     private ICommit _second = null!;
     private ICommit _third = null!;
 

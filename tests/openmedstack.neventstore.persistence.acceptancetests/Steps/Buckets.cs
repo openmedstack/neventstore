@@ -12,7 +12,7 @@ public partial class PersistenceEngineBehavior
     private List<Guid> _committedOnBucket1 = null!;
     private List<Guid> _committedOnBucket2 = null!;
     private DateTimeOffset _attemptACommitStamp;
-    private IEventStream _attemptForBucketB = null!;
+    private CommitAttempt _attemptForBucketB = null!;
     private ICommit _commitToBucketB = null!;
     private ICommit[] _returnedCommits = null!;
 
@@ -59,7 +59,6 @@ public partial class PersistenceEngineBehavior
     public async Task GivenAStreamCommittedInBucketA()
     {
         _streamId = Guid.NewGuid().ToString();
-        var now = SystemTime.UtcNow;
         await Persistence.Commit(_streamId.BuildAttempt(BucketAId)).ConfigureAwait(false);
         var enumerable = Persistence.Get(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
         _attemptACommitStamp =
@@ -192,14 +191,14 @@ public partial class PersistenceEngineBehavior
         }
     }
 
-    const int bodyLength = 100000;
+    private const int BodyLength = 100000;
 
     [When(@"committing stream with a large payload")]
     public async Task WhenCommittingStreamWithALargePayload()
     {
         _streamId = Guid.NewGuid().ToString();
-        var stream = OptimisticEventStream.Create("default", _streamId);
-        stream.Add(new EventMessage(new string('a', bodyLength)));
+        var stream = new CommitAttempt("default", _streamId, 1, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>(), [new EventMessage(new string('a', BodyLength))]);
         await Persistence.Commit(stream);
     }
 
@@ -208,6 +207,6 @@ public partial class PersistenceEngineBehavior
     {
         var commits = await Persistence
             .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).Single();
-        Assert.Equal(bodyLength, commits.Events.Single().Body.ToString()!.Length);
+        Assert.Equal(BodyLength, commits.Events.Single().Body.ToString()!.Length);
     }
 }

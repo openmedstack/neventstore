@@ -10,7 +10,7 @@ internal class DynamoDbSnapshots
     [DynamoDBProperty] public required string BucketId { get; set; }
     [DynamoDBProperty] public required string StreamId { get; set; }
     [DynamoDBRangeKey] public int StreamRevision { get; set; }
-    [DynamoDBProperty] public byte[] Payload { get; set; } = Array.Empty<byte>();
+    [DynamoDBProperty] public byte[] Payload { get; set; } = [];
 
     public static DynamoDbSnapshots FromSnapshot(ISnapshot snapshot, ISerialize serializer)
     {

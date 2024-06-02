@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using TechTalk.SpecFlow;
 using Xunit;
@@ -11,11 +10,18 @@ public partial class PersistenceEngineBehavior
     public Task GivenAPersistedStreamWithAHeaderContainingAPeriod()
     {
         _streamId = Guid.NewGuid().ToString();
-        var attempt = OptimisticEventStream.Create(
+        var attempt = new CommitAttempt(
             "default",
-            _streamId, NullLogger<OptimisticEventStream>.Instance);
-        attempt.Add(new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" }));
-        attempt.Add("key.1", "value");
+            _streamId,
+            1,
+            Guid.NewGuid(),
+            1,
+            DateTimeOffset.UtcNow,
+            new Dictionary<string, object>
+            {
+                ["key.1"] = "value"
+            },
+            [new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test" })]);
 
         return Persistence.Commit(attempt);
     }

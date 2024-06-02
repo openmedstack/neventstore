@@ -7,8 +7,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private const int WithinThreshold = 2;
-    private const int OverThreshold = 3;
+    private const int WithinThreshold = 1;
+    private const int OverThreshold = 2;
 
     private const string SnapshotData = "snapshot";
     private ICommit _newest = null!;

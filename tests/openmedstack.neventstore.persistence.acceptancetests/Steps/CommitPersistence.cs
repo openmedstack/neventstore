@@ -6,7 +6,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private IEventStream _attempt = null!;
+    private CommitAttempt _attempt = null!;
     private DateTimeOffset _now;
     private ICommit _persisted = null!;
     private string _streamId = null!;
@@ -36,7 +36,7 @@ public partial class PersistenceEngineBehavior
     [Then(@"should correctly persist the commit sequence")]
     public void ThenShouldCorrectlyPersistTheCommitSequence()
     {
-        Assert.Equal(_attempt.CommitSequence + 1, _persisted.CommitSequence);
+        Assert.Equal(_attempt.CommitSequence, _persisted.CommitSequence);
     }
 
     [Then(@"should correctly persist the commit stamp")]
@@ -52,13 +52,13 @@ public partial class PersistenceEngineBehavior
     [Then(@"should correctly persist the headers")]
     public void ThenShouldCorrectlyPersistTheHeaders()
     {
-        Assert.Equal(_attempt.UncommittedHeaders.Count, _persisted.Headers.Count);
+        Assert.Equal(_attempt.Headers.Count, _persisted.Headers.Count);
     }
 
     [Then(@"should correctly persist the events")]
     public void ThenShouldCorrectlyPersistTheEvents()
     {
-        Assert.Equal(_attempt.UncommittedEvents.Count, _persisted.Events.Count);
+        Assert.Equal(_attempt.Events.Count, _persisted.Events.Count);
     }
 
     [Then(@"should cause the stream to be found in the list of streams to snapshot")]

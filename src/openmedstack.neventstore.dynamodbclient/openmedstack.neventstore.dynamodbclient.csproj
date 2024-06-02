@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.14" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.15" />
         <PackageReference Include="openmedstack" Version="2.2.0" />
     </ItemGroup>
 

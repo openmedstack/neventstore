@@ -168,15 +168,13 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return result;
     }
 
-    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
+    public async Task<ICommit?> Commit(CommitAttempt attempt, CancellationToken cancellationToken)
     {
-        if (eventStream.UncommittedEvents.Count == 0)
+        if (attempt.Events.Count == 0)
         {
             return null;
         }
 
-        var id = commitId ?? Guid.NewGuid();
-        var attempt = CommitAttempt.FromStream(eventStream, id);
         ICommit commit;
         try
         {
@@ -191,16 +189,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
                 throw new DuplicateCommitException(e.Message, e);
             }
 
-            _logger.LogInformation(PersistenceMessages.ConcurrentWriteDetected);
-
-            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
-            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
-            if (eventStream.StreamRevision <= currentRevision)
-            {
-                throw;
-            }
-
-            return await PersistCommit(CommitAttempt.FromStream(eventStream, id));
+            throw new ConcurrencyException(e.Message, e);
         }
 
         return commit;

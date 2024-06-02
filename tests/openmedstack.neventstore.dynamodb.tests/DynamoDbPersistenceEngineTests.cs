@@ -40,9 +40,8 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
 
-        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(new EventMessage(1));
-        stream.Add(new EventMessage(2));
+        var stream = new CommitAttempt(bucket, streamId, 1, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>(), [new EventMessage(1), new EventMessage(2)]);
         var commitResult = await _engine.Commit(stream);
 
         Assert.NotNull(commitResult);
@@ -55,38 +54,10 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         var bucket = Guid.NewGuid().ToString("N");
         var streamId = Guid.NewGuid().ToString("N");
         var commitId = Guid.NewGuid();
-        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(new EventMessage(1));
-        stream.Add(new EventMessage(2));
-        _ = await _engine.Commit(stream, commitId);
-        await Assert.ThrowsAsync<DuplicateCommitException>(() => _ = _engine.Commit(stream, commitId));
-    }
-
-    [Fact]
-    public async Task WhenCommittingDuplicateCommitThenUpdatesStream()
-    {
-        await _management.Initialize();
-        var bucket = Guid.NewGuid().ToString("N");
-        var streamId = Guid.NewGuid().ToString("N");
-
-        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(new EventMessage(1));
-        stream.Add(new EventMessage(2));
-        var result = await _engine.Commit(stream);
-        stream.SetPersisted(result!.CommitSequence);
-        stream.Add(new EventMessage(3));
-        var stream2 = await OptimisticEventStream.Create(bucket, streamId, _engine, 0, int.MaxValue,
-            NullLogger<OptimisticEventStream>.Instance);
-        stream2.Add(new EventMessage(100));
-
-        await _engine.Commit(stream);
-        await _engine.Commit(stream2);
-
-        var finalStream = await OptimisticEventStream.Create(bucket, streamId, _engine, 0, int.MaxValue,
-            NullLogger<OptimisticEventStream>.Instance);
-
-        Assert.Equal(4, finalStream.StreamRevision);
-        Assert.Equal(3, finalStream.CommitSequence);
+        var stream = new CommitAttempt(bucket, streamId, 1, commitId, 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>(), [new EventMessage(1), new EventMessage(2)]);
+        _ = await _engine.Commit(stream);
+        await Assert.ThrowsAsync<DuplicateCommitException>(() => _ = _engine.Commit(stream));
     }
 
     [Fact]
@@ -127,21 +98,17 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
             new DynamoDbPersistenceEngine(_dbClient,
                 new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
                 NullLogger<DynamoDbPersistenceEngine>.Instance);
-        var stream = OptimisticEventStream.Create(bucket, streamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(new EventMessage(1));
-        stream.Add(new EventMessage(2));
+        var stream = new CommitAttempt(bucket, streamId, 1, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+            new Dictionary<string, object>(), [new EventMessage(1), new EventMessage(2)]);
         var commitResult = await engine.Commit(stream);
 
         Assert.NotNull(commitResult);
 
-        stream.SetPersisted(commitResult.CommitSequence);
-        stream.Add(new EventMessage(3));
-        await engine.Commit(stream);
         for (int i = 0; i < 100; i++)
         {
             var streamId2 = Guid.NewGuid().ToString("N");
-            var stream2 = OptimisticEventStream.Create(bucket, streamId2, NullLogger<OptimisticEventStream>.Instance);
-            stream2.Add(new EventMessage("a" + i));
+            var stream2 = new CommitAttempt(bucket, streamId2, 1, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+                new Dictionary<string, object>(), [new EventMessage("a" + i)]);
             await engine.Commit(stream2);
         }
 

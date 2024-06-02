@@ -30,15 +30,13 @@ public interface ICommitEvents : IDisposable
     /// <summary>
     ///     Writes the to-be-committed events stream provided to the underlying persistence mechanism.
     /// </summary>
-    /// <param name="eventStream">The series of events and associated metadata to be committed.</param>
-    /// <param name="commitId">The id to use for the commit. If <c>null</c> then will use <c>Guid.NewGuid()</c>.</param>
+    /// <param name="commitAttempt">The series of events and associated metadata to be committed.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <exception cref="ConcurrencyException" />
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
     Task<ICommit?> Commit(
-        IEventStream eventStream,
-        Guid? commitId = null,
+        CommitAttempt commitAttempt,
         CancellationToken cancellationToken = default);
 }
 

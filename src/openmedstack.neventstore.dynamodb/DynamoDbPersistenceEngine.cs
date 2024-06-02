@@ -63,26 +63,28 @@ public class DynamoDbPersistenceEngine(
     }
 
     public async Task<ICommit?> Commit(
-        IEventStream eventStream,
-        Guid? commitId = null,
+        CommitAttempt commitAttempt,
         CancellationToken cancellationToken = default)
     {
         ThrowWhenDisposed();
-        var id = commitId ?? Guid.NewGuid();
-        var attempt = DynamoDbCommit.FromStream(eventStream, id, serializer);
+        var attempt = DynamoDbCommit.FromCommitAttempt(commitAttempt, serializer);
         try
         {
-            await context.Save(attempt, cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (!await context.Save(attempt, cancellationToken: cancellationToken).ConfigureAwait(false))
+            {
+                return null;
+            }
+
             return new Commit(
                 attempt.BucketId,
                 attempt.StreamId,
                 attempt.StreamRevision,
-                id,
+                Guid.Parse(attempt.CommitId),
                 attempt.CommitSequence,
                 DateTimeOffset.FromUnixTimeSeconds(attempt.CommitStamp),
                 0,
-                eventStream.UncommittedHeaders.ToDictionary(),
-                eventStream.UncommittedEvents);
+                commitAttempt.Headers.ToDictionary(),
+                commitAttempt.Events.ToList());
         }
         catch (ConditionalCheckFailedException e)
         {
@@ -93,15 +95,7 @@ public class DynamoDbPersistenceEngine(
             }
 
             logger.LogError(e, "Concurrent commit detected. Retrying");
-
-            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
-            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
-            if (eventStream.StreamRevision <= currentRevision)
-            {
-                throw;
-            }
-
-            return await Commit(eventStream, id, cancellationToken).ConfigureAwait(false);
+            throw new ConcurrencyException(e.Message, e);
         }
     }
 

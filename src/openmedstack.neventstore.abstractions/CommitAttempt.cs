@@ -77,19 +77,6 @@ public class CommitAttempt
         Events = new ReadOnlyCollection<EventMessage>(events);
     }
 
-    public static CommitAttempt FromStream(IEventStream eventStream, Guid commitId)
-    {
-        return new CommitAttempt(
-            eventStream.BucketId,
-            eventStream.StreamId,
-            eventStream.StreamRevision,
-            commitId,
-            eventStream.CommitSequence + 1,
-            DateTimeOffset.UtcNow,
-            eventStream.UncommittedHeaders.ToDictionary(),
-            eventStream.UncommittedEvents.ToList());
-    }
-
     internal static CommitAttempt FromCommit(ICommit commit)
     {
         return new CommitAttempt(

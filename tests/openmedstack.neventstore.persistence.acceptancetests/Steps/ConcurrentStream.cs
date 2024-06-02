@@ -6,7 +6,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private IEventStream _concurrentAttempt = null!;
+    private CommitAttempt _concurrentAttempt = null!;
     private ICommit _attemptTwice = null!;
     private Exception _thrown = null!;
     private CommitAttempt _secondAttempt = null!;
@@ -16,14 +16,7 @@ public partial class PersistenceEngineBehavior
     {
         var streamId = Guid.NewGuid().ToString();
         var attempt1 = streamId.BuildAttempt();
-        await Persistence.Commit(attempt1);
-        _concurrentAttempt = await OptimisticEventStream.Create("default", streamId, Persistence);
-        foreach (var header in attempt1.CommittedHeaders)
-        {
-            _concurrentAttempt.Add(header.Key, header.Value);
-        }
-
-        _concurrentAttempt.Add(new EventMessage(new ExtensionMethods.SomeDomainEvent { SomeProperty = "Test 3" }));
+        _ = await Persistence.Commit(attempt1);
         attempt1 = attempt1.BuildNextAttempt();
         _ = (await Persistence.Commit(attempt1))!;
     }
@@ -49,9 +42,11 @@ public partial class PersistenceEngineBehavior
     [When(@"committing the stream again")]
     public async Task WhenCommittingTheStreamAgain()
     {
-        _thrown = (await Catch
-            .Exception(() => Persistence.Commit(new CommitAttemptStream(CommitAttempt.FromCommit(_attemptTwice)),
-                _attemptTwice.CommitId)))!;
+        _thrown = (await Catch.Exception(() => Persistence.Commit(new CommitAttempt(_attemptTwice.BucketId,
+            _attemptTwice.StreamId,
+            _attemptTwice.StreamRevision,
+            _attemptTwice.CommitId, _attemptTwice.CommitSequence, _attemptTwice.CommitStamp,
+            _attemptTwice.Headers, _attemptTwice.Events.ToList()))))!;
     }
 
     [Then(@"should throw a duplicate commit exception")]
@@ -79,7 +74,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenCommittingAgainOnTheSameStream()
     {
         _thrown = (await Catch
-            .Exception(() => Persistence.Commit(new CommitAttemptStream(_secondAttempt), _secondAttempt.CommitId))
+            .Exception(() => Persistence.Commit(_secondAttempt))
             .ConfigureAwait(false))!;
     }
 }

@@ -23,27 +23,26 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
     {
     }
 
-    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
+    public async Task<ICommit?> Commit(CommitAttempt eventStream, CancellationToken cancellationToken)
     {
-        if (eventStream.UncommittedEvents.Count == 0)
+        if (eventStream.Events.Count == 0)
         {
             return null;
         }
 
-        commitId ??= Guid.NewGuid();
         var commitInfo = new CommitInfo
         {
             BucketId = eventStream.BucketId,
             StreamId = eventStream.StreamId,
             StreamRevision = eventStream.StreamRevision,
             CheckpointToken = 0,
-            CommitId = commitId.Value.ToString("N"),
+            CommitId = eventStream.CommitId.ToString("N"),
             CommitSequence = eventStream.CommitSequence + 1,
             CommitStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            Events = { eventStream.UncommittedEvents.Select(Serialize) },
-            Headers = { eventStream.UncommittedHeaders.ToDictionary(x => x.Key, x => Serialize(x.Value)) }
+            Events = { eventStream.Events.Select(Serialize) },
+            Headers = { eventStream.Headers.ToDictionary(x => x.Key, x => Serialize(x.Value)) }
         };
-        var commitResponse = await _client.CommitAsync(commitInfo).ConfigureAwait(false);
+        var commitResponse = await _client.CommitAsync(commitInfo, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return new Commit(commitResponse.BucketId, commitResponse.StreamId, commitResponse.StreamRevision,
             Guid.Parse(commitResponse.CommitId), commitResponse.CommitSequence,

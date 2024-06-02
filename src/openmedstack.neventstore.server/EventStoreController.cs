@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 
 namespace OpenMedStack.NEventStore.Server;
@@ -32,25 +31,7 @@ public class EventStoreController : Controller
     [HttpPost("/commit")]
     public async Task<ICommit?> Commit([FromBody] CommitAttempt attempt, CancellationToken cancellationToken)
     {
-        var stream = await OptimisticEventStream.Create(
-            attempt.BucketId,
-            attempt.StreamId,
-            _persistence,
-            0,
-            attempt.StreamRevision,
-            NullLogger<OptimisticEventStream>.Instance,
-            cancellationToken).ConfigureAwait(false);
-        foreach (var eventMessage in attempt.Events)
-        {
-            stream.Add(eventMessage);
-        }
-
-        foreach (var header in attempt.Headers)
-        {
-            stream.Add(header.Key, header.Value);
-        }
-
-        return await _persistence.Commit(stream, attempt.CommitId, cancellationToken).ConfigureAwait(false);
+        return await _persistence.Commit(attempt, cancellationToken).ConfigureAwait(false);
     }
 
     [HttpGet("/snapshots/{bucketId}/{streamId}/{maxRevision:int}")]

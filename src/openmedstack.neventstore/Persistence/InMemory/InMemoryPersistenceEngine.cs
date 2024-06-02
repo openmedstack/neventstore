@@ -99,33 +99,33 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public async Task<ICommit?> Commit(
-        IEventStream eventStream,
-        Guid? commitId = null,
+        CommitAttempt attempt,
         CancellationToken cancellationToken = default)
     {
-        if (eventStream.UncommittedEvents.Count == 0)
+        if (attempt.Events.Count == 0)
         {
             return null;
         }
 
+        await Task.Yield();
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.AttemptingToCommit, commitId, eventStream.StreamId, eventStream.CommitSequence);
-        var attempt = CommitAttempt.FromStream(eventStream, commitId ?? Guid.NewGuid());
+        _logger.LogDebug(Resources.AttemptingToCommit, attempt.CommitId, attempt.StreamId,
+            attempt.CommitSequence);
         var bucket = this[attempt.BucketId];
         try
         {
             return bucket.Commit(attempt, Interlocked.Increment(ref _checkpoint));
         }
-        catch (ConcurrencyException)
+        catch (ConcurrencyException e)
         {
-            var currentRevision = eventStream.StreamRevision - eventStream.UncommittedEvents.Count;
-            await eventStream.Update(this, cancellationToken).ConfigureAwait(false);
-            if (eventStream.StreamRevision <= currentRevision)
+            if (DetectDuplicate(attempt))
             {
-                throw;
+                _logger.LogError(e, "Duplicate commit detected");
+                throw new DuplicateCommitException(e.Message, e);
             }
 
-            return await Commit(eventStream, commitId, cancellationToken).ConfigureAwait(false);
+            _logger.LogError(e, "Concurrent commit detected. Retrying");
+            throw new ConcurrencyException(e.Message, e);
         }
     }
 
@@ -157,21 +157,9 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         return Task.FromResult(this[snapshot.BucketId].AddSnapshot(snapshot));
     }
 
-    public Task<bool> Purge()
-    {
-        ThrowWhenDisposed();
-        _logger.LogWarning(Resources.PurgingStore);
-        foreach (var bucket in _buckets.Values)
-        {
-            bucket.Purge();
-        }
-
-        return Task.FromResult(true);
-    }
-
     public Task<bool> Purge(string bucketId)
     {
-        _buckets.TryRemove(bucketId, out var _);
+        _buckets.TryRemove(bucketId, out _);
         return Task.FromResult(true);
     }
 
@@ -193,6 +181,12 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public bool IsDisposed { get; private set; }
+
+    private bool DetectDuplicate(CommitAttempt attempt)
+    {
+        return this[attempt.BucketId].GetCommits()
+            .Any(c => c.StreamId == attempt.StreamId && c.CommitSequence == attempt.CommitSequence);
+    }
 
     private void ThrowWhenDisposed()
     {
@@ -350,7 +344,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
                 var commitId = _stamps.Where(x => x.Value >= start).Select(x => x.Key).FirstOrDefault();
                 if (commitId == Guid.Empty)
                 {
-                    return Enumerable.Empty<ICommit>();
+                    return [];
                 }
 
                 var startingCommit = _commits.FirstOrDefault(x => x.CommitId == commitId);
@@ -376,7 +370,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
             var lastCommitId = selectedCommitIds.LastOrDefault();
             if (firstCommitId == Guid.Empty && lastCommitId == Guid.Empty)
             {
-                return Enumerable.Empty<ICommit>();
+                return [];
             }
 
             lock (_commits)

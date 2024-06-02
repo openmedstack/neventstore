@@ -14,35 +14,30 @@ public partial class PersistenceEngineBehavior
     private readonly EventMessage _uncommitted = new(string.Empty);
     private ICommit[] _committed = null!;
     private ICommit? _commit;
-    private IEventStream _stream = null!;
+    private CommitAttempt _stream = null!;
 
     [Given("a persisted stream with a single event")]
     public async Task APersistedStreamWithASingleEvent()
     {
         _committed = [BuildCommitStub(1, 1, 1)];
-        var stream = OptimisticEventStream.Create(BucketId, StreamId, NullLogger<OptimisticEventStream>.Instance);
-        stream.Add(_committed[0].Events.First());
-        await Persistence.Commit(stream, Guid.NewGuid());
+        var stream = new CommitAttempt(BucketId,
+            StreamId, StreamRevision, Guid.NewGuid(), 1, SystemTime.UtcNow,
+            null,
+            _committed[0].Events.ToArray());
+        await Persistence.Commit(stream);
     }
 
     [When("committing after another thread or process has moved the stream head")]
     public async Task WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead()
     {
-        _stream = await OptimisticEventStream
-            .Create(BucketId, StreamId, Persistence, StreamRevision, int.MaxValue,
-                NullLogger<OptimisticEventStream>.Instance);
-        var competingStream = await OptimisticEventStream.Create(BucketId, StreamId, Persistence, StreamRevision,
-            int.MaxValue,
-            NullLogger<OptimisticEventStream>.Instance);
-        foreach (var c in BuildCommitStub(3, 2, 2).Events)
-        {
-            competingStream.Add(c);
-        }
+        _stream = new CommitAttempt(BucketId, StreamId, StreamRevision, Guid.NewGuid(), 1, SystemTime.UtcNow, null,
+            [new EventMessage(_uncommitted)]);
+        var competingStream = new CommitAttempt(BucketId, StreamId, StreamRevision,
+            Guid.NewGuid(), 1, SystemTime.UtcNow, null, BuildCommitStub(3, 2, 2).Events.ToArray());
 
-        await Persistence.Commit(competingStream, Guid.NewGuid());
+        await Persistence.Commit(competingStream);
 
-        _stream.Add(_uncommitted);
-        _commit = await Persistence.Commit(_stream, Guid.NewGuid());
+        _commit = await Persistence.Commit(_stream);
     }
 
     [Then("should update the stream revision accordingly")]

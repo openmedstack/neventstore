@@ -79,24 +79,22 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
     }
 
     /// <inheritdoc />
-    public async Task<ICommit?> Commit(IEventStream eventStream, Guid? commitId, CancellationToken cancellationToken)
+    public async Task<ICommit?> Commit(CommitAttempt eventStream, CancellationToken cancellationToken)
     {
-        if (eventStream.UncommittedEvents.Count == 0)
+        if (eventStream.Events.Count == 0)
         {
             return null;
         }
-
-        commitId ??= Guid.NewGuid();
 
         var commitAttempt = new CommitAttempt(
             eventStream.BucketId,
             eventStream.StreamId,
             eventStream.StreamRevision,
-            commitId.Value,
+            eventStream.CommitId,
             eventStream.CommitSequence + 1,
             DateTimeOffset.UtcNow,
-            eventStream.UncommittedHeaders.ToDictionary(),
-            eventStream.UncommittedEvents.Select(x => new EventMessage(SerializeBody(x.Body),
+            eventStream.Headers.ToDictionary(),
+            eventStream.Events.Select(x => new EventMessage(SerializeBody(x.Body),
                 x.Headers.ToDictionary(y => y.Key, y => (object)JsonConvert.SerializeObject(y.Value)))).ToList());
         var response = await _client.PostAsync(
                 "/commit",

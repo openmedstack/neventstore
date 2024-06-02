@@ -7,8 +7,8 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 public partial class PersistenceEngineBehavior
 {
     private const int CheckPoint = 2;
-    private Guid[] _committedIds = Array.Empty<Guid>();
-    private Guid[] _loadedIds = Array.Empty<Guid>();
+    private Guid[] _committedIds = [];
+    private Guid[] _loadedIds = [];
     private int _moreThanPageSize;
 
     [Given(@"one more committed stream than page size")]
@@ -44,8 +44,12 @@ public partial class PersistenceEngineBehavior
 
         for (var i = 0; i < _moreThanPageSize; i++)
         {
-            var stream = OptimisticEventStream.Create("default", Guid.NewGuid().ToString("N"));
-            stream.Add(new EventMessage(new Pippo { S = "Hi " + i }));
+            var stream = new CommitAttempt("default", Guid.NewGuid().ToString("N"), 1, Guid.NewGuid(), 1,
+                SystemTime.UtcNow,
+                new Dictionary<string, object>(), new[]
+                {
+                    new EventMessage(new Pippo { S = "Hi " + i })
+                });
             await Persistence.Commit(stream);
         }
     }

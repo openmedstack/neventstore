@@ -28,7 +28,7 @@ public static class SerializationExtensions
     /// <returns>The reconstituted object, if any.</returns>
     public static T? Deserialize<T>(this ISerialize serializer, byte[] serialized)
     {
-        serialized ??= System.Array.Empty<byte>();
+        serialized ??= [];
         if (serialized.Length == 0)
         {
             return default;

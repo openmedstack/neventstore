@@ -27,10 +27,13 @@ internal class Program
         {
             Name = typeof(EventStoreController).Assembly.GetName().Name!,
             Urls = ["https://localhost:5001"],
-            TenantPrefix = "test",
+            TenantPrefix = "openmedstack",
             QueueName = "eventstore",
             ServiceBus = new Uri("loopback://localhost"),
-            ConnectionString = ""
+            ConnectionString = "",
+            TokenService = "https://identity.reimers.dk",
+            ClientId = "eventstore",
+
         };
 
         var chassis = Chassis.From(configuration)
@@ -70,8 +73,8 @@ internal class Program
                                     ValidateTokenReplay = true,
                                     LogValidationExceptions = true,
                                     ValidateAudience = false,
-                                    ValidateIssuer = false,
-                                    ValidateIssuerSigningKey = false,
+                                    ValidateIssuer = true,
+                                    ValidateIssuerSigningKey = true,
                                     ValidIssuers = new[] { configuration.TokenService }
                                 };
                             })

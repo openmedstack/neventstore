@@ -29,17 +29,16 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
         _engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
         await _engine.Initialize();
         var streamId = Guid.NewGuid().ToString();
-        await _engine.Commit(new CommitAttemptStream(
-            new CommitAttempt(
-                Bucket.Default,
-                streamId,
-                1,
-                Guid.NewGuid(),
-                1,
-                _startDate,
-                new Dictionary<string, object>(),
-                new List<EventMessage> { new EventMessage(new object()) })));
-        await _engine.Commit(new CommitAttemptStream(
+        await _engine.Commit(new CommitAttempt(
+            Bucket.Default,
+            streamId,
+            1,
+            Guid.NewGuid(),
+            1,
+            _startDate,
+            new Dictionary<string, object>(),
+            new List<EventMessage> { new EventMessage(new object()) }));
+        await _engine.Commit(
             new CommitAttempt(
                 Bucket.Default,
                 streamId,
@@ -48,7 +47,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 2,
                 _endDate,
                 new Dictionary<string, object>(),
-                new List<EventMessage> { new EventMessage(new object()) })));
+                new List<EventMessage> { new EventMessage(new object()) }));
     }
 
     protected override async Task Because()

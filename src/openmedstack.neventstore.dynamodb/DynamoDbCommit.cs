@@ -13,22 +13,22 @@ internal class DynamoDbCommit
     [DynamoDBProperty] public required string CommitId { get; set; }
     [DynamoDBRangeKey] public int CommitSequence { get; set; }
     [DynamoDBProperty] public long CommitStamp { get; set; }
-    [DynamoDBProperty] public byte[] Headers { get; set; } = Array.Empty<byte>();
-    [DynamoDBProperty] public byte[] Events { get; set; } = Array.Empty<byte>();
+    [DynamoDBProperty] public byte[] Headers { get; set; } = [];
+    [DynamoDBProperty] public byte[] Events { get; set; } = [];
 
-    public static DynamoDbCommit FromStream(IEventStream eventStream, Guid? commitId, ISerialize serializer)
+    public static DynamoDbCommit FromCommitAttempt(CommitAttempt commitAttempt, ISerialize serializer)
     {
         return new DynamoDbCommit
         {
-            BucketAndStream = $"{eventStream.BucketId}{eventStream.StreamId}",
-            BucketId = eventStream.BucketId,
-            StreamId = eventStream.StreamId,
-            StreamRevision = eventStream.StreamRevision,
-            CommitId = (commitId ?? Guid.NewGuid()).ToString("N"),
-            CommitSequence = eventStream.CommitSequence + 1,
+            BucketAndStream = $"{commitAttempt.BucketId}{commitAttempt.StreamId}",
+            BucketId = commitAttempt.BucketId,
+            StreamId = commitAttempt.StreamId,
+            StreamRevision = commitAttempt.StreamRevision,
+            CommitId = commitAttempt.CommitId.ToString("N"),
+            CommitSequence = commitAttempt.CommitSequence + 1,
             CommitStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            Headers = serializer.Serialize(eventStream.UncommittedHeaders),
-            Events = serializer.Serialize(eventStream.UncommittedEvents)
+            Headers = serializer.Serialize(commitAttempt.Headers),
+            Events = serializer.Serialize(commitAttempt.Events)
         };
     }
 }
