@@ -8,7 +8,7 @@ using OpenMedStack.NEventStore.Serialization;
 namespace OpenMedStack.NEventStore;
 
 using System.Diagnostics.CodeAnalysis;
-using OpenMedStack.NEventStore.Persistence.InMemory;
+using Persistence.InMemory;
 
 public static class EventStoreExtensions
 {

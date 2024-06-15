@@ -27,13 +27,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.po
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.abstractions", "src\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj", "{F8015247-40AA-4764-9E0A-D598BEDC59BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.server", "src\openmedstack.neventstore.server\openmedstack.neventstore.server.csproj", "{B42619D2-B9DC-4F77-833A-44F3CF788BCA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.httpclient", "src\openmedstack.neventstore.httpclient\openmedstack.neventstore.httpclient.csproj", "{7488B5B5-4896-4E1F-9C14-E4EC9CB66F4A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.grpcclient", "src\openmedstack.neventstore.grpcclient\openmedstack.neventstore.grpcclient.csproj", "{D74F0964-E21E-4A9C-9C13-07F0261C47AA}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.server.client.tests", "tests\openmedstack.neventstore.server.client.tests\openmedstack.neventstore.server.client.tests.csproj", "{26060BED-67A0-4F3F-8522-8CC584818C2B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.build", "src\openmedstack.neventstore.build\openmedstack.neventstore.build.csproj", "{395AC3C0-661C-4E45-97B3-1DB99A2CF220}"
 EndProject
@@ -77,10 +73,6 @@ Global
 		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8015247-40AA-4764-9E0A-D598BEDC59BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B42619D2-B9DC-4F77-833A-44F3CF788BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B42619D2-B9DC-4F77-833A-44F3CF788BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B42619D2-B9DC-4F77-833A-44F3CF788BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B42619D2-B9DC-4F77-833A-44F3CF788BCA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7488B5B5-4896-4E1F-9C14-E4EC9CB66F4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7488B5B5-4896-4E1F-9C14-E4EC9CB66F4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7488B5B5-4896-4E1F-9C14-E4EC9CB66F4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -89,10 +81,6 @@ Global
 		{D74F0964-E21E-4A9C-9C13-07F0261C47AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D74F0964-E21E-4A9C-9C13-07F0261C47AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D74F0964-E21E-4A9C-9C13-07F0261C47AA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26060BED-67A0-4F3F-8522-8CC584818C2B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{395AC3C0-661C-4E45-97B3-1DB99A2CF220}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -117,7 +105,6 @@ Global
 		{9319A568-60F5-4164-AFAE-6D71FCCF75CA} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6} = {1D0BF739-F744-4B0B-9162-78770E21A030}
-		{26060BED-67A0-4F3F-8522-8CC584818C2B} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{CD431507-D3BF-405B-A225-301A1FBC7F71} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

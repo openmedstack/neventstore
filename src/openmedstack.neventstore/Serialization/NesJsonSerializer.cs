@@ -1,7 +1,7 @@
 namespace OpenMedStack.NEventStore.Serialization;
 
 using Newtonsoft.Json;
-using OpenMedStack.NEventStore.Abstractions;
+using Abstractions;
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;

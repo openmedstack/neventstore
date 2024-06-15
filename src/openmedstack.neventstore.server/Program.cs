@@ -17,7 +17,7 @@ namespace OpenMedStack.NEventStore.Server;
 using Npgsql;
 using OpenMedStack;
 using OpenMedStack.Web.Autofac;
-using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
+using Persistence.Sql.SqlDialects;
 
 internal class Program
 {

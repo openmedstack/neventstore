@@ -2,8 +2,6 @@ using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using OpenMedStack.Autofac;
-using OpenMedStack.Autofac.NEventstore;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.GrpcClient;
 using OpenMedStack.NEventStore.HttpClient;

@@ -135,14 +135,14 @@ public class CommonDbStatement : IDbStatement
         //}
     }
 
-    protected virtual IDbCommand BuildCommand(string statement)
+    protected virtual IDbCommand BuildCommand(string statement, TimeSpan? timeout = null)
     {
         _logger.LogTrace(PersistenceMessages.CreatingCommand);
         var command = _connection.CreateCommand();
 
-        if (Settings.CommandTimeout > 0)
+        if (timeout?.TotalSeconds > 0)
         {
-            command.CommandTimeout = Settings.CommandTimeout;
+            command.CommandTimeout = (int)timeout.Value.TotalSeconds;
         }
 
         command.CommandText = statement;

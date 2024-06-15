@@ -45,7 +45,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _pageSize = pageSize;
         _logger = logger;
-        _streamIdHasher = new StreamIdHasherValidator(streamIdHasher);
+        _streamIdHasher = streamIdHasher;
     }
 
     public void Dispose()
@@ -518,42 +518,4 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
 
     private static bool RecoverableException(Exception e) =>
         e is UniqueKeyViolationException or StorageUnavailableException;
-
-    private class StreamIdHasherValidator : IStreamIdHasher
-    {
-        private readonly IStreamIdHasher _streamIdHasher;
-        private const int MaxStreamIdHashLength = 40;
-
-        public StreamIdHasherValidator(IStreamIdHasher streamIdHasher)
-        {
-            _streamIdHasher = streamIdHasher ?? throw new ArgumentNullException(nameof(streamIdHasher));
-        }
-
-        public string GetHash(string streamId)
-        {
-            if (string.IsNullOrWhiteSpace(streamId))
-            {
-                throw new ArgumentException(PersistenceMessages.StreamIdIsNullEmptyOrWhiteSpace);
-            }
-
-            var streamIdHash = _streamIdHasher.GetHash(streamId);
-            if (string.IsNullOrWhiteSpace(streamIdHash))
-            {
-                throw new InvalidOperationException(PersistenceMessages.StreamIdHashIsNullEmptyOrWhiteSpace);
-            }
-
-            if (streamIdHash.Length > MaxStreamIdHashLength)
-            {
-                throw new InvalidOperationException(
-                    string.Format(
-                        PersistenceMessages.StreamIdHashTooLong,
-                        streamId,
-                        streamIdHash,
-                        streamIdHash.Length,
-                        MaxStreamIdHashLength));
-            }
-
-            return streamIdHash;
-        }
-    }
 }

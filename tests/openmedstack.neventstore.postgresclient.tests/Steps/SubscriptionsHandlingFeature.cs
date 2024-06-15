@@ -29,7 +29,7 @@ public class SubscriptionsHandlingFeature : IDisposable
         var serviceCollection = new ServiceCollection()
             .RegisterJsonSerialization()
             .AddLogging()
-            .RegisterSqlEventStore<PostgreSqlDialect, Sha1StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
+            .RegisterSqlEventStore<PostgreSqlDialect, Sha256StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
         var serviceProvider = serviceCollection.BuildServiceProvider();
         _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
         await _managePersistence.Initialize();

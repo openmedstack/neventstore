@@ -120,8 +120,8 @@
   <data name="InitializeStorage" xml:space="preserve">
     <value>CREATE TABLE IF NOT EXISTS Commits
 (
-    BucketId varchar(40) charset utf8 NOT NULL,
-    StreamId varchar(40) charset utf8 NOT NULL,
+    BucketId varchar(64) charset utf8 NOT NULL,
+    StreamId varchar(64) charset utf8 NOT NULL,
     StreamIdOriginal varchar(1000) charset utf8 NOT NULL,
     StreamRevision int NOT NULL CHECK (StreamRevision &gt; 0),
     Items tinyint NOT NULL CHECK (Items &gt; 0),
@@ -140,8 +140,8 @@ CREATE INDEX IX_Commits_Stamp ON Commits (CommitStamp);
 
 CREATE TABLE IF NOT EXISTS Snapshots
 (
-    BucketId varchar(40) charset utf8 NOT NULL,
-    StreamId varchar(40) charset utf8 NOT NULL,
+    BucketId varchar(64) charset utf8 NOT NULL,
+    StreamId varchar(64) charset utf8 NOT NULL,
     StreamRevision int NOT NULL CHECK (StreamRevision &gt; 0),
     Payload blob NOT NULL,
     CONSTRAINT PK_Snapshots PRIMARY KEY (BucketId, StreamId, StreamRevision)

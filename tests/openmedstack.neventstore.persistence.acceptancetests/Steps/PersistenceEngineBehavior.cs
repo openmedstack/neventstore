@@ -104,7 +104,7 @@ public partial class PersistenceEngineBehavior
             new PostgreSqlDialect(NullLogger<PostgreSqlDialect>.Instance),
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
             pageSize,
-            new Sha1StreamIdHasher(),
+            new Sha256StreamIdHasher(),
             NullLogger<SqlPersistenceEngine>.Instance);
         return (engine, engine, engine);
     }

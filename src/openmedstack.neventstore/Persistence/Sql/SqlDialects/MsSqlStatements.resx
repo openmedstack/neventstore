@@ -121,8 +121,8 @@
     <value>IF EXISTS(SELECT * FROM sysobjects WHERE name='Commits' AND xtype = 'U') RETURN;
 CREATE TABLE [dbo].[Commits]
 (
-       [BucketId] [varchar](40) NOT NULL,
-       [StreamId] [char](40) NOT NULL,
+       [BucketId] [varchar](64) NOT NULL,
+       [StreamId] [char](64) NOT NULL,
        [StreamIdOriginal] [nvarchar](1000) NOT NULL,
        [StreamRevision] [int] NOT NULL CHECK ([StreamRevision] &gt; 0),
        [Items] [tinyint] NOT NULL CHECK ([Items] &gt; 0),
@@ -147,8 +147,8 @@ CREATE INDEX [IX_Commits_Stamp] ON Commits ([CommitStamp]);
 
 CREATE TABLE [dbo].[Snapshots]
 (
-       [BucketId] [varchar](40) NOT NULL,
-       [StreamId] [char](40) NOT NULL,
+       [BucketId] [varchar](64) NOT NULL,
+       [StreamId] [char](64) NOT NULL,
        [StreamRevision] [int] NOT NULL CHECK ([StreamRevision] &gt; 0),
        [Payload] [varbinary](MAX) NOT NULL CHECK (DATALENGTH([Payload]) &gt; 0),
        CONSTRAINT [PK_Snapshots] PRIMARY KEY CLUSTERED ([BucketId], [StreamId], [StreamRevision])
