@@ -15,6 +15,7 @@ public partial class PersistenceEngineBehavior
     private CommitAttempt _attemptForBucketB = null!;
     private ICommit _commitToBucketB = null!;
     private ICommit[] _returnedCommits = null!;
+    private Exception _thrown = null!;
 
     [Given(@"multiple streams in different buckets")]
     public async Task GivenMultipleStreamsInDifferentBuckets()

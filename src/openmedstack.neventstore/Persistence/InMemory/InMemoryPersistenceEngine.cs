@@ -125,7 +125,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
             }
 
             _logger.LogError(e, "Concurrent commit detected. Retrying");
-            throw new ConcurrencyException(e.Message, e);
+            throw;
         }
     }
 
@@ -185,7 +185,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     private bool DetectDuplicate(CommitAttempt attempt)
     {
         return this[attempt.BucketId].GetCommits()
-            .Any(c => c.StreamId == attempt.StreamId && c.CommitSequence == attempt.CommitSequence);
+            .Any(c => c.StreamId == attempt.StreamId && c.CommitId == attempt.CommitId);
     }
 
     private void ThrowWhenDisposed()
@@ -403,9 +403,9 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
                 throw new ConcurrencyException();
             }
 
-            _stamps[commit.CommitId] = commit.CommitStamp;
             lock (_commits)
             {
+                _stamps[commit.CommitId] = commit.CommitStamp;
                 _commits.Add(commit);
             }
 
@@ -440,7 +440,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         {
             lock (_commits)
             {
-                return _heads.Where(x => x.HeadRevision >= x.SnapshotRevision + maxThreshold)
+                return _heads.Where(x => x.HeadRevision > x.SnapshotRevision + maxThreshold)
                     .Select(
                         stream => new StreamHead(
                             stream.BucketId,

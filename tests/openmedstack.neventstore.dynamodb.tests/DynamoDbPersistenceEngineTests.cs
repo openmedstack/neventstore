@@ -113,8 +113,8 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         }
 
         var loaded = await engine.Get(bucket, streamId, 0, int.MaxValue, default).ToArray();
-        Assert.Equal(2, loaded.Length);
-        Assert.Equal(3, loaded[1].StreamRevision);
+        Assert.Single(loaded);
+        Assert.Equal(1, loaded[0].StreamRevision);
     }
 
     public async ValueTask DisposeAsync()

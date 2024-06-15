@@ -10,6 +10,7 @@ using OpenMedStack.NEventStore.Persistence.Sql;
 using OpenMedStack.NEventStore.Persistence.Sql.SqlDialects;
 using OpenMedStack.NEventStore.Serialization;
 using TechTalk.SpecFlow;
+using Xunit;
 
 namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
@@ -40,7 +41,7 @@ public partial class PersistenceEngineBehavior
     {
         var (commitEvents, accessSnapshots, managePersistence) = type switch
         {
-            "in-memory" => CreateInMemoryPersistence(ConfiguredPageSizeForTesting),
+            "in-memory" => CreateInMemoryPersistence(),
             "postgres" => CreatePostgresPersistence(ConfiguredPageSizeForTesting),
             "dynamodb" => CreateDynamoDbPersistence(),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
@@ -57,7 +58,37 @@ public partial class PersistenceEngineBehavior
         await PersistenceManagement.Initialize();
     }
 
-    private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreateInMemoryPersistence(int pageSize)
+    [Given("an existing commit attempt")]
+    public void GivenAnExistingCommitAttempt()
+    {
+        _attempt = new CommitAttempt(
+            BucketId,
+            StreamId,
+            1,
+            Guid.NewGuid(),
+            1,
+            DateTimeOffset.UtcNow,
+            new Dictionary<string, object>(),
+            new List<EventMessage>
+            {
+                new(new ExtensionMethods.SomeDomainEvent { SomeProperty = "test" },
+                    new Dictionary<string, object>())
+            });
+    }
+
+    [When("committing again on the same stream")]
+    public async Task WhenCommittingAgainOnTheSameStream()
+    {
+        await Persistence.Commit(_attempt);
+    }
+
+    [Then(@"should throw a duplicate commit exception")]
+    public async Task ThenShouldThrowADuplicateCommitException()
+    {
+        await Assert.ThrowsAsync<DuplicateCommitException>(async () => await Persistence.Commit(_attempt));
+    }
+
+    private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreateInMemoryPersistence()
     {
         var engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
         return (engine, engine, engine);
@@ -78,8 +109,7 @@ public partial class PersistenceEngineBehavior
         return (engine, engine, engine);
     }
 
-
-    private (ICommitEvents commitEvents, IAccessSnapshots accessSnapshots, IManagePersistence managePersistence)
+    private static (ICommitEvents commitEvents, IAccessSnapshots accessSnapshots, IManagePersistence managePersistence)
         CreateDynamoDbPersistence()
     {
         var client = new AmazonDynamoDBClient(

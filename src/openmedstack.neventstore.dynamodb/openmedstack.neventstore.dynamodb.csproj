@@ -13,7 +13,7 @@
         <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.15" />
+      <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.303.22" />
     </ItemGroup>
 
 </Project>

@@ -209,13 +209,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             var statement = _dialect.GetStreamsRequiringSnapshots;
             query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
             query.AddParameter(_dialect.Threshold, maxThreshold);
-            await foreach (var record in query.ExecuteWithQuery(
-                    statement,
-                    //(q, s) => q.SetParameter(
-                    //    _dialect.StreamId,
-                    //    s == null ? null : _dialect.CoalesceParameterValue(s.StreamId()),
-                    //    DbType.AnsiString),
-                    token)
+            await foreach (var record in query.ExecuteWithQuery(statement, token)
                 .ConfigureAwait(false))
             {
                 if (token.IsCancellationRequested)

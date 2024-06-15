@@ -7,7 +7,7 @@ I want to ensure that the persistence engine behaves as expected
         And the persistence is initialized
         And a persisted stream with a single event
         When committing after another thread or process has moved the stream head
-        Then should update the stream revision accordingly
+        Then must throw a concurrency exception
 
         Examples:
           | type      |
@@ -73,32 +73,6 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
-
-    Scenario Outline: Committing a stream with the same sequence id
-    Test to ensure the uniqueness of BucketId+StreamId+CommitSequence to avoid concurrency issues
-        Given a <type> persistence engine
-        And the persistence is initialized
-        And a persisted stream
-        When committing a stream with the same sequence id
-        Then should update to include competing events
-
-        Examples:
-          | type      |
-          | in-memory |
-          | postgres  |
-          | dynamodb  |
-
-    Scenario Outline: Attempting to persist a commit twice
-        Given a <type> persistence engine
-        And the persistence is initialized
-        And an already persisted stream
-        When committing the stream again
-        Then should throw a duplicate commit exception
-
-        Examples:
-          | type      |
-          | in-memory |
-          | postgres  |
 
     Scenario Outline: Attempting to persist a commit id twice on same stream
         Given a <type> persistence engine

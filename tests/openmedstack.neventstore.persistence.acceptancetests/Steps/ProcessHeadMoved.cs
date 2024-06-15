@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
 using TechTalk.SpecFlow;
@@ -13,7 +12,6 @@ public partial class PersistenceEngineBehavior
     private const int StreamRevision = 1;
     private readonly EventMessage _uncommitted = new(string.Empty);
     private ICommit[] _committed = null!;
-    private ICommit? _commit;
     private CommitAttempt _stream = null!;
 
     [Given("a persisted stream with a single event")]
@@ -30,20 +28,18 @@ public partial class PersistenceEngineBehavior
     [When("committing after another thread or process has moved the stream head")]
     public async Task WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead()
     {
-        _stream = new CommitAttempt(BucketId, StreamId, StreamRevision, Guid.NewGuid(), 1, SystemTime.UtcNow, null,
+        _stream = new CommitAttempt(BucketId, StreamId, 2, Guid.NewGuid(), 2, SystemTime.UtcNow, null,
             [new EventMessage(_uncommitted)]);
-        var competingStream = new CommitAttempt(BucketId, StreamId, StreamRevision,
-            Guid.NewGuid(), 1, SystemTime.UtcNow, null, BuildCommitStub(3, 2, 2).Events.ToArray());
+        var competingStream = new CommitAttempt(BucketId, StreamId, 3,
+            Guid.NewGuid(), 2, SystemTime.UtcNow, null, BuildCommitStub(3, 2, 2).Events.ToArray());
 
-        await Persistence.Commit(competingStream);
-
-        _commit = await Persistence.Commit(_stream);
+        _ = await Persistence.Commit(competingStream);
     }
 
-    [Then("should update the stream revision accordingly")]
-    public void ShouldUpdateTheStreamRevisionAccordingly()
+    [Then("must throw a concurrency exception")]
+    public async Task MustThrowAConcurrencyException()
     {
-        Assert.Equal(3, _commit?.CommitSequence);
+        await Assert.ThrowsAsync<ConcurrencyException>(async () => await Persistence.Commit(_stream));
     }
 
     protected ICommit BuildCommitStub(int revision, int sequence, int eventCount)
