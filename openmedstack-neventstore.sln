@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.dy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.s3", "src\openmedstack.neventstore.s3\openmedstack.neventstore.s3.csproj", "{98D06CCF-E596-40FE-8BA1-0ADBFEDC6F0D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "openmedstack.neventstore.server.client.tests", "tests\openmedstack.neventstore.server.client.tests\openmedstack.neventstore.server.client.tests.csproj", "{0B2029B9-21F6-4874-92A8-9FEBF2778DCF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,10 @@ Global
 		{98D06CCF-E596-40FE-8BA1-0ADBFEDC6F0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{98D06CCF-E596-40FE-8BA1-0ADBFEDC6F0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{98D06CCF-E596-40FE-8BA1-0ADBFEDC6F0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B2029B9-21F6-4874-92A8-9FEBF2778DCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B2029B9-21F6-4874-92A8-9FEBF2778DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B2029B9-21F6-4874-92A8-9FEBF2778DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B2029B9-21F6-4874-92A8-9FEBF2778DCF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -106,6 +112,7 @@ Global
 		{8BFE371A-285C-4711-9217-E3A122F5E60F} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{EA1A0BC6-5F44-4533-9D95-9E01EA9716C6} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 		{CD431507-D3BF-405B-A225-301A1FBC7F71} = {1D0BF739-F744-4B0B-9162-78770E21A030}
+		{0B2029B9-21F6-4874-92A8-9FEBF2778DCF} = {1D0BF739-F744-4B0B-9162-78770E21A030}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {67B44C3E-DC8A-4BB3-9CD4-5D81241AC7A5}
