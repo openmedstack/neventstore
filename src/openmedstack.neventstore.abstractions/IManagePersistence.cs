@@ -50,10 +50,10 @@ public interface IManagePersistence
     /// </summary>
     Task<bool> Drop();
 
-    /// <summary>
-    /// Deletes a stream.
-    /// </summary>
-    /// <param name="bucketId">The bucket Id from which the stream is to be deleted.</param>
-    /// <param name="streamId">The stream Id of the stream that is to be deleted.</param>
-    Task<bool> DeleteStream(string bucketId, string streamId);
+//    /// <summary>
+//    /// Deletes a stream.
+//    /// </summary>
+//    /// <param name="bucketId">The bucket Id from which the stream is to be deleted.</param>
+//    /// <param name="streamId">The stream Id of the stream that is to be deleted.</param>
+//    Task<bool> DeleteStream(string bucketId, string streamId);
 }

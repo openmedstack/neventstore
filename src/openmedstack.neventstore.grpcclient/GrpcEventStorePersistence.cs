@@ -32,7 +32,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
 
         var commitInfo = new CommitInfo
         {
-            BucketId = eventStream.BucketId,
+            BucketId = eventStream.TenantId,
             StreamId = eventStream.StreamId,
             StreamRevision = eventStream.StreamRevision,
             CheckpointToken = 0,
@@ -61,13 +61,13 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     /// <inheritdoc />
     public async Task<ISnapshot?> GetSnapshot(
-        string bucketId,
+        string tenantId,
         string streamId,
         int maxRevision,
         CancellationToken cancellationToken)
     {
         var response = await _client.GetSnapshotAsync(
-            new GetSnapshotRequest { BucketId = bucketId, StreamId = streamId, MaxRevision = maxRevision },
+            new GetSnapshotRequest { BucketId = tenantId, StreamId = streamId, MaxRevision = maxRevision },
             cancellationToken: cancellationToken).ConfigureAwait(false);
         return new Snapshot(response.BucketId, response.StreamId, response.StreamRevision,
             _serializer.Deserialize<object>(Convert.FromBase64String(response.Base64Payload))!);
@@ -82,7 +82,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     /// <inheritdoc />
     public IAsyncEnumerable<ICommit> Get(
-        string bucketId,
+        string tenantId,
         string streamId,
         int minRevision,
         int maxRevision,
@@ -90,7 +90,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
     {
         var response = _client.GetFromMinMax(
             new GetFromMinMaxRequest
-                { BucketId = bucketId, StreamId = streamId, MinRevision = minRevision, MaxRevision = maxRevision });
+                { BucketId = tenantId, StreamId = streamId, MinRevision = minRevision, MaxRevision = maxRevision });
         return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
     }
 

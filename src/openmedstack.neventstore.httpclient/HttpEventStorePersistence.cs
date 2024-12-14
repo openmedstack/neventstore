@@ -40,14 +40,14 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ICommit> Get(
-        string bucketId,
+        string tenantId,
         string streamId,
         int minRevision = 0,
         int maxRevision = int.MaxValue,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var response = await _client.GetAsync(
-            $"commits/{bucketId}/{streamId}/{minRevision}/{maxRevision}",
+            $"commits/{tenantId}/{streamId}/{minRevision}/{maxRevision}",
             cancellationToken).ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {
@@ -70,7 +70,7 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     private Commit ToDeserializedCommit(Commit commit)
     {
-        return new Commit(commit.BucketId, commit.StreamId, commit.StreamRevision, commit.CommitId,
+        return new Commit(commit.TenantId, commit.StreamId, commit.StreamRevision, commit.CommitId,
             commit.CommitSequence, commit.CommitStamp, commit.CheckpointToken, commit.Headers,
             commit.Events.Select(x => new EventMessage(
                 _serializer.Deserialize<object>(Convert.FromBase64String((string)x.Body))!,
@@ -87,7 +87,7 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
         }
 
         var commitAttempt = new CommitAttempt(
-            eventStream.BucketId,
+            eventStream.TenantId,
             eventStream.StreamId,
             eventStream.StreamRevision,
             eventStream.CommitId,
@@ -123,12 +123,12 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     /// <inheritdoc />
     public async Task<ISnapshot?> GetSnapshot(
-        string bucketId,
+        string tenantId,
         string streamId,
         int maxRevision,
         CancellationToken cancellationToken)
     {
-        var response = await _client.GetAsync($"snapshots/{bucketId}/{streamId}/{maxRevision}", cancellationToken)
+        var response = await _client.GetAsync($"snapshots/{tenantId}/{streamId}/{maxRevision}", cancellationToken)
             .ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {

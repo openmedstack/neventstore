@@ -31,3 +31,7 @@ public class StreamNotFoundException : Exception
     {
     }
 }
+
+public class ConflictingCommitException(string message) : Exception(message);
+
+public class NonConflictingCommitException(string message) : Exception(message);

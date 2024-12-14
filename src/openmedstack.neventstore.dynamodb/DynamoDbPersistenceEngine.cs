@@ -26,7 +26,7 @@ public class DynamoDbPersistenceEngine(
     }
 
     public async IAsyncEnumerable<ICommit> Get(
-        string bucketId,
+        string tenantId,
         string streamId,
         int minRevision,
         int maxRevision,
@@ -42,7 +42,7 @@ public class DynamoDbPersistenceEngine(
                 "BucketAndStream = :v_BucketAndStream AND StreamRevision BETWEEN :v_MinRevision AND :v_MaxRevision",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":v_BucketAndStream", new AttributeValue { S = $"{bucketId}{streamId}" } },
+                { ":v_BucketAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
                 { ":v_MinRevision", new AttributeValue { N = minRevision.ToString() } },
                 { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
             },
@@ -134,7 +134,7 @@ public class DynamoDbPersistenceEngine(
     }
 
     public async Task<ISnapshot?> GetSnapshot(
-        string bucketId,
+        string tenantId,
         string streamId,
         int maxRevision,
         CancellationToken cancellationToken)
@@ -148,7 +148,7 @@ public class DynamoDbPersistenceEngine(
                 "BucketAndStream = :v_BucketAndStream AND StreamRevision <= :v_MaxRevision",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":v_BucketAndStream", new AttributeValue { S = $"{bucketId}{streamId}" } },
+                { ":v_BucketAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
                 { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
             },
             ScanIndexForward = false

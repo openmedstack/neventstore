@@ -16,8 +16,8 @@ internal class DynamoDbSnapshots
     {
         return new DynamoDbSnapshots
         {
-            BucketAndStream = $"{snapshot.BucketId}{snapshot.StreamId}",
-            BucketId = snapshot.BucketId,
+            BucketAndStream = $"{snapshot.TenantId}{snapshot.StreamId}",
+            BucketId = snapshot.TenantId,
             StreamId = snapshot.StreamId,
             StreamRevision = snapshot.StreamRevision,
             Payload = serializer.Serialize(snapshot.Payload)

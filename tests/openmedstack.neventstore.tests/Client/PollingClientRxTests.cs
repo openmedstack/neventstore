@@ -177,7 +177,7 @@ public class WhenPollingFromBucket1 : UsingPollingClient
     {
         var result = await _commitObserved;
         //Assert.True(_commitObserved.Wait(PollingInterval * 2));
-        Assert.Equal("bucket_1", result.BucketId);
+        Assert.Equal("bucket_1", result.TenantId);
     }
 }
 

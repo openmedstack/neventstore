@@ -5,7 +5,7 @@ namespace OpenMedStack.NEventStore.Abstractions.Persistence;
 public class Commit : ICommit
 {
     public Commit(
-        string bucketId,
+        string tenantId,
         string streamId,
         int streamRevision,
         Guid commitId,
@@ -15,7 +15,7 @@ public class Commit : ICommit
         IDictionary<string, object>? headers,
         IEnumerable<EventMessage>? events)
     {
-        BucketId = bucketId;
+        TenantId = tenantId;
         StreamId = streamId;
         StreamRevision = streamRevision;
         CommitId = commitId;
@@ -28,7 +28,7 @@ public class Commit : ICommit
             new ReadOnlyCollection<EventMessage>(new List<EventMessage>(events));
     }
 
-    public string BucketId { get; }
+    public string TenantId { get; }
 
     public string StreamId { get; }
 

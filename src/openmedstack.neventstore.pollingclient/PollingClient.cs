@@ -80,7 +80,7 @@ public class PollingClient : IDisposable
 
     public async Task Stop()
     {
-        _cts.Cancel();
+        await _cts.CancelAsync();
         if (_pollingThread != null
          && _pollingThread.Status != TaskStatus.WaitingForActivation
          && _pollingThread.Status != TaskStatus.WaitingToRun)

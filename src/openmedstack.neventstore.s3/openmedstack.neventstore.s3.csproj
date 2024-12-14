@@ -2,8 +2,8 @@
 
     <Import Project="..\..\shared.proj"/>
     <PropertyGroup>
-        <RootNamespace>OpenMedStack.NEventStore.DynamoDb</RootNamespace>
-        <PackageTags>OpenMedStack Architecture EventStore DynamoDB</PackageTags>
+        <RootNamespace>OpenMedStack.NEventStore.S3</RootNamespace>
+        <PackageTags>OpenMedStack Architecture EventStore S3</PackageTags>
         <Description>NEventStore for OpenMedStack based applications.</Description>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -13,7 +13,6 @@
         <ProjectReference Include="..\openmedstack.neventstore.abstractions\openmedstack.neventstore.abstractions.csproj"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.404.5" />
+      <PackageReference Include="AWSSDK.S3" Version="3.7.410.6" />
     </ItemGroup>
-
 </Project>

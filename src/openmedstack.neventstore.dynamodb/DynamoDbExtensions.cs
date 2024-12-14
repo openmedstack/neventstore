@@ -71,10 +71,9 @@ internal static class DynamoDbExtensions
         return response.HttpStatusCode == HttpStatusCode.OK;
     }
 
-    private static Dictionary<string, AttributeValue> MapToDictionary(object item)
+    private static Dictionary<string, AttributeValue> MapToDictionary<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]T>(T item)
     {
-        var type = item.GetType();
-        var properties = type.GetProperties();
+        var properties = typeof(T).GetProperties();
         return properties.Where(x => !x.GetCustomAttributes<DynamoDBIgnoreAttribute>().Any()).ToDictionary(
             p => p.Name,
             p =>

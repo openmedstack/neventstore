@@ -2,6 +2,8 @@ using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using OpenMedStack.Autofac;
+using OpenMedStack.Autofac.NEventstore;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.GrpcClient;
 using OpenMedStack.NEventStore.HttpClient;
@@ -25,8 +27,8 @@ public partial class FeatureSteps : IAsyncDisposable
             { TenantPrefix = "test", Name = typeof(EventStoreController).Namespace! };
         _server = Chassis.From(configuration)
             .UsingNEventStore()
-            //.UsingInMemoryEventStore()
-            //.UsingInMemoryEventDispatcher(TimeSpan.FromMilliseconds(100))
+//            .UsingInMemoryEventStore()
+//            .UsingInMemoryEventDispatcher(TimeSpan.FromMilliseconds(100))
             .AddAutofacModules((c, _) => new TestModule(c))
             .UsingTestWebServer(_ => new DelegateWebApplicationConfiguration(
                 collection =>

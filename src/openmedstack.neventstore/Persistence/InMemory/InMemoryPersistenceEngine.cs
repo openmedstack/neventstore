@@ -41,7 +41,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public IAsyncEnumerable<ICommit> Get(
-        string bucketId,
+        string tenantId,
         string streamId,
         int minRevision,
         int maxRevision,
@@ -49,7 +49,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     {
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.GettingAllCommitsFromRevision, streamId, minRevision, maxRevision);
-        var enumerable = this[bucketId].GetFrom(streamId, minRevision, maxRevision);
+        var enumerable = this[tenantId].GetFrom(streamId, minRevision, maxRevision);
         return enumerable.ToAsyncEnumerable(cancellationToken);
     }
 
@@ -111,7 +111,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.AttemptingToCommit, attempt.CommitId, attempt.StreamId,
             attempt.CommitSequence);
-        var bucket = this[attempt.BucketId];
+        var bucket = this[attempt.TenantId];
         try
         {
             return bucket.Commit(attempt, Interlocked.Increment(ref _checkpoint));
@@ -140,21 +140,21 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public Task<ISnapshot?> GetSnapshot(
-        string bucketId,
+        string tenantId,
         string streamId,
         int maxRevision,
         CancellationToken cancellationToken)
     {
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.GettingSnapshotForStream, bucketId, streamId, maxRevision);
-        return Task.FromResult(this[bucketId].GetSnapshot(streamId, maxRevision));
+        _logger.LogDebug(Resources.GettingSnapshotForStream, tenantId, streamId, maxRevision);
+        return Task.FromResult(this[tenantId].GetSnapshot(streamId, maxRevision));
     }
 
     public Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken = default)
     {
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.AddingSnapshot, snapshot.StreamId, snapshot.StreamRevision);
-        return Task.FromResult(this[snapshot.BucketId].AddSnapshot(snapshot));
+        return Task.FromResult(this[snapshot.TenantId].AddSnapshot(snapshot));
     }
 
     public Task<bool> Purge(string bucketId)
@@ -184,7 +184,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
 
     private bool DetectDuplicate(CommitAttempt attempt)
     {
-        return this[attempt.BucketId].GetCommits()
+        return this[attempt.TenantId].GetCommits()
             .Any(c => c.StreamId == attempt.StreamId && c.CommitId == attempt.CommitId);
     }
 
@@ -202,7 +202,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     private class InMemoryCommit : Commit
     {
         public InMemoryCommit(
-            string bucketId,
+            string tenantId,
             string streamId,
             int streamRevision,
             Guid commitId,
@@ -212,7 +212,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
             IDictionary<string, object> headers,
             IEnumerable<EventMessage> events)
             : base(
-                bucketId,
+                tenantId,
                 streamId,
                 streamRevision,
                 commitId,
@@ -247,14 +247,14 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
 
         public IdentityForConcurrencyConflictDetection(CommitAttempt commitAttempt)
         {
-            _bucketId = commitAttempt.BucketId;
+            _bucketId = commitAttempt.TenantId;
             _streamId = commitAttempt.StreamId;
             _commitSequence = commitAttempt.CommitSequence;
         }
 
         public IdentityForConcurrencyConflictDetection(Commit commit)
         {
-            _bucketId = commit.BucketId;
+            _bucketId = commit.TenantId;
             _streamId = commit.StreamId;
             _commitSequence = commit.CommitSequence;
         }
@@ -282,14 +282,14 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
 
         public IdentityForDuplicationDetection(CommitAttempt commitAttempt)
         {
-            _bucketId = commitAttempt.BucketId;
+            _bucketId = commitAttempt.TenantId;
             _streamId = commitAttempt.StreamId;
             _commitId = commitAttempt.CommitId;
         }
 
         public IdentityForDuplicationDetection(Commit commit)
         {
-            _bucketId = commit.BucketId;
+            _bucketId = commit.TenantId;
             _streamId = commit.StreamId;
             _commitId = commit.CommitId;
         }
@@ -389,7 +389,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         {
             DetectDuplicate(attempt);
             var commit = new InMemoryCommit(
-                attempt.BucketId,
+                attempt.TenantId,
                 attempt.StreamId,
                 attempt.StreamRevision,
                 attempt.CommitId,
@@ -422,7 +422,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
                 _logger.LogDebug(Resources.UpdatingStreamHead, commit.StreamId);
                 var snapshotRevision = head?.SnapshotRevision ?? 0;
                 _heads.Add(
-                    new StreamHead(commit.BucketId, commit.StreamId, commit.StreamRevision, snapshotRevision));
+                    new StreamHead(commit.TenantId, commit.StreamId, commit.StreamRevision, snapshotRevision));
             }
 
             return commit;

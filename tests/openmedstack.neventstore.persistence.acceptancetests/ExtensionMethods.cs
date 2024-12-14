@@ -63,7 +63,7 @@ public static class ExtensionMethods
 
     public static CommitAttempt BuildNextAttempt(this CommitAttempt stream)
     {
-        var attempt = new CommitAttempt(stream.BucketId, stream.StreamId, stream.StreamRevision + 2, Guid.NewGuid(),
+        var attempt = new CommitAttempt(stream.TenantId, stream.StreamId, stream.StreamRevision + 2, Guid.NewGuid(),
             stream.CommitSequence + 1, DateTimeOffset.UtcNow,
             new Dictionary<string, object>
             {
@@ -79,7 +79,7 @@ public static class ExtensionMethods
 
     public static CommitAttempt BuildNextAttempt(this ICommit commit)
     {
-        return new CommitAttempt(commit.BucketId, commit.StreamId, commit.StreamRevision + 2, Guid.NewGuid(),
+        return new CommitAttempt(commit.TenantId, commit.StreamId, commit.StreamRevision + 2, Guid.NewGuid(),
             commit.CommitSequence + 1, DateTimeOffset.UtcNow,
             new Dictionary<string, object>
             {

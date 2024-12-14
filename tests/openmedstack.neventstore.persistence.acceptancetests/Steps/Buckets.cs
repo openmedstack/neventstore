@@ -170,7 +170,7 @@ public partial class PersistenceEngineBehavior
     [When(@"getting all commits from bucket A")]
     public async Task WhenGettingAllCommitsFromBucketA()
     {
-        var enumerable = PersistenceManagement.GetFromStart("A");
+        var enumerable = PersistenceManagement.GetFrom("A", 0, CancellationToken.None);
         _returnedCommits = await enumerable.ToArray().ConfigureAwait(false);
     }
 

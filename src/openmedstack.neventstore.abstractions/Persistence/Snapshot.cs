@@ -18,7 +18,7 @@ public class Snapshot : ISnapshot
     public Snapshot(string bucketId, string streamId, int streamRevision, object payload)
         //   : this()
     {
-        BucketId = bucketId;
+        TenantId = bucketId;
         StreamId = streamId;
         StreamRevision = streamRevision;
         Payload = payload;
@@ -31,7 +31,7 @@ public class Snapshot : ISnapshot
     //{}
 
     [DataMember]
-    public virtual string BucketId { get; private set; }
+    public virtual string TenantId { get; private set; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream to which the snapshot applies.

@@ -8,7 +8,7 @@ public interface ICommit
     /// <summary>
     ///     Gets the value which identifies bucket to which the the stream and the the commit belongs.
     /// </summary>
-    string BucketId { get; }
+    string TenantId { get; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream to which the commit belongs.

@@ -7,7 +7,7 @@ public class CommitAttempt
     /// <summary>
     ///     Initializes a new instance of the Commit class.
     /// </summary>
-    /// <param name="bucketId">The value which identifies bucket to which the the stream and the the commit belongs</param>
+    /// <param name="tenantId">The value which identifies bucket to which the the stream and the the commit belongs</param>
     /// <param name="streamId">The value which uniquely identifies the stream in a bucket to which the commit belongs.</param>
     /// <param name="streamRevision">The value which indicates the revision of the most recent event in the stream to which this commit applies.</param>
     /// <param name="commitId">The value which uniquely identifies the commit within the stream.</param>
@@ -16,7 +16,7 @@ public class CommitAttempt
     /// <param name="headers">The metadata which provides additional, unstructured information about this commit.</param>
     /// <param name="events">The collection of event messages to be committed as a single unit.</param>
     public CommitAttempt(
-        string bucketId,
+        string tenantId,
         string streamId,
         int streamRevision,
         Guid commitId,
@@ -25,9 +25,9 @@ public class CommitAttempt
         IDictionary<string, object>? headers,
         IList<EventMessage> events)
     {
-        if (string.IsNullOrWhiteSpace(bucketId))
+        if (string.IsNullOrWhiteSpace(tenantId))
         {
-            throw new ArgumentException("Cannot be null or whitespace", nameof(bucketId));
+            throw new ArgumentException("Cannot be null or whitespace", nameof(tenantId));
         }
 
         if (string.IsNullOrWhiteSpace(streamId))
@@ -67,7 +67,7 @@ public class CommitAttempt
             throw new ArgumentException($"{nameof(events)} cannot be empty", nameof(events));
         }
 
-        BucketId = bucketId;
+        TenantId = tenantId;
         StreamId = streamId;
         StreamRevision = streamRevision;
         CommitId = commitId;
@@ -77,23 +77,10 @@ public class CommitAttempt
         Events = new ReadOnlyCollection<EventMessage>(events);
     }
 
-    internal static CommitAttempt FromCommit(ICommit commit)
-    {
-        return new CommitAttempt(
-            commit.BucketId,
-            commit.StreamId,
-            commit.StreamRevision,
-            commit.CommitId,
-            commit.CommitSequence,
-            commit.CommitStamp,
-            commit.Headers,
-            commit.Events.ToList());
-    }
-
     /// <summary>
     ///     Gets the value which identifies bucket to which the the stream and the the commit belongs.
     /// </summary>
-    public string BucketId { get; }
+    public string TenantId { get; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream to which the commit belongs.

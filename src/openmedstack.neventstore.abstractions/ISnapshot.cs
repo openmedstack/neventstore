@@ -8,7 +8,7 @@ public interface ISnapshot
     /// <summary>
     /// Gets the value which uniquely identifies the bucket to which the snapshot applies.
     /// </summary>
-    string BucketId { get; }
+    string TenantId { get; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream to which the snapshot applies.

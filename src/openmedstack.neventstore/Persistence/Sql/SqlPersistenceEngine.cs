@@ -72,7 +72,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
     }
 
     public virtual IAsyncEnumerable<ICommit> Get(
-        string bucketId,
+        string tenantId,
         string streamId,
         int minRevision,
         int maxRevision,
@@ -84,7 +84,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         async IAsyncEnumerable<ICommit> Query(IDbStatement query, [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetCommitsFromStartingRevision;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+            query.AddParameter(_dialect.BucketId, tenantId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamRevision, minRevision);
             query.AddParameter(_dialect.MaxStreamRevision, maxRevision);
@@ -225,7 +225,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
     }
 
     public virtual Task<ISnapshot?> GetSnapshot(
-        string bucketId,
+        string tenantId,
         string streamId,
         int maxRevision,
         CancellationToken cancellationToken)
@@ -238,7 +238,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetSnapshot;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+            query.AddParameter(_dialect.BucketId, tenantId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamId, streamIdHash!, DbType.AnsiString);
             query.AddParameter(_dialect.StreamRevision, maxRevision);
             var dataRecords = query.ExecuteWithQuery(statement, token).ConfigureAwait(false);
@@ -263,7 +263,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(
                     async (connection, cmd) =>
                     {
-                        cmd.AddParameter(_dialect.BucketId, snapshot.BucketId, DbType.AnsiString);
+                        cmd.AddParameter(_dialect.BucketId, snapshot.TenantId, DbType.AnsiString);
                         cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                         cmd.AddParameter(_dialect.StreamRevision, snapshot.StreamRevision);
                         var payload = _serializer.Serialize(snapshot.Payload);
@@ -390,12 +390,12 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             attempt.Events.Count,
             attempt.StreamId,
             attempt.CommitSequence,
-            attempt.BucketId);
+            attempt.TenantId);
         var streamId = _streamIdHasher.GetHash(attempt.StreamId);
         return await ExecuteCommand(
                 async (connection, cmd) =>
                 {
-                    cmd.AddParameter(_dialect.BucketId, attempt.BucketId, DbType.AnsiString);
+                    cmd.AddParameter(_dialect.BucketId, attempt.TenantId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamIdOriginal, attempt.StreamId);
                     cmd.AddParameter(_dialect.StreamRevision, attempt.StreamRevision);
@@ -411,7 +411,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
                     var scalar = await cmd.ExecuteScalar(_dialect.PersistCommit).ConfigureAwait(false);
                     var checkpointNumber = scalar!.ToLong();
                     return new Commit(
-                        attempt.BucketId,
+                        attempt.TenantId,
                         attempt.StreamId,
                         attempt.StreamRevision,
                         attempt.CommitId,
@@ -430,7 +430,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(
                 async cmd =>
                 {
-                    cmd.AddParameter(_dialect.BucketId, attempt.BucketId, DbType.AnsiString);
+                    cmd.AddParameter(_dialect.BucketId, attempt.TenantId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.CommitId, attempt.CommitId);
                     cmd.AddParameter(_dialect.CommitSequence, attempt.CommitSequence);

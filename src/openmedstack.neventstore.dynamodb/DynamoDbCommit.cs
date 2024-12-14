@@ -20,8 +20,8 @@ internal class DynamoDbCommit
     {
         return new DynamoDbCommit
         {
-            BucketAndStream = $"{commitAttempt.BucketId}{commitAttempt.StreamId}",
-            BucketId = commitAttempt.BucketId,
+            BucketAndStream = $"{commitAttempt.TenantId}{commitAttempt.StreamId}",
+            BucketId = commitAttempt.TenantId,
             StreamId = commitAttempt.StreamId,
             StreamRevision = commitAttempt.StreamRevision,
             CommitId = commitAttempt.CommitId.ToString("N"),

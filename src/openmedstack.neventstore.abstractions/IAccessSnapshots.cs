@@ -11,14 +11,14 @@ public interface IAccessSnapshots
     /// <summary>
     ///     Gets the most recent snapshot which was taken on or before the revision indicated.
     /// </summary>
-    /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
+    /// <param name="tenantId">The value which uniquely identifies bucket the stream belongs to.</param>
     /// <param name="streamId">The stream to be searched for a snapshot.</param>
     /// <param name="maxRevision">The maximum revision possible for the desired snapshot.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> for the async operation</param>
     /// <returns>If found, it returns the snapshot; otherwise null is returned.</returns>
     /// <exception cref="StorageException" />
     /// <exception cref="StorageUnavailableException" />
-    Task<ISnapshot?> GetSnapshot(string bucketId, string streamId, int maxRevision, CancellationToken cancellationToken);
+    Task<ISnapshot?> GetSnapshot(string tenantId, string streamId, int maxRevision, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Adds the snapshot provided to the stream indicated.

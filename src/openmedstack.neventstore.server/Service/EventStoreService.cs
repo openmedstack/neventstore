@@ -38,7 +38,7 @@ public class EventStoreService : EventStore.EventStoreBase
             ? null
             : new CommitInfo
             {
-                BucketId = info.BucketId,
+                BucketId = info.TenantId,
                 CommitId = info.CommitId.ToString("N"),
                 CheckpointToken = info.CheckpointToken,
                 CommitSequence = info.CommitSequence, CommitStamp = info.CommitStamp.ToUnixTimeSeconds(),
@@ -84,7 +84,7 @@ public class EventStoreService : EventStore.EventStoreBase
         var bytes = Convert.ToBase64String(stream.ToArray());
         return new SnapshotInfo
         {
-            BucketId = result.BucketId,
+            BucketId = result.TenantId,
             StreamId = result.StreamId,
             StreamRevision = result.StreamRevision,
             Base64Payload = bytes
@@ -100,7 +100,7 @@ public class EventStoreService : EventStore.EventStoreBase
         {
             await responseStream.WriteAsync(new CommitInfo
             {
-                BucketId = commit.BucketId,
+                BucketId = commit.TenantId,
                 CommitId = commit.CommitId.ToString("N"),
                 CommitSequence = commit.CommitSequence,
                 CommitStamp = commit.CommitStamp.ToUnixTimeSeconds(),
