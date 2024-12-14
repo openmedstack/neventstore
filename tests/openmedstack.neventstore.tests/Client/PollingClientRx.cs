@@ -21,7 +21,7 @@ public sealed class PollingClientRx
         IManagePersistence managePersistence,
         TimeSpan waitInterval = default)
     {
-        if (waitInterval == default)
+        if (waitInterval == TimeSpan.Zero)
         {
             waitInterval = TimeSpan.FromMilliseconds(5000);
         }

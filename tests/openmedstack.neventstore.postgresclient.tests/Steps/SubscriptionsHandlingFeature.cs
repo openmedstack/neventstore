@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
@@ -13,6 +15,7 @@ namespace OpenMedStack.NEventStore.PostgresClient.Tests.Steps;
 [Binding]
 public class SubscriptionsHandlingFeature : IDisposable
 {
+    private IContainer? _testContainer;
     private IManagePersistence _managePersistence = null!;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ManualResetEventSlim _waitHandle = new();
@@ -20,8 +23,42 @@ public class SubscriptionsHandlingFeature : IDisposable
     private ICommitEvents _eventStore = null!;
     private Task _subscriptionTask = null!;
 
-    private const string ConnectionString =
-        "Server=localhost;Keepalive=1;Pooling=true;MinPoolSize=1;MaxPoolSize=20;Port=5432;Database=openmedstack;User Id=openmedstack;Password=openmedstack;";
+    private string? _connectionString;
+
+    [AfterScenario]
+    public async Task AfterScenario()
+    {
+        try
+        {
+            if (_testContainer != null)
+            {
+                await _testContainer.StopAsync();
+                await _testContainer.DisposeAsync();
+            }
+        }
+        catch
+        {
+            // Empty
+        }
+    }
+
+    [Given("a postgres instance")]
+    public async Task GivenAPersistenceEngine()
+    {
+        var testContainer = new ContainerBuilder()
+            .WithImage("postgres:alpine")
+            .WithPortBinding("5432", true)
+            .WithEnvironment("POSTGRES_USER", "openmedstack")
+            .WithEnvironment("POSTGRES_PASSWORD", "openmedstack")
+            .WithEnvironment("POSTGRES_DB", "openmedstack")
+            .WithCommand("postgres", "-c", "wal_level=logical")
+            .Build();
+        await testContainer.StartAsync();
+        _testContainer = testContainer;
+        var mappedPublicPort = testContainer.GetMappedPublicPort(5432);
+        _connectionString =
+            $"Server=localhost;Keepalive=1;Pooling=true;MinPoolSize=1;MaxPoolSize=20;Port={mappedPublicPort};Database=openmedstack;User Id=openmedstack;Password=openmedstack;";
+    }
 
     [Given(@"a postgres server for NEventStore")]
     public async Task GivenAPostgresServerForNEventStore()
@@ -29,7 +66,7 @@ public class SubscriptionsHandlingFeature : IDisposable
         var serviceCollection = new ServiceCollection()
             .RegisterJsonSerialization()
             .AddLogging()
-            .RegisterSqlEventStore<PostgreSqlDialect, Sha256StreamIdHasher>(NpgsqlFactory.Instance, ConnectionString);
+            .RegisterSqlEventStore<PostgreSqlDialect, Sha256StreamIdHasher>(NpgsqlFactory.Instance, _connectionString!);
         var serviceProvider = serviceCollection.BuildServiceProvider();
         _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
         await _managePersistence.Initialize();
@@ -41,7 +78,7 @@ public class SubscriptionsHandlingFeature : IDisposable
     {
         try
         {
-            await using var connection = new NpgsqlConnection(ConnectionString);
+            await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync().ConfigureAwait(false);
             await using var command = connection.CreateCommand();
             command.CommandText =
@@ -66,7 +103,7 @@ public class SubscriptionsHandlingFeature : IDisposable
             return Task.CompletedTask;
         }
 
-        _client = new DelegatePgPublicationClient("commit_slot", "commit_pub", ConnectionString,
+        _client = new DelegatePgPublicationClient("commit_slot", "commit_pub", _connectionString!,
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance), Handler);
         await _client.CreateSubscriptionSlot(_cancellationTokenSource.Token).ConfigureAwait(false);
         _subscriptionTask = _client.Subscribe(_cancellationTokenSource.Token);

@@ -36,7 +36,7 @@ public class PollingClient : IDisposable
         TimeSpan waitInterval = default)
     {
         _logger = logger;
-        _waitInterval = waitInterval == default ? TimeSpan.FromMilliseconds(300) : waitInterval;
+        _waitInterval = waitInterval == TimeSpan.Zero ? TimeSpan.FromMilliseconds(300) : waitInterval;
 
         _commitCallback = callback
          ?? throw new ArgumentNullException(

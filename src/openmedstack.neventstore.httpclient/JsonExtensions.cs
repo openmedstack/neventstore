@@ -11,7 +11,7 @@ internal static class JsonExtensions
     /// </summary>
     public static async Task<T?> DeserializeAsync<T>(
         this Stream stream,
-        JsonSerializerSettings? settings = default,
+        JsonSerializerSettings? settings = null,
         CancellationToken cancellationToken = default)
     {
         var serializer = JsonSerializer.CreateDefault(settings);
@@ -29,7 +29,7 @@ internal static class JsonExtensions
     /// </summary>
     public static async IAsyncEnumerable<T?> DeserializeAsyncEnumerable<T>(
         this Stream stream,
-        JsonSerializerSettings? settings = default,
+        JsonSerializerSettings? settings = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var serializer = JsonSerializer.CreateDefault(settings);
@@ -49,7 +49,7 @@ internal static class JsonExtensions
     /// </summary>
     private static async IAsyncEnumerable<JToken> LoadAsyncEnumerable(
         JsonTextReader reader,
-        JsonLoadSettings? settings = default,
+        JsonLoadSettings? settings = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         (await reader.MoveToContentAndAssertAsync(cancellationToken: cancellationToken).ConfigureAwait(false))

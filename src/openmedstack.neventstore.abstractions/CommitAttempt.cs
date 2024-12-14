@@ -42,10 +42,10 @@ public class CommitAttempt
                 $"{nameof(streamRevision)} has value {streamRevision} which is less than or equal to 0");
         }
 
-        if (commitId.CompareTo(default) == 0)
+        if (commitId.CompareTo(Guid.Empty) == 0)
         {
             throw new ArgumentException(
-                $"{nameof(commitId)} has value {commitId} which cannot be equal to it's default value {default(Guid)}");
+                $"{nameof(commitId)} has value {commitId} which cannot be equal to it's default value {Guid.Empty}");
         }
 
         if (commitSequence.CompareTo(0) <= 0)

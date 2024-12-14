@@ -1,6 +1,8 @@
 using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.Runtime;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenMedStack.NEventStore.Abstractions;
 using OpenMedStack.NEventStore.Abstractions.Persistence;
@@ -11,19 +13,26 @@ namespace OpenMedStack.NEventStore.DynamoDb.Tests;
 
 public class DynamoDbPersistenceEngineTests : IAsyncDisposable
 {
+    private readonly IContainer _testContainer;
     private readonly AmazonDynamoDBClient _dbClient;
     private readonly DynamoDbPersistenceEngine _engine;
     private readonly DynamoDbManagement _management;
 
     public DynamoDbPersistenceEngineTests()
     {
+        _testContainer = new ContainerBuilder()
+            .WithImage("amazon/dynamodb-local")
+            .WithPortBinding("8000", true)
+            .Build();
+        _testContainer.StartAsync().Wait();
+        var mappedPublicPort = _testContainer.GetMappedPublicPort(8000);
         _dbClient = new AmazonDynamoDBClient(
             new BasicAWSCredentials("blah", "blah"),
             new AmazonDynamoDBConfig
             {
                 AllowAutoRedirect = true,
                 RegionEndpoint = RegionEndpoint.EUCentral1,
-                ServiceURL = "http://localhost:8000"
+                ServiceURL = $"http://localhost:{mappedPublicPort}"
             });
 
         _engine =
@@ -84,7 +93,7 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         var commitResult = await _engine.AddSnapshot(snapshot, CancellationToken.None);
         Assert.True(commitResult);
 
-        var reloaded = await _engine.GetSnapshot(bucket, streamId, 1, default);
+        var reloaded = await _engine.GetSnapshot(bucket, streamId, 1, CancellationToken.None);
         Assert.NotNull(reloaded);
     }
 
@@ -112,7 +121,7 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
             await engine.Commit(stream2);
         }
 
-        var loaded = await engine.Get(bucket, streamId, 0, int.MaxValue, default).ToArray();
+        var loaded = await engine.Get(bucket, streamId, 0, int.MaxValue, CancellationToken.None).ToArray();
         Assert.Single(loaded);
         Assert.Equal(1, loaded[0].StreamRevision);
     }
@@ -122,6 +131,8 @@ public class DynamoDbPersistenceEngineTests : IAsyncDisposable
         await _management.Drop();
         await CastAndDispose(_dbClient);
         await CastAndDispose(_engine);
+        await _testContainer.StopAsync();
+        await _testContainer.DisposeAsync();
         GC.SuppressFinalize(this);
 
         return;

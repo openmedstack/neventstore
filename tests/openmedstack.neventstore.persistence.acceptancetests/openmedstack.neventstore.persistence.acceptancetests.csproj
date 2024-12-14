@@ -21,6 +21,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="SpecFlow.xUnit" Version="3.9.74" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.1.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -19,7 +19,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.1.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,9 +28,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="docker-compose.yml">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
       <None Update="xunit.runner.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

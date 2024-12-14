@@ -1,6 +1,8 @@
 using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.Runtime;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using OpenMedStack.NEventStore.Abstractions;
@@ -18,6 +20,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 [Scope(Feature = "Persistence Engine Behavior")]
 public partial class PersistenceEngineBehavior
 {
+    private IContainer? _testContainer;
     protected const int ConfiguredPageSizeForTesting = 2;
     public ICommitEvents Persistence { get; protected set; } = null!;
     public IAccessSnapshots Snapshots { get; protected set; } = null!;
@@ -29,6 +32,11 @@ public partial class PersistenceEngineBehavior
         try
         {
             await PersistenceManagement.Drop().ConfigureAwait(false);
+            if (_testContainer != null)
+            {
+                await _testContainer.StopAsync();
+                await _testContainer.DisposeAsync();
+            }
         }
         catch
         {
@@ -37,13 +45,13 @@ public partial class PersistenceEngineBehavior
     }
 
     [Given("a (.+) persistence engine")]
-    public void GivenAPersistenceEngine(string type)
+    public async Task GivenAPersistenceEngine(string type)
     {
         var (commitEvents, accessSnapshots, managePersistence) = type switch
         {
             "in-memory" => CreateInMemoryPersistence(),
-            "postgres" => CreatePostgresPersistence(ConfiguredPageSizeForTesting),
-            "dynamodb" => CreateDynamoDbPersistence(),
+            "postgres" => await CreatePostgresPersistence(ConfiguredPageSizeForTesting),
+            "dynamodb" => await CreateDynamoDbPersistence(),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -94,12 +102,22 @@ public partial class PersistenceEngineBehavior
         return (engine, engine, engine);
     }
 
-    private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreatePostgresPersistence(int pageSize)
+    private async Task<(ICommitEvents, IAccessSnapshots, IManagePersistence)> CreatePostgresPersistence(int pageSize)
     {
+        var testContainer = new ContainerBuilder()
+            .WithImage("postgres:alpine")
+            .WithPortBinding("5432", true)
+            .WithEnvironment("POSTGRES_USER", "openmedstack")
+            .WithEnvironment("POSTGRES_PASSWORD", "openmedstack")
+            .WithEnvironment("POSTGRES_DB", "openmedstack")
+            .Build();
+        await testContainer.StartAsync();
+        _testContainer = testContainer;
+        var mappedPublicPort = testContainer.GetMappedPublicPort(5432);
         var engine = new SqlPersistenceEngine(
             new NetStandardConnectionFactory(
                 NpgsqlFactory.Instance,
-                "Server=localhost;Port=5432;Database=openmedstack;User Id=openmedstack;Password=openmedstack;",
+                $"Server=localhost;Port={mappedPublicPort};Database=openmedstack;User Id=openmedstack;Password=openmedstack;",
                 NullLogger<NetStandardConnectionFactory>.Instance),
             new PostgreSqlDialect(NullLogger<PostgreSqlDialect>.Instance),
             new NesJsonSerializer(NullLogger<NesJsonSerializer>.Instance),
@@ -109,15 +127,23 @@ public partial class PersistenceEngineBehavior
         return (engine, engine, engine);
     }
 
-    private static (ICommitEvents commitEvents, IAccessSnapshots accessSnapshots, IManagePersistence managePersistence)
+    private async Task<(ICommitEvents commitEvents, IAccessSnapshots accessSnapshots, IManagePersistence
+            managePersistence)>
         CreateDynamoDbPersistence()
     {
+        var testContainer = new ContainerBuilder()
+            .WithImage("amazon/dynamodb-local:latest")
+            .WithPortBinding("8000", true)
+            .Build();
+        await testContainer.StartAsync();
+        var mappedPort = testContainer.GetMappedPublicPort(8000);
+        _testContainer = testContainer;
         var client = new AmazonDynamoDBClient(
             new BasicAWSCredentials("blah", "blah"),
             new AmazonDynamoDBConfig
             {
                 AllowAutoRedirect = true, RegionEndpoint = RegionEndpoint.EUCentral1,
-                ServiceURL = "http://localhost:8000"
+                ServiceURL = $"http://localhost:{mappedPort}"
             });
         var engine = new DynamoDbPersistenceEngine(
             client,
