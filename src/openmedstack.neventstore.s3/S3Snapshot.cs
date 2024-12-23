@@ -5,8 +5,7 @@ namespace OpenMedStack.NEventStore.S3;
 
 internal class S3Snapshot
 {
-    public required string BucketAndStream { get; set; }
-    public required string BucketId { get; set; }
+    public required string TenantId { get; set; }
     public required string StreamId { get; set; }
     public int StreamRevision { get; set; }
     public byte[] Payload { get; set; } = [];
@@ -15,8 +14,7 @@ internal class S3Snapshot
     {
         return new S3Snapshot
         {
-            BucketAndStream = $"{snapshot.TenantId}{snapshot.StreamId}",
-            BucketId = snapshot.TenantId,
+            TenantId = snapshot.TenantId,
             StreamId = snapshot.StreamId,
             StreamRevision = snapshot.StreamRevision,
             Payload = serializer.Serialize(snapshot.Payload)
@@ -25,6 +23,6 @@ internal class S3Snapshot
 
     public ISnapshot ToSnapshot(ISerialize serializer)
     {
-        return new Snapshot(BucketId, StreamId, StreamRevision, serializer.Deserialize<object>(Payload)!);
+        return new Snapshot(TenantId, StreamId, StreamRevision, serializer.Deserialize<object>(Payload)!);
     }
 }

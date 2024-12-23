@@ -41,7 +41,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldBeAbleToLoadTheSnapshot()
     {
         var snapshot =
-            await Snapshots.GetSnapshot("default", _streamId, _snapshot.StreamRevision, CancellationToken.None);
+            await Snapshots.GetSnapshot("default", _streamId, _snapshot.StreamRevision, CancellationToken.None).ConfigureAwait(false);
         Assert.NotNull(snapshot);
     }
 
@@ -106,7 +106,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldNoLongerFindTheStreamInTheSetOfStreamsToBeSnapshotted()
     {
         Assert.DoesNotContain(
-            await PersistenceManagement.GetStreamsToSnapshot("default", 1, CancellationToken.None).ToList(),
+            await PersistenceManagement.GetStreamsToSnapshot("default", 1, CancellationToken.None).ToList().ConfigureAwait(false),
             x => x.StreamId == _streamId);
     }
 
@@ -123,7 +123,7 @@ public partial class PersistenceEngineBehavior
     [When(@"adding commit after the snapshot")]
     public async Task WhenAddingCommitAfterTheSnapshot()
     {
-        await Persistence.Commit(_oldest2.BuildNextAttempt());
+        await Persistence.Commit(_oldest2.BuildNextAttempt()).ConfigureAwait(false);
     }
 
     [Then(@"should find the stream in the set of streams to be snapshotted when within the snapshot threshold")]
@@ -131,7 +131,7 @@ public partial class PersistenceEngineBehavior
     {
         var value = await PersistenceManagement
             .GetStreamsToSnapshot("default", WithinThreshold, CancellationToken.None)
-            .FirstOrDefault(x => x.StreamId == _streamId);
+            .FirstOrDefault(x => x.StreamId == _streamId).ConfigureAwait(false);
         Assert.NotNull(value);
     }
 
@@ -140,6 +140,6 @@ public partial class PersistenceEngineBehavior
     {
         Assert.DoesNotContain(await PersistenceManagement
             .GetStreamsToSnapshot("default", OverThreshold, CancellationToken.None)
-            .ToList(), x => x.StreamId == _streamId);
+            .ToList().ConfigureAwait(false), x => x.StreamId == _streamId);
     }
 }

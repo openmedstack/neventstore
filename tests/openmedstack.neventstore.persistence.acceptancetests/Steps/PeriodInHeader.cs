@@ -6,12 +6,14 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
+    private const string TenantId = "default";
+
     [Given(@"a persisted stream with a header containing a period")]
     public Task GivenAPersistedStreamWithAHeaderContainingAPeriod()
     {
         _streamId = Guid.NewGuid().ToString();
         var attempt = new CommitAttempt(
-            "default",
+            TenantId,
             _streamId,
             1,
             Guid.NewGuid(),
@@ -30,7 +32,7 @@ public partial class PersistenceEngineBehavior
     public async Task WhenGettingCommit()
     {
         _persisted = await Persistence
-            .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).First()
+            .Get(TenantId, _streamId).First()
             .ConfigureAwait(false);
     }
 

@@ -153,9 +153,9 @@ public class WhenPollingFromBucket1 : UsingPollingClient
 
     protected override async Task Context()
     {
-        await base.Context().ConfigureAwait(false);
-        await StoreEvents.CommitMany(4, null, "bucket_2").ConfigureAwait(false);
-        await StoreEvents.CommitMany(4, null, "bucket_1").ConfigureAwait(false);
+        await base.Context();
+        await StoreEvents.CommitMany(4, null, "bucket_2");
+        await StoreEvents.CommitMany(4, null, "bucket_1");
         _observeCommits = PollingClient.ObserveFrom();
         _commitObserved = _observeCommits.FirstAsync().ToTask();
     }

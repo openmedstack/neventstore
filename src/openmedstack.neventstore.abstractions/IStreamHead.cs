@@ -8,7 +8,7 @@ public interface IStreamHead
     /// <summary>
     ///     Gets the value which uniquely identifies the stream where the last snapshot exceeds the allowed threshold.
     /// </summary>
-    string BucketId { get; }
+    string TenantId { get; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream where the last snapshot exceeds the allowed threshold.

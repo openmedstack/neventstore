@@ -54,7 +54,7 @@ public class NetStandardConnectionFactory : IConnectionFactory
         catch (Exception e)
         {
             _logger.LogWarning(PersistenceMessages.OpenFailed, connectionString);
-            throw new StorageUnavailableException(e.Message, e);
+            throw new ObjectDisposedException(e.Message, e);
         }
 
         return connection;

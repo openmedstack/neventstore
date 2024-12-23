@@ -22,9 +22,9 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         _logger = logger;
     }
 
-    private Bucket this[string bucketId]
+    private Bucket this[string TenantId]
     {
-        get { return _buckets.GetOrAdd(bucketId, static (_, logger) => new Bucket(logger), _logger); }
+        get { return _buckets.GetOrAdd(TenantId, static (_, logger) => new Bucket(logger), _logger); }
     }
 
     public void Dispose()
@@ -54,23 +54,23 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
+        string TenantId,
         DateTimeOffset start,
         CancellationToken cancellationToken)
     {
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.GettingAllCommitsFromTime, bucketId, start);
-        return this[bucketId].GetFrom(start).ToAsyncEnumerable(cancellationToken);
+        _logger.LogDebug(Resources.GettingAllCommitsFromTime, TenantId, start);
+        return this[TenantId].GetFrom(start).ToAsyncEnumerable(cancellationToken);
     }
 
     public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
+        string TenantId,
         long checkpointToken,
         CancellationToken cancellationToken)
     {
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.GettingAllCommitsFromBucketAndCheckpoint, bucketId, checkpointToken);
-        return this[bucketId].GetFrom(checkpointToken).ToAsyncEnumerable(cancellationToken);
+        _logger.LogDebug(Resources.GettingAllCommitsFromBucketAndCheckpoint, TenantId, checkpointToken);
+        return this[TenantId].GetFrom(checkpointToken).ToAsyncEnumerable(cancellationToken);
     }
 
     public IAsyncEnumerable<ICommit> GetFrom(
@@ -86,14 +86,14 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public IAsyncEnumerable<ICommit> GetFromTo(
-        string bucketId,
+        string TenantId,
         DateTimeOffset start,
         DateTimeOffset end,
         CancellationToken cancellationToken)
     {
         ThrowWhenDisposed();
         _logger.LogDebug(Resources.GettingAllCommitsFromToTime, start, end);
-        var bucket = this[bucketId];
+        var bucket = this[TenantId];
         var fromTo = bucket.GetFromTo(start, end);
         return fromTo.ToAsyncEnumerable(cancellationToken);
     }
@@ -130,13 +130,13 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     }
 
     public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
+        string TenantId,
         int maxThreshold,
         CancellationToken cancellationToken)
     {
         ThrowWhenDisposed();
-        _logger.LogDebug(Resources.GettingStreamsToSnapshot, bucketId, maxThreshold);
-        return this[bucketId].GetStreamsToSnapshot(maxThreshold).ToAsyncEnumerable(cancellationToken);
+        _logger.LogDebug(Resources.GettingStreamsToSnapshot, TenantId, maxThreshold);
+        return this[TenantId].GetStreamsToSnapshot(maxThreshold).ToAsyncEnumerable(cancellationToken);
     }
 
     public Task<ISnapshot?> GetSnapshot(
@@ -157,9 +157,9 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         return Task.FromResult(this[snapshot.TenantId].AddSnapshot(snapshot));
     }
 
-    public Task<bool> Purge(string bucketId)
+    public Task<bool> Purge(string TenantId)
     {
-        _buckets.TryRemove(bucketId, out _);
+        _buckets.TryRemove(TenantId, out _);
         return Task.FromResult(true);
     }
 
@@ -169,10 +169,10 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
         return Task.FromResult(true);
     }
 
-    public Task<bool> DeleteStream(string bucketId, string streamId)
+    public Task<bool> DeleteStream(string TenantId, string streamId)
     {
-        _logger.LogWarning(Resources.DeletingStream, streamId, bucketId);
-        if (_buckets.TryGetValue(bucketId, out var bucket))
+        _logger.LogWarning(Resources.DeletingStream, streamId, TenantId);
+        if (_buckets.TryGetValue(TenantId, out var bucket))
         {
             bucket.DeleteStream(streamId);
         }
@@ -229,7 +229,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     {
         protected bool Equals(IdentityForConcurrencyConflictDetection other) =>
             string.Equals(_streamId, other._streamId)
-         && string.Equals(_bucketId, other._bucketId)
+         && string.Equals(_TenantId, other._TenantId)
          && _commitSequence == other._commitSequence;
 
         public override bool Equals(object? obj)
@@ -237,24 +237,24 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
             return obj is IdentityForConcurrencyConflictDetection other && Equals(other);
         }
 
-        public override int GetHashCode() => HashCode.Combine(_streamId, _bucketId, _commitSequence);
+        public override int GetHashCode() => HashCode.Combine(_streamId, _TenantId, _commitSequence);
 
         private readonly int _commitSequence;
 
-        private readonly string _bucketId;
+        private readonly string _TenantId;
 
         private readonly string _streamId;
 
         public IdentityForConcurrencyConflictDetection(CommitAttempt commitAttempt)
         {
-            _bucketId = commitAttempt.TenantId;
+            _TenantId = commitAttempt.TenantId;
             _streamId = commitAttempt.StreamId;
             _commitSequence = commitAttempt.CommitSequence;
         }
 
         public IdentityForConcurrencyConflictDetection(Commit commit)
         {
-            _bucketId = commit.TenantId;
+            _TenantId = commit.TenantId;
             _streamId = commit.StreamId;
             _commitSequence = commit.CommitSequence;
         }
@@ -264,7 +264,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
     {
         protected bool Equals(IdentityForDuplicationDetection other) =>
             string.Equals(_streamId, other._streamId)
-         && string.Equals(_bucketId, other._bucketId)
+         && string.Equals(_TenantId, other._TenantId)
          && _commitId.Equals(other._commitId);
 
         public override bool Equals(object? obj)
@@ -272,24 +272,24 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
             return obj is IdentityForDuplicationDetection other && Equals(other);
         }
 
-        public override int GetHashCode() => HashCode.Combine(_streamId, _bucketId, _commitId);
+        public override int GetHashCode() => HashCode.Combine(_streamId, _TenantId, _commitId);
 
         private readonly Guid _commitId;
 
-        private readonly string _bucketId;
+        private readonly string _TenantId;
 
         private readonly string _streamId;
 
         public IdentityForDuplicationDetection(CommitAttempt commitAttempt)
         {
-            _bucketId = commitAttempt.TenantId;
+            _TenantId = commitAttempt.TenantId;
             _streamId = commitAttempt.StreamId;
             _commitId = commitAttempt.CommitId;
         }
 
         public IdentityForDuplicationDetection(Commit commit)
         {
-            _bucketId = commit.TenantId;
+            _TenantId = commit.TenantId;
             _streamId = commit.StreamId;
             _commitId = commit.CommitId;
         }
@@ -443,7 +443,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
                 return _heads.Where(x => x.HeadRevision > x.SnapshotRevision + maxThreshold)
                     .Select(
                         stream => new StreamHead(
-                            stream.BucketId,
+                            stream.TenantId,
                             stream.StreamId,
                             stream.HeadRevision,
                             stream.SnapshotRevision));
@@ -473,7 +473,7 @@ public class InMemoryPersistenceEngine : IManagePersistence, ICommitEvents, IAcc
                 _heads.Remove(currentHead);
                 _heads.Add(
                     new StreamHead(
-                        currentHead.BucketId,
+                        currentHead.TenantId,
                         currentHead.StreamId,
                         currentHead.HeadRevision,
                         snapshot.StreamRevision));

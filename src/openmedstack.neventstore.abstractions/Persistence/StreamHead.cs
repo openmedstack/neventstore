@@ -8,14 +8,14 @@ public class StreamHead : IStreamHead
     /// <summary>
     ///     Initializes a new instance of the StreamHead class.
     /// </summary>
-    /// <param name="bucketId">The value which uniquely identifies bucket the stream belongs to.</param>
+    /// <param name="tenantId">The value which uniquely identifies bucket the stream belongs to.</param>
     /// <param name="streamId">The value which uniquely identifies the stream in the bucket where the last snapshot exceeds the allowed threshold.</param>
     /// <param name="headRevision">The value which indicates the revision, length, or number of events committed to the stream.</param>
     /// <param name="snapshotRevision">The value which indicates the revision at which the last snapshot was taken.</param>
-    public StreamHead(string bucketId, string streamId, int headRevision, int snapshotRevision)
+    public StreamHead(string tenantId, string streamId, int headRevision, int snapshotRevision)
         //: this()
     {
-        BucketId = bucketId;
+        TenantId = tenantId;
         StreamId = streamId;
         HeadRevision = headRevision;
         SnapshotRevision = snapshotRevision;
@@ -30,7 +30,7 @@ public class StreamHead : IStreamHead
     /// <summary>
     ///     Gets the value which uniquely identifies the stream where the last snapshot exceeds the allowed threshold.
     /// </summary>
-    public string BucketId { get; }
+    public string TenantId { get; }
 
     /// <summary>
     ///     Gets the value which uniquely identifies the stream where the last snapshot exceeds the allowed threshold.

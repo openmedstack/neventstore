@@ -23,9 +23,9 @@ public interface ICommitEvents : IDisposable
     IAsyncEnumerable<ICommit> Get(
         string tenantId,
         string streamId,
-        int minRevision,
-        int maxRevision,
-        CancellationToken cancellationToken);
+        int minRevision = 0,
+        int maxRevision = int.MaxValue,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Writes the to-be-committed events stream provided to the underlying persistence mechanism.

@@ -7,7 +7,7 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 
 public partial class PersistenceEngineBehavior
 {
-    private const string BucketId = "bucket";
+//    private const string TenantId = "bucket";
     private readonly string StreamId = Guid.NewGuid().ToString();
     private const int StreamRevision = 1;
     private readonly EventMessage _uncommitted = new(string.Empty);
@@ -18,19 +18,19 @@ public partial class PersistenceEngineBehavior
     public async Task APersistedStreamWithASingleEvent()
     {
         _committed = [BuildCommitStub(1, 1, 1)];
-        var stream = new CommitAttempt(BucketId,
+        var stream = new CommitAttempt(TenantId,
             StreamId, StreamRevision, Guid.NewGuid(), 1, SystemTime.UtcNow,
             null,
             _committed[0].Events.ToArray());
         await Persistence.Commit(stream);
+        _stream = new CommitAttempt(TenantId, StreamId, 2, Guid.NewGuid(), 2, SystemTime.UtcNow, null,
+            [new EventMessage(_uncommitted)]);
     }
 
     [When("committing after another thread or process has moved the stream head")]
     public async Task WhenCommittingAfterAnotherThreadOrProcessHasMovedTheStreamHead()
     {
-        _stream = new CommitAttempt(BucketId, StreamId, 2, Guid.NewGuid(), 2, SystemTime.UtcNow, null,
-            [new EventMessage(_uncommitted)]);
-        var competingStream = new CommitAttempt(BucketId, StreamId, 3,
+        var competingStream = new CommitAttempt(TenantId, StreamId, 3,
             Guid.NewGuid(), 2, SystemTime.UtcNow, null, BuildCommitStub(3, 2, 2).Events.ToArray());
 
         _ = await Persistence.Commit(competingStream);

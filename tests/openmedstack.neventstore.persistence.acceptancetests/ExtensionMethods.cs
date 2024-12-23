@@ -17,14 +17,14 @@ public static class ExtensionMethods
     public static async Task<ICommit?> CommitNext(this ICommitEvents persistence, ICommit previous)
     {
         var nextAttempt = previous.BuildNextAttempt();
-        return await persistence.Commit(nextAttempt);
+        return await persistence.Commit(nextAttempt).ConfigureAwait(false);
     }
 
     public static async Task<List<ICommit>> CommitMany(
         this ICommitEvents persistence,
         int numberOfCommits,
         string? streamId = null,
-        string? bucketId = null)
+        string? TenantId = null)
     {
         var commits = new List<ICommit>();
         CommitAttempt? attempt = null;
@@ -32,7 +32,7 @@ public static class ExtensionMethods
         for (var i = 0; i < numberOfCommits; i++)
         {
             attempt = attempt == null
-                ? (streamId ?? Guid.NewGuid().ToString()).BuildAttempt(bucketId)
+                ? (streamId ?? Guid.NewGuid().ToString()).BuildAttempt(TenantId)
                 : attempt.BuildNextAttempt();
             var commit = await persistence.Commit(attempt)
                 .ConfigureAwait(false);
@@ -44,11 +44,11 @@ public static class ExtensionMethods
 
     public static CommitAttempt BuildAttempt(
         this string streamId,
-        string? bucketId = null)
+        string? TenantId = null)
     {
-        bucketId ??= "default";
+        TenantId ??= "default";
 
-        var stream = new CommitAttempt(bucketId, streamId, 2, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
+        var stream = new CommitAttempt(TenantId, streamId, 2, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
             new Dictionary<string, object>
             {
                 ["A header"] = "A string value",

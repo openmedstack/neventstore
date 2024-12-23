@@ -9,7 +9,7 @@ using System.Data;
 
 public static class CommitExtensions
 {
-    private const int BucketIdIndex = 0;
+    private const int TenantIdIndex = 0;
     //private const int StreamIdIndex = 1;
     private const int StreamIdOriginalIndex = 2;
     private const int StreamRevisionIndex = 3;
@@ -25,7 +25,7 @@ public static class CommitExtensions
         var headers = serializer.Deserialize<Dictionary<string, object>>(record, HeadersIndex);
         var events = serializer.Deserialize<List<EventMessage>>(record, PayloadIndex);
 
-        var commit = new Commit(record.GetString(BucketIdIndex),
+        var commit = new Commit(record.GetString(TenantIdIndex),
             record.GetString(StreamIdOriginalIndex),
             record.GetInt32(StreamRevisionIndex),
             record.GetGuid(CommitIdIndex),

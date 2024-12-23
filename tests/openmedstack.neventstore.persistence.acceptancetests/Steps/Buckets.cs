@@ -63,7 +63,7 @@ public partial class PersistenceEngineBehavior
         await Persistence.Commit(_streamId.BuildAttempt(BucketAId)).ConfigureAwait(false);
         var enumerable = Persistence.Get(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
         _attemptACommitStamp =
-            (await enumerable.First())
+            (await enumerable.First().ConfigureAwait(false))
             .CommitStamp;
     }
 
@@ -89,7 +89,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldPersistToTheCorrectBucket()
     {
         var enumerable = Persistence.Get(BucketBId, _streamId, 0, int.MaxValue, CancellationToken.None);
-        var stream = await enumerable.ToList();
+        var stream = await enumerable.ToList().ConfigureAwait(false);
         Assert.NotNull(stream);
         Assert.Single(stream);
     }
@@ -98,7 +98,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenShouldNotAffectTheStreamFromTheOtherBucket()
     {
         var enumerable = Persistence.Get(BucketAId, _streamId, 0, int.MaxValue, CancellationToken.None);
-        var stream = await enumerable.ToList();
+        var stream = await enumerable.ToList().ConfigureAwait(false);
         Assert.NotNull(stream);
         Assert.Single(stream);
         Assert.Equal(_attemptACommitStamp, stream.First().CommitStamp);
@@ -109,14 +109,14 @@ public partial class PersistenceEngineBehavior
     {
         _streamId = Guid.NewGuid().ToString();
         _snapshot = new Snapshot(BucketBId, _streamId, 1, "Snapshot");
-        await Persistence.Commit(_streamId.BuildAttempt(bucketId: BucketAId)).ConfigureAwait(false);
-        await Persistence.Commit(_streamId.BuildAttempt(bucketId: BucketBId)).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt(TenantId: BucketAId)).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt(TenantId: BucketBId)).ConfigureAwait(false);
     }
 
     [When(@"saving a snapshot for the stream in bucket B")]
     public async Task WhenSavingASnapshotForTheStreamInBucketB()
     {
-        var result = await Snapshots.AddSnapshot(_snapshot);
+        var result = await Snapshots.AddSnapshot(_snapshot).ConfigureAwait(false);
 
         Assert.True(result);
     }
@@ -125,7 +125,7 @@ public partial class PersistenceEngineBehavior
     public async Task ThenNotAffectSnapshotsInBucketA()
     {
         var snapshot = await Snapshots
-            .GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None);
+            .GetSnapshot(BucketAId, _streamId, _snapshot.StreamRevision, CancellationToken.None).ConfigureAwait(false);
         Assert.Null(snapshot);
     }
 
@@ -143,7 +143,7 @@ public partial class PersistenceEngineBehavior
 
         var stream = Guid.NewGuid().ToString().BuildAttempt(BucketBId);
 
-        _commitToBucketB = (await Persistence.Commit(stream))!;
+        _commitToBucketB = (await Persistence.Commit(stream).ConfigureAwait(false))!;
     }
 
     [When(@"getting commits from bucket A")]
@@ -162,9 +162,9 @@ public partial class PersistenceEngineBehavior
     [Given(@"streams committed to buckets A and B")]
     public async Task GivenStreamsCommittedToBucketsAAndB()
     {
-        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(bucketId: BucketAId)).ConfigureAwait(false);
-        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(bucketId: BucketBId)).ConfigureAwait(false);
-        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(bucketId: BucketAId)).ConfigureAwait(false);
+        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(TenantId: BucketAId)).ConfigureAwait(false);
+        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(TenantId: BucketBId)).ConfigureAwait(false);
+        await Persistence.Commit(Guid.NewGuid().ToString().BuildAttempt(TenantId: BucketAId)).ConfigureAwait(false);
     }
 
     [When(@"getting all commits from bucket A")]
@@ -200,14 +200,14 @@ public partial class PersistenceEngineBehavior
         _streamId = Guid.NewGuid().ToString();
         var stream = new CommitAttempt("default", _streamId, 1, Guid.NewGuid(), 1, DateTimeOffset.UtcNow,
             new Dictionary<string, object>(), [new EventMessage(new string('a', BodyLength))]);
-        await Persistence.Commit(stream);
+        await Persistence.Commit(stream).ConfigureAwait(false);
     }
 
     [Then(@"reads the whole body")]
     public async Task ThenReadsTheWholeBody()
     {
         var commits = await Persistence
-            .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).Single();
+            .Get("default", _streamId, 0, int.MaxValue, CancellationToken.None).Single().ConfigureAwait(false);
         Assert.Equal(BodyLength, commits.Events.Single().Body.ToString()!.Length);
     }
 }

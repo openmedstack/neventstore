@@ -27,7 +27,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
     protected override async Task Context()
     {
         _engine = new InMemoryPersistenceEngine(NullLogger<InMemoryPersistenceEngine>.Instance);
-        await _engine.Initialize();
+        await _engine.Initialize().ConfigureAwait(false);
         var streamId = Guid.NewGuid().ToString();
         await _engine.Commit(new CommitAttempt(
             Bucket.Default,
@@ -37,7 +37,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
             1,
             _startDate,
             new Dictionary<string, object>(),
-            new List<EventMessage> { new EventMessage(new object()) }));
+            new List<EventMessage> { new EventMessage(new object()) })).ConfigureAwait(false);
         await _engine.Commit(
             new CommitAttempt(
                 Bucket.Default,
@@ -47,7 +47,7 @@ public class WhenGettingFromToThenShouldNotGetLaterCommits : SpecificationBase
                 2,
                 _endDate,
                 new Dictionary<string, object>(),
-                new List<EventMessage> { new EventMessage(new object()) }));
+                new List<EventMessage> { new EventMessage(new object()) })).ConfigureAwait(false);
     }
 
     protected override async Task Because()

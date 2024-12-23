@@ -6,8 +6,8 @@ namespace OpenMedStack.NEventStore.DynamoDb;
 [DynamoDBTable("commits", LowerCamelCaseProperties = false)]
 internal class DynamoDbCommit
 {
-    [DynamoDBHashKey] public required string BucketAndStream { get; set; }
-    [DynamoDBProperty] public required string BucketId { get; set; }
+    [DynamoDBHashKey] public required string TenantAndStream { get; set; }
+    [DynamoDBProperty] public required string TenantId { get; set; }
     [DynamoDBProperty] public required string StreamId { get; set; }
     [DynamoDBLocalSecondaryIndexRangeKey] public int StreamRevision { get; set; }
     [DynamoDBProperty] public required string CommitId { get; set; }
@@ -20,8 +20,8 @@ internal class DynamoDbCommit
     {
         return new DynamoDbCommit
         {
-            BucketAndStream = $"{commitAttempt.TenantId}{commitAttempt.StreamId}",
-            BucketId = commitAttempt.TenantId,
+            TenantAndStream = $"{commitAttempt.TenantId}{commitAttempt.StreamId}",
+            TenantId = commitAttempt.TenantId,
             StreamId = commitAttempt.StreamId,
             StreamRevision = commitAttempt.StreamRevision,
             CommitId = commitAttempt.CommitId.ToString("N"),

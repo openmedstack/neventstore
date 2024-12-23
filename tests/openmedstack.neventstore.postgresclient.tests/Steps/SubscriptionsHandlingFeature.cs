@@ -32,8 +32,8 @@ public class SubscriptionsHandlingFeature : IDisposable
         {
             if (_testContainer != null)
             {
-                await _testContainer.StopAsync();
-                await _testContainer.DisposeAsync();
+                await _testContainer.StopAsync().ConfigureAwait(false);
+                await _testContainer.DisposeAsync().ConfigureAwait(false);
             }
         }
         catch
@@ -53,7 +53,7 @@ public class SubscriptionsHandlingFeature : IDisposable
             .WithEnvironment("POSTGRES_DB", "openmedstack")
             .WithCommand("postgres", "-c", "wal_level=logical")
             .Build();
-        await testContainer.StartAsync();
+        await testContainer.StartAsync().ConfigureAwait(false);
         _testContainer = testContainer;
         var mappedPublicPort = testContainer.GetMappedPublicPort(5432);
         _connectionString =
@@ -69,7 +69,7 @@ public class SubscriptionsHandlingFeature : IDisposable
             .RegisterSqlEventStore<PostgreSqlDialect, Sha256StreamIdHasher>(NpgsqlFactory.Instance, _connectionString!);
         var serviceProvider = serviceCollection.BuildServiceProvider();
         _managePersistence = serviceProvider.GetRequiredService<IManagePersistence>();
-        await _managePersistence.Initialize();
+        await _managePersistence.Initialize().ConfigureAwait(false);
         _eventStore = serviceProvider.GetRequiredService<ICommitEvents>();
     }
 
@@ -78,9 +78,11 @@ public class SubscriptionsHandlingFeature : IDisposable
     {
         try
         {
-            await using var connection = new NpgsqlConnection(_connectionString);
+            var connection = new NpgsqlConnection(_connectionString);
+            await using var connection1 = connection.ConfigureAwait(false);
             await connection.OpenAsync().ConfigureAwait(false);
-            await using var command = connection.CreateCommand();
+            var command = connection.CreateCommand();
+            await using var command1 = command.ConfigureAwait(false);
             command.CommandText =
                 "CREATE PUBLICATION commit_pub FOR TABLE Commits WITH (publish = 'insert')";
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);

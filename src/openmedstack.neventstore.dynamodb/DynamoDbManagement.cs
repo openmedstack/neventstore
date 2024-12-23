@@ -21,13 +21,13 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
         {
             var createTableRequest = new CreateTableRequest(CommitsTableName,
             [
-                new(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
+                new(nameof(DynamoDbCommit.TenantAndStream), KeyType.HASH),
                 new(nameof(DynamoDbCommit.CommitSequence), KeyType.RANGE)
             ])
             {
                 AttributeDefinitions =
                 [
-                    new AttributeDefinition(nameof(DynamoDbCommit.BucketAndStream), ScalarAttributeType.S),
+                    new AttributeDefinition(nameof(DynamoDbCommit.TenantAndStream), ScalarAttributeType.S),
                     new AttributeDefinition(nameof(DynamoDbCommit.CommitSequence), ScalarAttributeType.N),
                     new AttributeDefinition(nameof(DynamoDbCommit.StreamRevision), ScalarAttributeType.N)
                 ],
@@ -38,7 +38,7 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
                         IndexName = "RevisionIndex",
                         KeySchema =
                         [
-                            new KeySchemaElement(nameof(DynamoDbCommit.BucketAndStream), KeyType.HASH),
+                            new KeySchemaElement(nameof(DynamoDbCommit.TenantAndStream), KeyType.HASH),
                             new KeySchemaElement(nameof(DynamoDbCommit.StreamRevision), KeyType.RANGE)
                         ],
                         Projection = new Projection { ProjectionType = ProjectionType.ALL }
@@ -65,11 +65,11 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
         {
             var createTableRequest = new CreateTableRequest(SnapshotsTableName,
                 [
-                    new(nameof(DynamoDbSnapshots.BucketAndStream), KeyType.HASH),
+                    new(nameof(DynamoDbSnapshots.TenantAndStream), KeyType.HASH),
                     new(nameof(DynamoDbSnapshots.StreamRevision), KeyType.RANGE)
                 ],
                 [
-                    new AttributeDefinition(nameof(DynamoDbSnapshots.BucketAndStream),
+                    new AttributeDefinition(nameof(DynamoDbSnapshots.TenantAndStream),
                         ScalarAttributeType.S),
                     new AttributeDefinition(nameof(DynamoDbSnapshots.StreamRevision), ScalarAttributeType.N)
                 ],
@@ -87,20 +87,20 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
         }
     }
 
-    public IAsyncEnumerable<ICommit> GetFrom(string bucketId, long checkpointToken, CancellationToken cancellationToken)
+    public IAsyncEnumerable<ICommit> GetFrom(string TenantId, long checkpointToken, CancellationToken cancellationToken)
     {
         throw new NotSupportedException();
     }
 
     public IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
+        string TenantId,
         int maxThreshold,
         CancellationToken cancellationToken)
     {
         throw new NotSupportedException();
     }
 
-    public Task<bool> Purge(string bucketId)
+    public Task<bool> Purge(string TenantId)
     {
         throw new NotSupportedException();
     }
@@ -114,13 +114,13 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
         return responses.All(response => response.HttpStatusCode == HttpStatusCode.OK);
     }
 
-    public async Task<bool> DeleteStream(string bucketId, string streamId)
+    public async Task<bool> DeleteStream(string TenantId, string streamId)
     {
-        var pk = $"{bucketId}{streamId}";
+        var pk = $"{TenantId}{streamId}";
         var items = await dbClient.QueryAsync(new QueryRequest
         {
             TableName = CommitsTableName,
-            KeyConditionExpression = $"{nameof(DynamoDbCommit.BucketAndStream)} = :pk",
+            KeyConditionExpression = $"{nameof(DynamoDbCommit.TenantAndStream)} = :pk",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
                 { [":pk"] = new AttributeValue(pk) },
             Select = Select.SPECIFIC_ATTRIBUTES,
@@ -134,7 +134,7 @@ public class DynamoDbManagement(IAmazonDynamoDB dbClient, ILogger<DynamoDbManage
                 {
                     Key = new Dictionary<string, AttributeValue>
                     {
-                        [nameof(DynamoDbCommit.BucketAndStream)] = new AttributeValue { S = pk },
+                        [nameof(DynamoDbCommit.TenantAndStream)] = new AttributeValue { S = pk },
                         [nameof(DynamoDbCommit.CommitSequence)] = item[nameof(DynamoDbCommit.CommitSequence)]
                     }
                 }

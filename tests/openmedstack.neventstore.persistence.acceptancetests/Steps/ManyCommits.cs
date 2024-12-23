@@ -13,7 +13,7 @@ public partial class PersistenceEngineBehavior
     {
         _streamId = Guid.NewGuid().ToString();
         _committed =
-            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId))
+            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2, _streamId).ConfigureAwait(false))
             .ToArray();
     }
 

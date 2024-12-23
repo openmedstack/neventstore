@@ -37,12 +37,14 @@ public class DynamoDbPersistenceEngine(
         minRevision = minRevision < 0 ? 0 : minRevision;
         var queryRequest = new QueryRequest
         {
-            TableName = CommitsTableName, IndexName = "RevisionIndex", ConsistentRead = true,
+            TableName = CommitsTableName,
+            IndexName = "RevisionIndex",
+            ConsistentRead = true,
             KeyConditionExpression =
-                "BucketAndStream = :v_BucketAndStream AND StreamRevision BETWEEN :v_MinRevision AND :v_MaxRevision",
+                "TenantAndStream = :v_TenantAndStream AND StreamRevision BETWEEN :v_MinRevision AND :v_MaxRevision",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":v_BucketAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
+                { ":v_TenantAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
                 { ":v_MinRevision", new AttributeValue { N = minRevision.ToString() } },
                 { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
             },
@@ -76,7 +78,7 @@ public class DynamoDbPersistenceEngine(
             }
 
             return new Commit(
-                attempt.BucketId,
+                attempt.TenantId,
                 attempt.StreamId,
                 attempt.StreamRevision,
                 Guid.Parse(attempt.CommitId),
@@ -94,7 +96,7 @@ public class DynamoDbPersistenceEngine(
                 throw new DuplicateCommitException(e.Message, e);
             }
 
-            logger.LogError(e, "Concurrent commit detected. Retrying");
+            logger.LogError(e, "Concurrent commit detected");
             throw new ConcurrencyException(e.Message, e);
         }
     }
@@ -121,10 +123,10 @@ public class DynamoDbPersistenceEngine(
             Select = Select.SPECIFIC_ATTRIBUTES,
             ProjectionExpression = CommitId,
             KeyConditionExpression =
-                "BucketAndStream = :v_BucketAndStream AND CommitSequence = :v_CommitSequence",
+                "TenantAndStream = :v_TenantAndStream AND CommitSequence = :v_CommitSequence",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":v_BucketAndStream", new AttributeValue { S = $"{attempt.BucketId}{attempt.StreamId}" } },
+                { ":v_TenantAndStream", new AttributeValue { S = $"{attempt.TenantId}{attempt.StreamId}" } },
                 { ":v_CommitSequence", new AttributeValue { N = attempt.CommitSequence.ToString() } }
             }
         };
@@ -145,10 +147,10 @@ public class DynamoDbPersistenceEngine(
             ConsistentRead = true,
             Limit = 1,
             KeyConditionExpression =
-                "BucketAndStream = :v_BucketAndStream AND StreamRevision <= :v_MaxRevision",
+                "TenantAndStream = :v_TenantAndStream AND StreamRevision <= :v_MaxRevision",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                { ":v_BucketAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
+                { ":v_TenantAndStream", new AttributeValue { S = $"{tenantId}{streamId}" } },
                 { ":v_MaxRevision", new AttributeValue { N = maxRevision.ToString() } }
             },
             ScanIndexForward = false
@@ -159,10 +161,15 @@ public class DynamoDbPersistenceEngine(
             return null;
         }
 
+        if (response.Items.Count == 0)
+        {
+            return null;
+        }
+
         var commit = response.Items[0];
 
         return new Snapshot(
-            commit["BucketId"].S,
+            commit["TenantId"].S,
             commit["StreamId"].S,
             int.Parse(commit["StreamRevision"].N),
             serializer.Deserialize<object>(commit["Payload"].B)!);

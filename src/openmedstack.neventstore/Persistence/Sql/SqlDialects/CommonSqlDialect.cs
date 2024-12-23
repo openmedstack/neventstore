@@ -40,7 +40,7 @@ public abstract class CommonSqlDialect : ISqlDialect
 
     public virtual string AppendSnapshotToCommit => CommonSqlStatements.AppendSnapshotToCommit;
 
-    public virtual string BucketId => "@BucketId";
+    public virtual string TenantId => "@TenantId";
 
     public virtual string StreamId => "@StreamId";
 

@@ -32,7 +32,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
 
         var commitInfo = new CommitInfo
         {
-            BucketId = eventStream.TenantId,
+            TenantId = eventStream.TenantId,
             StreamId = eventStream.StreamId,
             StreamRevision = eventStream.StreamRevision,
             CheckpointToken = 0,
@@ -44,7 +44,7 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
         };
         var commitResponse = await _client.CommitAsync(commitInfo, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        return new Commit(commitResponse.BucketId, commitResponse.StreamId, commitResponse.StreamRevision,
+        return new Commit(commitResponse.TenantId, commitResponse.StreamId, commitResponse.StreamRevision,
             Guid.Parse(commitResponse.CommitId), commitResponse.CommitSequence,
             DateTimeOffset.FromUnixTimeSeconds(commitResponse.CommitStamp), commitResponse.CheckpointToken,
             commitResponse.Headers.ToDictionary(x => x.Key,
@@ -67,9 +67,9 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
         CancellationToken cancellationToken)
     {
         var response = await _client.GetSnapshotAsync(
-            new GetSnapshotRequest { BucketId = tenantId, StreamId = streamId, MaxRevision = maxRevision },
+            new GetSnapshotRequest { TenantId = tenantId, StreamId = streamId, MaxRevision = maxRevision },
             cancellationToken: cancellationToken).ConfigureAwait(false);
-        return new Snapshot(response.BucketId, response.StreamId, response.StreamRevision,
+        return new Snapshot(response.TenantId, response.StreamId, response.StreamRevision,
             _serializer.Deserialize<object>(Convert.FromBase64String(response.Base64Payload))!);
     }
 
@@ -90,14 +90,14 @@ internal class GrpcEventStorePersistence : ICommitEvents, IAccessSnapshots
     {
         var response = _client.GetFromMinMax(
             new GetFromMinMaxRequest
-                { BucketId = tenantId, StreamId = streamId, MinRevision = minRevision, MaxRevision = maxRevision });
+                { TenantId = tenantId, StreamId = streamId, MinRevision = minRevision, MaxRevision = maxRevision });
         return response.ResponseStream.ReadAllAsync(cancellationToken).Select(ToCommit);
     }
 
     private ICommit ToCommit(CommitInfo commit)
     {
         return new Commit(
-            commit.BucketId,
+            commit.TenantId,
             commit.StreamId,
             commit.StreamRevision,
             Guid.Parse(commit.CommitId),

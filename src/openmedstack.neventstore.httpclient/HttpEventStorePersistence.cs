@@ -152,11 +152,11 @@ internal class HttpEventStorePersistence : ICommitEvents, IAccessSnapshots
 
     /// <inheritdoc />
     public async IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
+        string TenantId,
         int maxThreshold,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var response = await _client.GetAsync($"streams/{bucketId}/{maxThreshold}", cancellationToken)
+        var response = await _client.GetAsync($"streams/{TenantId}/{maxThreshold}", cancellationToken)
             .ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {

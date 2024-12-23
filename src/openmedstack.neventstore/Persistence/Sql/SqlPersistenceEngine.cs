@@ -84,7 +84,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         async IAsyncEnumerable<ICommit> Query(IDbStatement query, [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetCommitsFromStartingRevision;
-            query.AddParameter(_dialect.BucketId, tenantId, DbType.AnsiString);
+            query.AddParameter(_dialect.TenantId, tenantId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamRevision, minRevision);
             query.AddParameter(_dialect.MaxStreamRevision, maxRevision);
@@ -101,71 +101,6 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         }
 
         return ExecuteQuery(Query, cancellationToken);
-    }
-
-    public virtual IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
-        DateTimeOffset start,
-        CancellationToken cancellationToken = default)
-    {
-        start = start.AddTicks(-(start.Ticks % TimeSpan.TicksPerSecond)); // Rounds down to the nearest second.
-        start = start < DateTimeOffset.UnixEpoch ? DateTimeOffset.UnixEpoch : start;
-
-        _logger.LogDebug(PersistenceMessages.GettingAllCommitsFrom, start, bucketId);
-
-        async IAsyncEnumerable<ICommit> Query(IDbStatement query, [EnumeratorCancellation] CancellationToken token)
-        {
-            var statement = _dialect.GetCommitsFromInstant;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
-            query.AddParameter(_dialect.CommitStamp, start);
-            var enumerable = query.ExecuteWithQuery(statement, token);
-            await foreach (var item in enumerable.WithCancellation(token).ConfigureAwait(false))
-            {
-                if (token.IsCancellationRequested)
-                {
-                    yield break;
-                }
-
-                yield return item.GetCommit(_serializer, _dialect);
-            }
-        }
-
-        return ExecuteQuery(Query, cancellationToken);
-    }
-
-    public virtual IAsyncEnumerable<ICommit> GetFromTo(
-        string bucketId,
-        DateTimeOffset start,
-        DateTimeOffset end,
-        CancellationToken cancellationToken)
-    {
-        start = start.AddTicks(-(start.Ticks % TimeSpan.TicksPerSecond)); // Rounds down to the nearest second.
-        start = start < DateTimeOffset.UnixEpoch ? DateTimeOffset.UnixEpoch : start;
-        end = end < DateTimeOffset.UnixEpoch ? DateTimeOffset.UnixEpoch : end;
-
-        _logger.LogDebug(PersistenceMessages.GettingAllCommitsFromTo, start, end);
-
-        async IAsyncEnumerable<ICommit> Query(IDbStatement query, [EnumeratorCancellation] CancellationToken token)
-        {
-            var statement = _dialect.GetCommitsFromToInstant;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
-            query.AddParameter(_dialect.CommitStampStart, start);
-            query.AddParameter(_dialect.CommitStampEnd, end);
-            var enumerable = query.ExecuteWithQuery(statement, token);
-            await foreach (var record in enumerable.WithCancellation(token).ConfigureAwait(false))
-            {
-                if (token.IsCancellationRequested)
-                {
-                    yield break;
-                }
-
-                yield return record.GetCommit(_serializer, _dialect);
-            }
-        }
-
-        var result = ExecuteQuery(Query, cancellationToken);
-
-        return result;
     }
 
     public async Task<ICommit?> Commit(CommitAttempt attempt, CancellationToken cancellationToken)
@@ -191,12 +126,17 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
 
             throw new ConcurrencyException(e.Message, e);
         }
+        catch (StorageUnavailableException e)
+        {
+            _logger.LogWarning(PersistenceMessages.AlreadyDisposed);
+            throw new StorageUnavailableException(e.Message, e);
+        }
 
         return commit;
     }
 
     public virtual IAsyncEnumerable<IStreamHead> GetStreamsToSnapshot(
-        string bucketId,
+        string TenantId,
         int maxThreshold,
         CancellationToken cancellationToken)
     {
@@ -207,7 +147,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetStreamsRequiringSnapshots;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+            query.AddParameter(_dialect.TenantId, TenantId, DbType.AnsiString);
             query.AddParameter(_dialect.Threshold, maxThreshold);
             await foreach (var record in query.ExecuteWithQuery(statement, token)
                 .ConfigureAwait(false))
@@ -238,7 +178,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
             [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetSnapshot;
-            query.AddParameter(_dialect.BucketId, tenantId, DbType.AnsiString);
+            query.AddParameter(_dialect.TenantId, tenantId, DbType.AnsiString);
             query.AddParameter(_dialect.StreamId, streamIdHash!, DbType.AnsiString);
             query.AddParameter(_dialect.StreamRevision, maxRevision);
             var dataRecords = query.ExecuteWithQuery(statement, token).ConfigureAwait(false);
@@ -263,7 +203,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(
                     async (connection, cmd) =>
                     {
-                        cmd.AddParameter(_dialect.BucketId, snapshot.TenantId, DbType.AnsiString);
+                        cmd.AddParameter(_dialect.TenantId, snapshot.TenantId, DbType.AnsiString);
                         cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                         cmd.AddParameter(_dialect.StreamRevision, snapshot.StreamRevision);
                         var payload = _serializer.Serialize(snapshot.Payload);
@@ -281,13 +221,13 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(cmd => cmd.ExecuteNonQuery(_dialect.PurgeStorage)).ConfigureAwait(false) > 0;
     }
 
-    public async Task<bool> Purge(string bucketId)
+    public async Task<bool> Purge(string TenantId)
     {
-        _logger.LogWarning(PersistenceMessages.PurgingBucket, bucketId);
+        _logger.LogWarning(PersistenceMessages.PurgingBucket, TenantId);
         return await ExecuteCommand(
             cmd =>
             {
-                cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+                cmd.AddParameter(_dialect.TenantId, TenantId, DbType.AnsiString);
                 return cmd.ExecuteNonQuery(_dialect.PurgeBucket);
             }).ConfigureAwait(false) > 0;
     }
@@ -298,30 +238,30 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(cmd => cmd.ExecuteWithoutExceptions(_dialect.Drop)).ConfigureAwait(false) > 0;
     }
 
-    public async Task<bool> DeleteStream(string bucketId, string streamId)
+    public async Task<bool> DeleteStream(string TenantId, string streamId)
     {
-        _logger.LogWarning(PersistenceMessages.DeletingStream, streamId, bucketId);
+        _logger.LogWarning(PersistenceMessages.DeletingStream, streamId, TenantId);
         streamId = _streamIdHasher.GetHash(streamId);
         return await ExecuteCommand(
             cmd =>
             {
-                cmd.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+                cmd.AddParameter(_dialect.TenantId, TenantId, DbType.AnsiString);
                 cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                 return cmd.ExecuteNonQuery(_dialect.DeleteStream);
             }).ConfigureAwait(false) > 0;
     }
 
     public IAsyncEnumerable<ICommit> GetFrom(
-        string bucketId,
+        string TenantId,
         long checkpointToken,
         CancellationToken cancellationToken)
     {
-        _logger.LogDebug(PersistenceMessages.GettingAllCommitsFromBucketAndCheckpoint, bucketId, checkpointToken);
+        _logger.LogDebug(PersistenceMessages.GettingAllCommitsFromBucketAndCheckpoint, TenantId, checkpointToken);
 
         async IAsyncEnumerable<ICommit> Query(IDbStatement query, [EnumeratorCancellation] CancellationToken token)
         {
             var statement = _dialect.GetCommitsFromBucketAndCheckpoint;
-            query.AddParameter(_dialect.BucketId, bucketId, DbType.AnsiString);
+            query.AddParameter(_dialect.TenantId, TenantId, DbType.AnsiString);
             query.AddParameter(_dialect.CheckpointNumber, checkpointToken);
             var enumerable = query.ExecuteWithQuery(statement, token);
             await foreach (var item in enumerable.WithCancellation(token).ConfigureAwait(false))
@@ -395,7 +335,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(
                 async (connection, cmd) =>
                 {
-                    cmd.AddParameter(_dialect.BucketId, attempt.TenantId, DbType.AnsiString);
+                    cmd.AddParameter(_dialect.TenantId, attempt.TenantId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamIdOriginal, attempt.StreamId);
                     cmd.AddParameter(_dialect.StreamRevision, attempt.StreamRevision);
@@ -430,7 +370,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
         return await ExecuteCommand(
                 async cmd =>
                 {
-                    cmd.AddParameter(_dialect.BucketId, attempt.TenantId, DbType.AnsiString);
+                    cmd.AddParameter(_dialect.TenantId, attempt.TenantId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.StreamId, streamId, DbType.AnsiString);
                     cmd.AddParameter(_dialect.CommitId, attempt.CommitId);
                     cmd.AddParameter(_dialect.CommitSequence, attempt.CommitSequence);
@@ -485,7 +425,7 @@ public class SqlPersistenceEngine : IManagePersistence, ICommitEvents, IAccessSn
 
     private async Task<T> ExecuteCommand<T>(Func<IDbStatement, Task<T>> command)
     {
-        return await ExecuteCommand((_, statement) => command(statement));
+        return await ExecuteCommand((_, statement) => command(statement)).ConfigureAwait(false);
     }
 
     protected virtual async Task<T> ExecuteCommand<T>(Func<IDbConnection, IDbStatement, Task<T>> command)

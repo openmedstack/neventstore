@@ -49,7 +49,7 @@ public partial class PersistenceEngineBehavior
                 new Dictionary<string, object>(), [
                     new EventMessage(new Pippo { S = "Hi " + i })
                 ]);
-            await Persistence.Commit(stream);
+            await Persistence.Commit(stream).ConfigureAwait(false);
         }
     }
 

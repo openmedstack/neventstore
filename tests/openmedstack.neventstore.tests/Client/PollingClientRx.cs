@@ -63,8 +63,8 @@ public sealed class PollingClientRx
     }
 
 
-    internal void StartFromBucket(string bucketId)
+    internal void StartFromBucket(string TenantId)
     {
-        _pollingClient2.StartFromBucket(bucketId);
+        _pollingClient2.StartFromBucket(TenantId);
     }
 }

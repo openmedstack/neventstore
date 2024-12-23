@@ -23,7 +23,7 @@ public interface ISqlDialect
     string GetSnapshot { get; }
     string AppendSnapshotToCommit { get; }
 
-    string BucketId { get; }
+    string TenantId { get; }
     string StreamId { get; }
     string StreamIdOriginal { get; }
     string StreamRevision { get; }

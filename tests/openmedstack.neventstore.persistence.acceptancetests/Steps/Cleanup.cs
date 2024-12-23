@@ -7,23 +7,23 @@ namespace OpenMedStack.NEventStore.Persistence.AcceptanceTests.Steps;
 public partial class PersistenceEngineBehavior
 {
     [When(@"purging all streams and commits in bucket (.+)")]
-    public async Task WhenPurgingAllStreamsAndCommits(string bucketId)
+    public async Task WhenPurgingAllStreamsAndCommits(string TenantId)
     {
-        await PersistenceManagement.Purge(bucketId);
+        await PersistenceManagement.Purge(TenantId).ConfigureAwait(false);
     }
 
     [Then(@"should not find any commits stored in bucket (.+)")]
-    public async Task ThenShouldNotFindAnyCommitsStoredInBucket(string bucketId)
+    public async Task ThenShouldNotFindAnyCommitsStoredInBucket(string TenantId)
     {
-        var enumerable = PersistenceManagement.GetFrom(bucketId, 0, CancellationToken.None);
-        Assert.Empty(await enumerable.ToList(CancellationToken.None));
+        var enumerable = PersistenceManagement.GetFrom(TenantId, 0, CancellationToken.None);
+        Assert.Empty(await enumerable.ToList(CancellationToken.None).ConfigureAwait(false));
     }
 
     [Then(@"should not find any streams to snapshot in bucket (.+)")]
-    public async Task ThenShouldNotFindAnyStreamsToSnapshotInBucket(string bucketId)
+    public async Task ThenShouldNotFindAnyStreamsToSnapshotInBucket(string TenantId)
     {
         Assert.Empty(
-            await PersistenceManagement.GetStreamsToSnapshot(bucketId, 0, CancellationToken.None).ToList());
+            await PersistenceManagement.GetStreamsToSnapshot(TenantId, 0, CancellationToken.None).ToList().ConfigureAwait(false));
     }
 
     [When(@"the storage is disposed")]
@@ -48,21 +48,21 @@ public partial class PersistenceEngineBehavior
     public async Task GivenEventStreamsPersistedInDifferentBuckets()
     {
         _streamId = Guid.NewGuid().ToString();
-        await Persistence.Commit(_streamId.BuildAttempt(bucketId: BucketAId)).ConfigureAwait(false);
-        await Persistence.Commit(_streamId.BuildAttempt(bucketId: BucketBId)).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt(TenantId: BucketAId)).ConfigureAwait(false);
+        await Persistence.Commit(_streamId.BuildAttempt(TenantId: BucketBId)).ConfigureAwait(false);
     }
 
     [Then(@"should purge all commits stored in bucket (.+)")]
-    public async Task ThenShouldPurgeAllCommitsStoredInBucket(string bucketId)
+    public async Task ThenShouldPurgeAllCommitsStoredInBucket(string TenantId)
     {
-        var asyncEnumerable = PersistenceManagement.GetFrom(bucketId, 0, CancellationToken.None);
-        Assert.Equal(0, await asyncEnumerable.Count());
+        var asyncEnumerable = PersistenceManagement.GetFrom(TenantId, 0, CancellationToken.None);
+        Assert.Equal(0, await asyncEnumerable.Count().ConfigureAwait(false));
     }
 
     [Then(@"should purge all streams to snapshot in bucket (.+)")]
-    public async Task ThenShouldPurgeAllStreamsToSnapshotInBucketA(string bucketId)
+    public async Task ThenShouldPurgeAllStreamsToSnapshotInBucketA(string TenantId)
     {
         Assert.Equal(0, await PersistenceManagement
-            .GetStreamsToSnapshot(bucketId, 0, CancellationToken.None).Count());
+            .GetStreamsToSnapshot(TenantId, 0, CancellationToken.None).Count().ConfigureAwait(false));
     }
 }

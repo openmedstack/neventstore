@@ -45,7 +45,7 @@ public partial class PersistenceEngineBehavior
         _now = SystemTime.UtcNow.AddSeconds(-1);
 
         _committed =
-            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2)).ToArray();
+            (await Persistence.CommitMany(ConfiguredPageSizeForTesting + 2).ConfigureAwait(false)).ToArray();
     }
 
     [When(@"loading streams from now onwards")]

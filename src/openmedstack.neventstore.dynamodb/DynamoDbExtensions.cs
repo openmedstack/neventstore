@@ -15,7 +15,7 @@ internal static class DynamoDbExtensions
     public static ICommit ToCommit(this Dictionary<string, AttributeValue> commit, ISerialize serializer)
     {
         return new Commit(
-            commit["BucketId"].S,
+            commit["TenantId"].S,
             commit["StreamId"].S,
             int.Parse(commit["StreamRevision"].N),
             Guid.Parse(commit["CommitId"].S),

@@ -45,7 +45,7 @@ public abstract class PgPublicationClient : IAsyncDisposable
             try
             {
                 await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch
             {
@@ -75,7 +75,7 @@ public abstract class PgPublicationClient : IAsyncDisposable
             {
                 if (_logicalReplicationConnection == null)
                 {
-                    await CreateSubscriptionSlot(stoppingToken);
+                    await CreateSubscriptionSlot(stoppingToken).ConfigureAwait(false);
                 }
 
                 var replication = _logicalReplicationConnection!.StartReplication(
@@ -212,7 +212,7 @@ public abstract class PgPublicationClient : IAsyncDisposable
         if (_logicalReplicationConnection != null)
         {
             await _logicalReplicationConnection.DropReplicationSlot(_replicationSlotName, true).ConfigureAwait(false);
-            await _logicalReplicationConnection.DisposeAsync();
+            await _logicalReplicationConnection.DisposeAsync().ConfigureAwait(false);
         }
 
         GC.SuppressFinalize(this);

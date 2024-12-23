@@ -13,27 +13,27 @@ service EventStore {
 }
 
 message GetSnapshotRequest {
-  string bucketId = 1;
+  string TenantId = 1;
   string streamId = 2;
   int32 maxRevision = 3;
 }
 
 message GetFromMinMaxRequest {
-  string bucketId = 1;
+  string TenantId = 1;
   string streamId = 2;
   int32 minRevision = 3;
   int32 maxRevision = 4;
 }
 
 message SnapshotInfo{
-  string BucketId = 1;
+  string TenantId = 1;
   string StreamId = 2;
   int32 StreamRevision = 3;
   string base64Payload = 4;
 }
 
 message CommitInfo {
-  string bucketId = 1;
+  string TenantId = 1;
   string streamId = 2;
   int32 streamRevision = 3;
   string commitId = 4;
@@ -50,7 +50,7 @@ message EventMessageInfo {
 }
 
 message StreamHeadInfo {
-  string bucketId = 1;
+  string TenantId = 1;
   string streamId = 2;
   int32 headRevision = 3;
   int32 snapshotRevision = 4;

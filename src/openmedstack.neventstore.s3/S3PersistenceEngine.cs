@@ -17,7 +17,6 @@ public class S3PersistenceEngine(
 {
     private const string SnapshotsTableName = "snapshots";
     private const string CommitsTableName = "commits";
-    private const string CommitId = "CommitId";
     private bool _disposed;
 
     public void Dispose()
@@ -30,19 +29,21 @@ public class S3PersistenceEngine(
     public async IAsyncEnumerable<ICommit> Get(
         string tenantId,
         string streamId,
-        int minRevision,
-        int maxRevision,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
+        int minRevision = 0,
+        int maxRevision = int.MaxValue,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ThrowWhenDisposed();
         maxRevision = maxRevision == int.MaxValue ? int.MaxValue : maxRevision + 1;
         minRevision = minRevision < 0 ? 0 : minRevision;
+        var prefix = $"{CommitsTableName}/{tenantId}/{streamId}/";
         var response = await context
             .ListObjectsV2Async(
                 new ListObjectsV2Request
                 {
-                    BucketName = tenantId, Delimiter = "/",
-                    Prefix = $"{bucketName}/{CommitsTableName}/{tenantId}/{streamId}"
+                    BucketName = bucketName,
+                    Delimiter = "/",
+                    Prefix = prefix
                 }, cancellationToken).ConfigureAwait(false);
         if (response.S3Objects.Count == 0)
         {
@@ -60,7 +61,7 @@ public class S3PersistenceEngine(
             .ToList();
         foreach (var key in keys)
         {
-            var obj = await context.GetObjectAsync(tenantId, key, cancellationToken).ConfigureAwait(false);
+            var obj = await context.GetObjectAsync(bucketName, key, cancellationToken).ConfigureAwait(false);
             if (obj.HttpStatusCode != HttpStatusCode.OK)
             {
                 continue;
@@ -84,12 +85,18 @@ public class S3PersistenceEngine(
         await CheckExists(commit.CommitSequence, commit).ConfigureAwait(false);
         var attempt = S3Commit.FromCommitAttempt(commit, serializer);
         var commitKey =
-            $"{bucketName}/{commit.TenantId}/{commit.StreamId}/{commit.CommitStamp.ToUnixTimeSeconds()}_{commit.CommitId}_{commit.CommitSequence}_{commit.StreamRevision}.json";
+            $"{CommitsTableName}/{commit.TenantId}/{commit.StreamId}/{commit.CommitStamp.ToUnixTimeSeconds()}_{commit.CommitId}_{commit.CommitSequence}_{commit.StreamRevision}.json";
         using var stream = new MemoryStream();
         serializer.Serialize(stream, attempt);
         stream.Position = 0;
         var response = await context
-            .PutObjectAsync(new PutObjectRequest { BucketName = bucketName, Key = commitKey, AutoCloseStream = true, InputStream = stream },
+            .PutObjectAsync(new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = commitKey,
+                    AutoCloseStream = true,
+                    InputStream = stream
+                },
                 cancellationToken).ConfigureAwait(false);
         if (!response.HttpStatusCode.Equals(HttpStatusCode.OK))
         {
@@ -97,11 +104,11 @@ public class S3PersistenceEngine(
         }
 
         return new Commit(
-            attempt.BucketId,
+            attempt.TenantId,
             attempt.StreamId,
             attempt.StreamRevision,
             Guid.Parse(attempt.CommitId),
-            attempt.CommitSequence,
+            attempt.CommitSequence + 1,
             DateTimeOffset.FromUnixTimeSeconds(attempt.CommitStamp),
             0,
             commit.Headers.ToDictionary(),
@@ -118,29 +125,6 @@ public class S3PersistenceEngine(
         logger.LogWarning("Accessing a disposed object");
         throw new ObjectDisposedException("Already disposed");
     }
-//
-//    private async Task<bool> DetectDuplicate(S3Commit attempt)
-//    {
-//        var queryRequest = new QueryRequest
-//        {
-//            TableName = CommitsTableName,
-//            ConsistentRead = true,
-//            ScanIndexForward = false,
-//            Limit = 1,
-//            Select = Select.SPECIFIC_ATTRIBUTES,
-//            ProjectionExpression = CommitId,
-//            KeyConditionExpression =
-//                "BucketAndStream = :v_BucketAndStream AND CommitSequence = :v_CommitSequence",
-//            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-//            {
-//                { ":v_BucketAndStream", new AttributeValue { S = $"{attempt.BucketId}{attempt.StreamId}" } },
-//                { ":v_CommitSequence", new AttributeValue { N = attempt.CommitSequence.ToString() } }
-//            }
-//        };
-//        var response = await context.QueryAsync(queryRequest).ConfigureAwait(false);
-//        var s = response.Items[0][CommitId].S;
-//        return response.HttpStatusCode == HttpStatusCode.OK && s == attempt.CommitId;
-//    }
 
     public async Task<ISnapshot?> GetSnapshot(
         string tenantId,
@@ -170,7 +154,7 @@ public class S3PersistenceEngine(
             .OrderByDescending(x => x.version)
             .SkipWhile(x => x.version > maxRevision)
             .First();
-        var key = $"{bucketName}/{SnapshotsTableName}/{tenantId}/{streamId}/{version.key}.json";
+        var key = $"{SnapshotsTableName}/{tenantId}/{streamId}/{version.key}.json";
         var obj = await context.GetObjectAsync(bucketName, key, cancellationToken).ConfigureAwait(false);
         if (obj.HttpStatusCode != HttpStatusCode.OK)
         {
@@ -184,14 +168,15 @@ public class S3PersistenceEngine(
     public async Task<bool> AddSnapshot(ISnapshot snapshot, CancellationToken cancellationToken)
     {
         var attempt = S3Snapshot.FromSnapshot(snapshot, serializer);
-        await using var ms = new MemoryStream();
+        var ms = new MemoryStream();
+        await using var ms1 = ms.ConfigureAwait(false);
         serializer.Serialize(ms, attempt);
         ms.Position = 0;
         var request = new PutObjectRequest
         {
             BucketName = bucketName,
             Key =
-                $"{bucketName}/{SnapshotsTableName}/{snapshot.TenantId}/{snapshot.StreamId}/{snapshot.StreamRevision}.json",
+                $"{SnapshotsTableName}/{snapshot.TenantId}/{snapshot.StreamId}/{snapshot.StreamRevision}.json",
             InputStream = ms,
             ContentType = "application/json"
         };
@@ -206,9 +191,9 @@ public class S3PersistenceEngine(
             new ListObjectsV2Request
             {
                 Delimiter = "/",
-                Prefix = $"{bucketName}/{commit.TenantId}/{commit.StreamId}/",
+                Prefix = $"{CommitsTableName}/{commit.TenantId}/{commit.StreamId}/",
                 BucketName = bucketName
-            });
+            }).ConfigureAwait(false);
         if (response.S3Objects.Count == 0)
         {
             return;
@@ -226,8 +211,13 @@ public class S3PersistenceEngine(
                 throw new DuplicateCommitException($"Commit {commit.CommitId} already exists");
             }
 
-            if (int.Parse(split[^2]) == commitSequence || commit.StreamRevision <=
-                int.Parse(split[^1].Replace(".json", "")))
+            var committingSequence = int.Parse(split[^2]);
+            if (committingSequence == commitSequence)
+            {
+                throw new ConcurrencyException("Commit sequence already exists");
+            }
+            var committingRevision = int.Parse(split[^1].Replace(".json", ""));
+            if (commit.StreamRevision <= committingRevision)
             {
                 var overlapping = keys.Where(k =>
                         int.Parse(k.Split('_').Last().Replace(".json", "")) >= commit.StreamRevision)
@@ -239,7 +229,7 @@ public class S3PersistenceEngine(
 
                 foreach (var o in overlapping.Select(FileToCommit))
                 {
-                    var c = await o;
+                    var c = await o.ConfigureAwait(false);
                     if (c == null)
                     {
                         continue;
@@ -260,7 +250,7 @@ public class S3PersistenceEngine(
 
     private async Task<S3Commit?> FileToCommit(string key)
     {
-        var file = await context.GetObjectAsync(bucketName, key);
+        var file = await context.GetObjectAsync(bucketName, key).ConfigureAwait(false);
         var doc = serializer.Deserialize<S3Commit>(file.ResponseStream);
         return doc;
     }

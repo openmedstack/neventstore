@@ -36,8 +36,8 @@ public partial class PersistenceEngineBehavior
             await PersistenceManagement.Drop().ConfigureAwait(false);
             if (_testContainer != null)
             {
-                await _testContainer.StopAsync();
-                await _testContainer.DisposeAsync();
+                await _testContainer.StopAsync().ConfigureAwait(false);
+                await _testContainer.DisposeAsync().ConfigureAwait(false);
             }
         }
         catch
@@ -52,9 +52,9 @@ public partial class PersistenceEngineBehavior
         var (commitEvents, accessSnapshots, managePersistence) = type switch
         {
             "in-memory" => CreateInMemoryPersistence(),
-            "postgres" => await CreatePostgresPersistence(ConfiguredPageSizeForTesting),
-            "dynamodb" => await CreateDynamoDbPersistence(),
-            "s3" => await CreateS3Persistence(),
+            "postgres" => await CreatePostgresPersistence(ConfiguredPageSizeForTesting).ConfigureAwait(false),
+            "dynamodb" => await CreateDynamoDbPersistence().ConfigureAwait(false),
+            "s3" => await CreateS3Persistence().ConfigureAwait(false),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
@@ -66,14 +66,14 @@ public partial class PersistenceEngineBehavior
     [Given("the persistence is initialized")]
     public async Task GivenThePersistenceIsInitialized()
     {
-        await PersistenceManagement.Initialize();
+        await PersistenceManagement.Initialize().ConfigureAwait(false);
     }
 
     [Given("an existing commit attempt")]
     public void GivenAnExistingCommitAttempt()
     {
         _attempt = new CommitAttempt(
-            BucketId,
+            TenantId,
             StreamId,
             1,
             Guid.NewGuid(),
@@ -90,13 +90,13 @@ public partial class PersistenceEngineBehavior
     [When("committing again on the same stream")]
     public async Task WhenCommittingAgainOnTheSameStream()
     {
-        await Persistence.Commit(_attempt);
+        await Persistence.Commit(_attempt).ConfigureAwait(false);
     }
 
     [Then(@"should throw a duplicate commit exception")]
     public async Task ThenShouldThrowADuplicateCommitException()
     {
-        await Assert.ThrowsAsync<DuplicateCommitException>(async () => await Persistence.Commit(_attempt));
+        await Assert.ThrowsAsync<DuplicateCommitException>(async () => await Persistence.Commit(_attempt).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
     private (ICommitEvents, IAccessSnapshots, IManagePersistence) CreateInMemoryPersistence()
@@ -114,7 +114,7 @@ public partial class PersistenceEngineBehavior
             .WithEnvironment("POSTGRES_PASSWORD", "openmedstack")
             .WithEnvironment("POSTGRES_DB", "openmedstack")
             .Build();
-        await testContainer.StartAsync();
+        await testContainer.StartAsync().ConfigureAwait(false);
         _testContainer = testContainer;
         var mappedPublicPort = testContainer.GetMappedPublicPort(5432);
         var engine = new SqlPersistenceEngine(
@@ -138,7 +138,7 @@ public partial class PersistenceEngineBehavior
             .WithImage("amazon/dynamodb-local:latest")
             .WithPortBinding("8000", true)
             .Build();
-        await testContainer.StartAsync();
+        await testContainer.StartAsync().ConfigureAwait(false);
         var mappedPort = testContainer.GetMappedPublicPort(8000);
         _testContainer = testContainer;
         var client = new AmazonDynamoDBClient(
@@ -165,7 +165,7 @@ public partial class PersistenceEngineBehavior
             .WithPortBinding("9000", true)
             .WithCommand("server", "/data")
             .Build();
-        await testContainer.StartAsync();
+        await testContainer.StartAsync().ConfigureAwait(false);
         var mappedPort = testContainer.GetMappedPublicPort(9000);
         _testContainer = testContainer;
         var client = new AmazonS3Client(

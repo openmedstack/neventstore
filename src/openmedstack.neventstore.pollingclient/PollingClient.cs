@@ -56,17 +56,17 @@ public class PollingClient : IDisposable
     /// </summary>
     public DateTime LastActivityTimestamp { get; private set; }
 
-    public void ConfigurePollingFunction(string bucketId)
+    public void ConfigurePollingFunction(string TenantId)
     {
         if (_pollingThread != null)
         {
             throw new PollingClientException("Cannot configure when polling client already started polling");
         }
 
-        _pollingFunc = () => _managePersistence.GetFrom(bucketId, _checkpointToken, _cts.Token);
+        _pollingFunc = () => _managePersistence.GetFrom(TenantId, _checkpointToken, _cts.Token);
     }
 
-    public void StartFromBucket(string bucketId, long checkpointToken = 0)
+    public void StartFromBucket(string TenantId, long checkpointToken = 0)
     {
         if (_pollingThread != null)
         {
@@ -74,13 +74,13 @@ public class PollingClient : IDisposable
         }
 
         _checkpointToken = checkpointToken;
-        ConfigurePollingFunction(bucketId);
+        ConfigurePollingFunction(TenantId);
         _pollingThread = InnerPollingLoop();
     }
 
     public async Task Stop()
     {
-        await _cts.CancelAsync();
+        await _cts.CancelAsync().ConfigureAwait(false);
         if (_pollingThread != null
          && _pollingThread.Status != TaskStatus.WaitingForActivation
          && _pollingThread.Status != TaskStatus.WaitingToRun)

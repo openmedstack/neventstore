@@ -5,8 +5,7 @@ namespace OpenMedStack.NEventStore.S3;
 
 internal class S3Commit
 {
-    public required string BucketAndStream { get; set; }
-    public required string BucketId { get; set; }
+    public required string TenantId { get; set; }
     public required string StreamId { get; set; }
     public int StreamRevision { get; set; }
     public required string CommitId { get; set; }
@@ -19,8 +18,7 @@ internal class S3Commit
     {
         return new S3Commit
         {
-            BucketAndStream = $"{commitAttempt.TenantId}{commitAttempt.StreamId}",
-            BucketId = commitAttempt.TenantId,
+            TenantId = commitAttempt.TenantId,
             StreamId = commitAttempt.StreamId,
             StreamRevision = commitAttempt.StreamRevision,
             CommitId = commitAttempt.CommitId.ToString("N"),
@@ -33,7 +31,7 @@ internal class S3Commit
 
     public ICommit ToCommit(ISerialize serializer)
     {
-        return new Commit(BucketId, StreamId, StreamRevision, Guid.Parse(CommitId), CommitSequence,
+        return new Commit(TenantId, StreamId, StreamRevision, Guid.Parse(CommitId), CommitSequence,
             DateTimeOffset.FromUnixTimeSeconds(CommitStamp), 0,
             serializer.Deserialize<Dictionary<string, object>>(Headers),
             serializer.Deserialize<List<EventMessage>>(Events));
