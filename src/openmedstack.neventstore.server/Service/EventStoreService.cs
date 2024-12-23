@@ -26,7 +26,7 @@ public class EventStoreService : EventStore.EventStoreBase
             return new EventMessage(info.Base64Payload, info.Headers.ToDictionary(x => x.Key, x => (object)x.Value));
         }
 
-        var commitAttempt = new CommitAttempt(request.BucketId, request.StreamId, request.StreamRevision,
+        var commitAttempt = new CommitAttempt(request.TenantId, request.StreamId, request.StreamRevision,
             Guid.Parse(request.CommitId), request.CommitSequence,
             DateTimeOffset.FromUnixTimeSeconds(request.CommitStamp),
             request.Headers.ToDictionary(x => x.Key, x => (object)x.Value),
@@ -38,7 +38,7 @@ public class EventStoreService : EventStore.EventStoreBase
             ? null
             : new CommitInfo
             {
-                BucketId = info.TenantId,
+                TenantId = info.TenantId,
                 CommitId = info.CommitId.ToString("N"),
                 CheckpointToken = info.CheckpointToken,
                 CommitSequence = info.CommitSequence, CommitStamp = info.CommitStamp.ToUnixTimeSeconds(),
@@ -52,7 +52,7 @@ public class EventStoreService : EventStore.EventStoreBase
         IServerStreamWriter<CommitInfo> responseStream,
         ServerCallContext context)
     {
-        var stream = _persistence.Get(request.BucketId, request.StreamId, request.MinRevision, request.MaxRevision,
+        var stream = _persistence.Get(request.TenantId, request.StreamId, request.MinRevision, request.MaxRevision,
             context.CancellationToken);
 
         await WriteToStream(responseStream, context, stream).ConfigureAwait(false);
@@ -62,7 +62,7 @@ public class EventStoreService : EventStore.EventStoreBase
     {
         var result = await _snapshots.AddSnapshot(
                 new Snapshot(
-                    request.BucketId,
+                    request.TenantId,
                     request.StreamId,
                     request.StreamRevision,
                     _serializer.Deserialize<object>(Convert.FromBase64String(request.Base64Payload))!))
@@ -72,7 +72,7 @@ public class EventStoreService : EventStore.EventStoreBase
 
     public override async Task<SnapshotInfo?> GetSnapshot(GetSnapshotRequest request, ServerCallContext context)
     {
-        var result = await _snapshots.GetSnapshot(request.BucketId, request.StreamId, request.MaxRevision,
+        var result = await _snapshots.GetSnapshot(request.TenantId, request.StreamId, request.MaxRevision,
             context.CancellationToken).ConfigureAwait(false);
         if (result == null)
         {
@@ -84,7 +84,7 @@ public class EventStoreService : EventStore.EventStoreBase
         var bytes = Convert.ToBase64String(stream.ToArray());
         return new SnapshotInfo
         {
-            BucketId = result.TenantId,
+            TenantId = result.TenantId,
             StreamId = result.StreamId,
             StreamRevision = result.StreamRevision,
             Base64Payload = bytes
@@ -100,7 +100,7 @@ public class EventStoreService : EventStore.EventStoreBase
         {
             await responseStream.WriteAsync(new CommitInfo
             {
-                BucketId = commit.TenantId,
+                TenantId = commit.TenantId,
                 CommitId = commit.CommitId.ToString("N"),
                 CommitSequence = commit.CommitSequence,
                 CommitStamp = commit.CommitStamp.ToUnixTimeSeconds(),
