@@ -16,7 +16,7 @@ internal class TestJsonSerializer : ISerialize
 
     public virtual void Serialize<T>(Stream output, T graph)
     {
-        using var streamWriter = new StreamWriter(output, Encoding.UTF8);
+        using var streamWriter = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
         var serializer = JsonSerializer.Create(_serializerOptions);
         serializer.Serialize(streamWriter, graph, typeof(T));
     }

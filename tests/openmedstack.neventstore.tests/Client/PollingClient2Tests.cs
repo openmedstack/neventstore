@@ -17,7 +17,7 @@ using Xunit;
 
 public class BaseHandlingCommittedEvents : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override Task Context()
     {
@@ -49,7 +49,7 @@ public class BaseHandlingCommittedEvents : UsingPollingClient2
 
 public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override Task Context()
     {
@@ -85,7 +85,7 @@ public class BaseHandlingCommittedEventsAndNewEvents : UsingPollingClient2
 
 public class VerifyStoppingCommitPollingClient : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override async Task Context()
     {
@@ -117,7 +117,7 @@ public class VerifyStoppingCommitPollingClient : UsingPollingClient2
 
 public class VerifyRetryCommitPollingClient : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override Task Context()
     {
@@ -155,7 +155,7 @@ public class VerifyRetryCommitPollingClient : UsingPollingClient2
 
 public class VerifyRetryThenMoveNext : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override Task Context()
     {
@@ -185,14 +185,14 @@ public class VerifyRetryThenMoveNext : UsingPollingClient2
     {
         WaitForCondition(() => _commits.Count >= 4, timeoutInSeconds: 1);
         Assert.Equal(4, _commits.Count);
-        Assert.Equal(new[] { 1L, 1L, 1, 2 }, _commits
+        Assert.Equal([1L, 1L, 1, 2], _commits
             .Select(c => c.CheckpointToken));
     }
 }
 
 public class VerifyManualPlling : UsingPollingClient2
 {
-    private readonly List<ICommit> _commits = new();
+    private readonly List<ICommit> _commits = [];
 
     protected override Task Context()
     {
@@ -221,7 +221,7 @@ public class VerifyManualPlling : UsingPollingClient2
     {
         WaitForCondition(() => _commits.Count >= 2, timeoutInSeconds: 3);
         Assert.Equal(2, _commits.Count);
-        Assert.Equal(new[] { 1L, 2L }, _commits
+        Assert.Equal([1L, 2L], _commits
             .Select(c => c.CheckpointToken));
     }
 }

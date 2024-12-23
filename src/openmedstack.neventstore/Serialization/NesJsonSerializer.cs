@@ -36,7 +36,7 @@ public class NesJsonSerializer : ISerialize
     public virtual void Serialize<T>(Stream output, T graph)
     {
         _logger.LogTrace(Messages.SerializingGraph, typeof(T));
-        using var streamWriter = new StreamWriter(output, Encoding.UTF8);
+        using var streamWriter = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
         _jsonSerializer.Serialize(streamWriter, graph, typeof(T));
         streamWriter.Flush();
     }

@@ -13,7 +13,6 @@ public class S3Management(IAmazonS3 dbClient, string bucketName, ILogger<S3Manag
 
     public async Task Initialize()
     {
-        await Task.Yield();
         await dbClient.PutBucketAsync(new PutBucketRequest { BucketName = bucketName, UseClientRegion = true });
     }
 

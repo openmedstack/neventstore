@@ -89,7 +89,7 @@ public class S3PersistenceEngine(
         serializer.Serialize(stream, attempt);
         stream.Position = 0;
         var response = await context
-            .GetObjectMetadataAsync(new GetObjectMetadataRequest { BucketName = bucketName, Key = commitKey },
+            .PutObjectAsync(new PutObjectRequest { BucketName = bucketName, Key = commitKey, AutoCloseStream = true, InputStream = stream },
                 cancellationToken).ConfigureAwait(false);
         if (!response.HttpStatusCode.Equals(HttpStatusCode.OK))
         {

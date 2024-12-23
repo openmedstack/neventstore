@@ -41,7 +41,7 @@ internal class Program
             .UsingSqlEventStore<EventStoreConfiguration, PostgreSqlDialect>(NpgsqlFactory.Instance)
             .AddAutofacModules((c, _) => new ServerModule(c))
             //.UsingMassTransitOverRabbitMq()
-            .UsingInMemoryMassTransit()
+//            .UsingInMemoryMassTransit()
             .UsingWebServer(_ => new DelegateWebApplicationConfiguration(
                 services =>
                 {

@@ -46,10 +46,9 @@ public partial class PersistenceEngineBehavior
         {
             var stream = new CommitAttempt("default", Guid.NewGuid().ToString("N"), 1, Guid.NewGuid(), 1,
                 SystemTime.UtcNow,
-                new Dictionary<string, object>(), new[]
-                {
+                new Dictionary<string, object>(), [
                     new EventMessage(new Pippo { S = "Hi " + i })
-                });
+                ]);
             await Persistence.Commit(stream);
         }
     }

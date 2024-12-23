@@ -14,6 +14,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: Header has a name that contains a period
         Given a <type> persistence engine
@@ -27,6 +28,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: When a commit is successfully persisted
         Given a <type> persistence engine
@@ -45,6 +47,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Reading a specific revision
         Given a <type> persistence engine
@@ -59,6 +63,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: Reading from a given revision to commit revision
         Given a <type> persistence engine
@@ -73,6 +78,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: Attempting to persist a commit id twice on same stream
         Given a <type> persistence engine
@@ -85,6 +91,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Committing more events than the configured page size
         Given a <type> persistence engine
@@ -99,6 +107,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: Getting from checkpoint amount of commits exceeds page size
         Given a <type> persistence engine
@@ -124,6 +133,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Retrieving a snapshot
         Given a <type> persistence engine
@@ -138,6 +149,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: A snapshot has been added to the most recent commit of a stream
         Given a <type> persistence engine
@@ -150,6 +163,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Adding commit after snapshot
         Given a <type> persistence engine
@@ -163,6 +178,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Reading all commits from a particular point in time
         Given a <type> persistence engine
@@ -201,6 +218,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Paging over all commits of a bucket from a particular checkpoint
         Given a <type> persistence engine
@@ -230,6 +249,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Saving a snapshot for a stream with the same id as a stream in another bucket
         Given a <type> persistence engine
@@ -243,6 +264,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Reading all commits from a particular point in time and there are streams in multiple buckets
         Given a <type> persistence engine
@@ -255,6 +278,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Getting all commits since checkpoint and there are streams in multiple buckets
         Given a <type> persistence engine
@@ -279,6 +304,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Purging all streams and commits
         Given a <type> persistence engine
@@ -292,6 +319,8 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
 
     Scenario Outline: Purging all streams and commits from all buckets
         Given a <type> persistence engine
@@ -321,6 +350,7 @@ I want to ensure that the persistence engine behaves as expected
           | in-memory |
           | postgres  |
           | dynamodb  |
+          | s3        |
 
     Scenario Outline: Large payload
         Given a <type> persistence engine
@@ -332,3 +362,5 @@ I want to ensure that the persistence engine behaves as expected
           | type      |
           | in-memory |
           | postgres  |
+          | dynamodb  |
+          | s3        |
